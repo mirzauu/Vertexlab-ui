@@ -1,0 +1,303 @@
+.admin-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.admin-header p {
+  color: #6B7280;
+  font-size: 0.95rem;
+}
+
+.invite-btn-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #003BFF;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.invite-btn-top:hover {
+  background-color: #002ECC;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.admin-card {
+  background-color: var(--card-bg);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+}
+
+.card-header-admin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.admin-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.staff-count {
+  font-size: 0.85rem;
+  color: #9CA3AF;
+  font-weight: 500;
+  background-color: #F9FAFB;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+/* Table */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staff-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.staff-table td {
+  padding: 16px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.member-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.member-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.member-email {
+  font-size: 0.8rem;
+  color: #9CA3AF;
+}
+
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.status-badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background-color: #ECFDF5;
+  color: #059669;
+}
+
+.status-badge.away {
+  background-color: #FFFBEB;
+  color: #D97706;
+}
+
+.status-badge.offline {
+  background-color: #F3F4F6;
+  color: #6B7280;
+}
+
+.action-dot-btn {
+  background: transparent;
+  border: none;
+  color: #D1D5DB;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.action-dot-btn:hover {
+  color: var(--text-dark);
+}
+
+/* Invite Card */
+.invite-desc {
+  font-size: 0.9rem;
+  color: #6B7280;
+  margin-top: 8px;
+  margin-bottom: 24px;
+}
+
+.invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #F3F4F6;
+  margin-bottom: 24px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon svg {
+  position: absolute;
+  left: 12px;
+  color: #9CA3AF;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-with-icon input:focus {
+  border-color: #003BFF;
+}
+
+.input-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  outline: none;
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+}
+
+.send-invite-btn {
+  width: 100%;
+  background-color: var(--text-dark);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.send-invite-btn:hover {
+  opacity: 0.9;
+}
+
+.pending-invites h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pending-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pending-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pending-email {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.pending-time {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+}
+
+.pending-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #D97706;
+}

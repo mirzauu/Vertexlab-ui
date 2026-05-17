@@ -1,0 +1,264 @@
+.review-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.review-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.secondary-btn, .primary-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-btn {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.secondary-btn:hover {
+  background-color: var(--sidebar-hover);
+}
+
+.primary-btn {
+  background-color: #003BFF;
+  border: none;
+  color: white;
+}
+
+.primary-btn:hover {
+  background-color: #002ECC;
+}
+
+.review-content {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.review-left {
+  flex: 0.8;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.review-right {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.review-card {
+  background-color: var(--card-bg);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+}
+
+.review-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 16px;
+}
+
+/* Audio Player */
+.player-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.progress-bar {
+  height: 6px;
+  background-color: #F3F4F6;
+  border-radius: 3px;
+  position: relative;
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #003BFF;
+  border-radius: 3px;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.main-btns {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: var(--text-dark);
+}
+
+.play-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--text-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Transcript */
+.transcript-section .scroll-content {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+.transcript-section p {
+  font-size: 0.9rem;
+  color: var(--text-gray);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.transcript-section p span {
+  font-weight: 600;
+  color: #9CA3AF;
+  margin-right: 8px;
+}
+
+/* Raw Data */
+.data-table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.data-table th {
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.data-table td {
+  color: var(--text-dark);
+}
+
+/* AI Document */
+.ai-document {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.doc-header h3 {
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.doc-badge {
+  padding: 4px 10px;
+  background-color: rgba(91, 68, 233, 0.08);
+  color: #5B44E9;
+  font-size: 12pt;
+  font-weight: 700;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+}
+
+.doc-editor {
+  flex: 1;
+  padding: 20px;
+  background-color: var(--bg-light);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  outline: none;
+}
+
+.doc-editor h2 {
+  font-size: 14pt;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
+
+.doc-editor p {
+  font-size: 15pt;
+  line-height: 1.7;
+  color: var(--text-dark);
+  margin-bottom: 16px;
+}
+
+.doc-editor strong {
+  font-size: 14pt;
+}
+
+.doc-editor ul {
+  margin-bottom: 16px;
+  padding-left: 20px;
+}
+
+.doc-editor li {
+  font-size: 14pt;
+  line-height: 1.7;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}

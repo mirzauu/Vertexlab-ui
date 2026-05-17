@@ -1,0 +1,337 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital@1&display=swap');
+
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #838C87; /* Grey background as in image */
+  padding: 40px;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+.auth-container {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  height: 650px;
+  background-color: #FFFFFF;
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+/* LEFT SIDE */
+.auth-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 40px;
+  position: relative;
+}
+
+.auth-header {
+  margin-bottom: 60px;
+}
+
+.auth-logo-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.5rem;
+  color: #EAEBE9; /* Very light color for "Fillianta" logo in top left */
+  font-weight: 600;
+}
+
+.auth-form-container {
+  max-width: 320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.auth-form-icon {
+  margin-bottom: 24px;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  font-size: 0.85rem;
+  color: #8C8C9A;
+  margin-bottom: 32px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgot-link {
+  font-size: 0.75rem;
+  color: #111827;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.form-group input {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #D1D5DB;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #1A4D39;
+}
+
+.form-group input::placeholder {
+  color: #6B7280;
+}
+
+.auth-submit {
+  margin-top: 8px;
+  background-color: #1A4D39;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.auth-submit:hover {
+  opacity: 0.9;
+}
+
+.auth-switch {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #8C8C9A;
+}
+
+.auth-switch a {
+  color: #111827;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* RIGHT SIDE */
+.auth-right {
+  flex: 1;
+  background: linear-gradient(145deg, #1A4331, #0F2D20);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 60px 40px 40px;
+}
+
+/* Subtle glow/gradient effect on right bg */
+.auth-right-bg-effect {
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(circle at 40% 30%, rgba(45, 110, 75, 0.4) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.auth-right-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-right-title {
+  color: white;
+  line-height: 1.1;
+  margin-bottom: auto;
+}
+
+.auth-right-title .italic-serif {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 3rem;
+  font-weight: 400;
+}
+
+.auth-right-title .sans-serif {
+  font-family: 'Inter', sans-serif;
+  font-size: 2.8rem;
+  font-weight: 500;
+  margin-left: 20px; /* Slight indent as in image */
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.auth-card-wrapper {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+/* Floating Toolbar */
+.auth-floating-toolbar {
+  background-color: #F8F9FA;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 200px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.toolbar-top {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #B0B5B3;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.toolbar-icon.active {
+  color: #1A4D39;
+  background-color: rgba(26, 77, 57, 0.1);
+}
+
+.toolbar-bottom-icon {
+  margin-top: 10px;
+}
+
+/* Credit Card Dashboard */
+.auth-credit-card {
+  background-color: #F8F9FA;
+  border-radius: 16px;
+  padding: 24px;
+  width: 260px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-top-logo {
+  margin-bottom: 24px;
+}
+
+.card-balance-section {
+  margin-bottom: 24px;
+}
+
+.card-balance {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.card-balance-label {
+  font-size: 0.75rem;
+  color: #B0B5B3;
+  margin-top: 4px;
+}
+
+.card-primary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-primary-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-primary-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-primary-number {
+  font-size: 0.7rem;
+  color: #6B7280;
+  margin-top: 4px;
+}
+
+.card-primary-amount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.card-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #B0B5B3;
+  letter-spacing: 1px;
+}
+
+.card-view-all {
+  background-color: #EAEBE9;
+  border: none;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+}
