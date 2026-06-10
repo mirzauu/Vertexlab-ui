@@ -1,27 +1,33 @@
 import React, { useState } from 'react';
 import './Auth.css';
+import { api } from './services/api';
 
 export default function Auth({ onLogin }) {
   const [email, setEmail] = useState('user@example.com');
-  const [password, setPassword] = useState('my111122');
+  const [fullName, setFullName] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
   
   // Organization state
-  const [step, setStep] = useState('login'); // 'login', 'select_org', 'create_org'
+  const [step, setStep] = useState('login'); // 'login', 'login_verify', 'signup', 'signup_verify', 'select_org', 'create_org'
   const [organizations, setOrganizations] = useState([]);
   const [orgName, setOrgName] = useState('');
   const [orgWebsite, setOrgWebsite] = useState('');
   const [orgTimezone, setOrgTimezone] = useState('UTC');
 
-  const fetchOrganizations = async (token) => {
+  const showToast = (message, type = 'error') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'error' });
+    }, 4500);
+  };
+
+  const fetchOrganizations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://127.0.0.1:8000/api/v1/organizations/', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await api('/api/v1/organizations/');
       if (!response.ok) throw new Error('Failed to fetch organizations.');
       const orgs = await response.json();
       
@@ -33,6 +39,7 @@ export default function Auth({ onLogin }) {
       }
     } catch (err) {
       setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -47,15 +54,10 @@ export default function Auth({ onLogin }) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const token = localStorage.getItem('bearer_token');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/organizations/', {
+      const response = await api('/api/v1/organizations/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ name: orgName, website: orgWebsite, timezone: orgTimezone }),
       });
 
@@ -65,40 +67,135 @@ export default function Auth({ onLogin }) {
 
       const newOrg = await response.json();
       localStorage.setItem('organization_id', newOrg.id);
+      showToast('Organization created successfully!', 'success');
       onLogin?.();
     } catch (err) {
       setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogin = async (e) => {
+  const handleRequestLoginOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/auth/login', {
+      const response = await api('/api/v1/auth/login/request', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       });
 
       if (!response.ok) {
-        throw new Error('Login failed. Please check your credentials.');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || 'No account associated with this email address.');
+      }
+
+      setOtp('');
+      setStep('login_verify');
+      showToast('Verification code sent to your email!', 'success');
+    } catch (err) {
+      setError(err.message);
+      showToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyLoginOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await api('/api/v1/auth/login/verify', {
+        method: 'POST',
+        body: JSON.stringify({ email, code: otp }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Verification failed. Please check the code.');
       }
 
       const data = await response.json();
       if (data.access_token) {
         localStorage.setItem('bearer_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
-        await fetchOrganizations(data.access_token);
+        showToast('Signed in successfully!', 'success');
+        await fetchOrganizations();
       }
     } catch (err) {
       setError(err.message);
+      showToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestSignupOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const nameParts = fullName.trim().split(/\s+/);
+      const first_name = nameParts[0] || 'User';
+      const last_name = nameParts.slice(1).join(' ') || ' ';
+
+      const response = await api('/api/v1/auth/signup/request', {
+        method: 'POST',
+        body: JSON.stringify({ email, first_name, last_name }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Failed to request code. Check email or try again.');
+      }
+
+      setOtp('');
+      setStep('signup_verify');
+      showToast('Verification code sent to your email!', 'success');
+    } catch (err) {
+      setError(err.message);
+      showToast(err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySignupOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const nameParts = fullName.trim().split(/\s+/);
+      const first_name = nameParts[0] || 'User';
+      const last_name = nameParts.slice(1).join(' ') || ' ';
+
+      const response = await api('/api/v1/auth/signup/verify', {
+        method: 'POST',
+        body: JSON.stringify({ email, code: otp, first_name, last_name }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Verification failed. Please check the code.');
+      }
+
+      const data = await response.json();
+      if (data.access_token) {
+        localStorage.setItem('bearer_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        showToast('Account registered successfully!', 'success');
+        await fetchOrganizations();
+      }
+    } catch (err) {
+      setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -106,30 +203,65 @@ export default function Auth({ onLogin }) {
 
   return (
     <div className="auth-wrapper">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          backgroundColor: toast.type === 'error' ? '#FEE2E2' : '#D1FAE5',
+          color: toast.type === 'error' ? '#991B1B' : '#065F46',
+          border: `1px solid ${toast.type === 'error' ? '#FCA5A5' : '#A7F3D0'}`,
+          padding: '16px 20px',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          zIndex: 9999,
+          fontSize: '0.875rem',
+          fontWeight: '550',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          animation: 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        }}>
+          {toast.type === 'error' ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          )}
+          {toast.message}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateY(-20px) scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
+
       <div className="auth-container">
         {/* Left Side - Form */}
         <div className="auth-left">
           <div className="auth-header">
-            <div className="auth-logo-text">Fillianta</div>
+            <div className="auth-logo-text">VerbaLex AI</div>
           </div>
           
           <div className="auth-form-container">
-            <div className="auth-form-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="48" height="48" rx="12" fill="#1A4D39" />
-                <path d="M30.5 18C30.5 18 25.5 15 19.5 18C13.5 21 13 28.5 13 28.5C13 28.5 15.5 24.5 19.5 24.5C23.5 24.5 29 27.5 30.5 33.5C30.5 33.5 33.5 28.5 30.5 18Z" fill="white" />
-                <path d="M16 32C16 32 21 35 27 32C33 29 33.5 21.5 33.5 21.5C33.5 21.5 31 25.5 27 25.5C23 25.5 17.5 22.5 16 16.5C16 16.5 13 21.5 16 32Z" fill="white" />
-              </svg>
-            </div>
             
             {step === 'login' && (
               <>
                 <h1 className="auth-title">Get Started</h1>
-                <p className="auth-subtitle">Welcome to Fillianta - Let's login to your account</p>
+                <p className="auth-subtitle">Welcome to VerbaLex AI - Let's login to your account</p>
                 
                 {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
                 
-                <form className="auth-form" onSubmit={handleLogin}>
+                <form className="auth-form" onSubmit={handleRequestLoginOTP}>
                   <div className="form-group">
                     <label>Email</label>
                     <input 
@@ -141,15 +273,33 @@ export default function Auth({ onLogin }) {
                     />
                   </div>
                   
+                  <button type="submit" className="auth-submit" disabled={loading}>
+                    {loading ? 'Sending code...' : 'Send Sign In OTP'}
+                  </button>
+                </form>
+                
+                <div className="auth-switch">
+                  Don't have an account? <span onClick={() => { setError(''); setStep('signup'); }} style={{color: '#111827', fontWeight: 600, cursor: 'pointer'}}>Sign up</span>
+                </div>
+              </>
+            )}
+
+            {step === 'login_verify' && (
+              <>
+                <h1 className="auth-title">Verify Code</h1>
+                <p className="auth-subtitle">We sent a 4-digit code to {email}</p>
+                
+                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
+                
+                <form className="auth-form" onSubmit={handleVerifyLoginOTP}>
                   <div className="form-group">
-                    <div className="label-row">
-                      <label>Password</label>
-                      <a href="#" className="forgot-link">Forgot?</a>
-                    </div>
+                    <label>OTP Code</label>
                     <input 
-                      type="password" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      type="text" 
+                      placeholder="1234" 
+                      maxLength="4"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                       required
                     />
                   </div>
@@ -157,11 +307,89 @@ export default function Auth({ onLogin }) {
                   <button type="submit" className="auth-submit" disabled={loading}>
                     {loading ? 'Signing in...' : 'Sign in'}
                   </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setError(''); setStep('login'); }} 
+                    className="auth-submit" 
+                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#1A4D39', border: '1px solid #1A4D39'}}
+                  >
+                    Back
+                  </button>
+                </form>
+              </>
+            )}
+
+            {step === 'signup' && (
+              <>
+                <h1 className="auth-title">Create Account</h1>
+                <p className="auth-subtitle">Join VerbaLex AI - Create your account</p>
+                
+                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
+                
+                <form className="auth-form" onSubmit={handleRequestSignupOTP}>
+                  <div className="form-group">
+                    <label>Full Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="John Doe" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input 
+                      type="email" 
+                      placeholder="hi@example.com" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required 
+                    />
+                  </div>
+                  <button type="submit" className="auth-submit" disabled={loading}>
+                    {loading ? 'Sending code...' : 'Send Up OTP'}
+                  </button>
                 </form>
                 
                 <div className="auth-switch">
-                  Don't have an account? <span style={{color: '#111827', fontWeight: 600, cursor: 'pointer'}}>Sign up</span>
+                  Already have an account? <span onClick={() => { setError(''); setStep('login'); }} style={{color: '#111827', fontWeight: 600, cursor: 'pointer'}}>Sign in</span>
                 </div>
+              </>
+            )}
+
+            {step === 'signup_verify' && (
+              <>
+                <h1 className="auth-title">Verify Code</h1>
+                <p className="auth-subtitle">We sent a 4-digit code to {email}</p>
+                
+                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
+                
+                <form className="auth-form" onSubmit={handleVerifySignupOTP}>
+                  <div className="form-group">
+                    <label>OTP Code</label>
+                    <input 
+                      type="text" 
+                      placeholder="1234" 
+                      maxLength="4"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      required
+                    />
+                  </div>
+                  
+                  <button type="submit" className="auth-submit" disabled={loading}>
+                    {loading ? 'Creating...' : 'Verify & Create Account'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setError(''); setStep('signup'); }} 
+                    className="auth-submit" 
+                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#1A4D39', border: '1px solid #1A4D39'}}
+                  >
+                    Back
+                  </button>
+                </form>
               </>
             )}
 
@@ -182,10 +410,11 @@ export default function Auth({ onLogin }) {
                         border: '1px solid #e5e7eb', 
                         borderRadius: '0.5rem', 
                         cursor: 'pointer',
+                        backgroundColor: '#F9FAFB',
                         transition: 'all 0.2s'
                       }}
-                      onMouseOver={(e) => e.currentTarget.style.borderColor = '#1A4D39'}
-                      onMouseOut={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#1A4D39'; e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
                     >
                       <h3 style={{margin: 0, fontSize: '1rem', color: '#111827'}}>{org.name}</h3>
                       {org.website && <p style={{margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#6b7280'}}>{org.website}</p>}
@@ -246,7 +475,7 @@ export default function Auth({ onLogin }) {
           <div className="auth-right-content">
             <h2 className="auth-right-title">
               <span className="italic-serif">Enter the Future</span><br/>
-              <span className="sans-serif">of Payments,<br/>today</span>
+              <span className="sans-serif">of Legal AI,<br/>today</span>
             </h2>
             
             <div className="auth-card-wrapper">
@@ -254,13 +483,13 @@ export default function Auth({ onLogin }) {
                <div className="auth-floating-toolbar">
                   <div className="toolbar-top">
                     <div className="toolbar-icon active">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
                     </div>
                     <div className="toolbar-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                     </div>
                     <div className="toolbar-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
                     </div>
                   </div>
                   
@@ -273,32 +502,30 @@ export default function Auth({ onLogin }) {
                   </div>
                </div>
 
-               {/* Credit Card Dashboard */}
+               {/* Legal Transcription Widget */}
                <div className="auth-credit-card">
-                 <div className="card-top-logo">
-                    <svg width="28" height="28" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M30.5 18C30.5 18 25.5 15 19.5 18C13.5 21 13 28.5 13 28.5C13 28.5 15.5 24.5 19.5 24.5C23.5 24.5 29 27.5 30.5 33.5C30.5 33.5 33.5 28.5 30.5 18Z" fill="#B0B5B3" />
-                      <path d="M16 32C16 32 21 35 27 32C33 29 33.5 21.5 33.5 21.5C33.5 21.5 31 25.5 27 25.5C23 25.5 17.5 22.5 16 16.5C16 16.5 13 21.5 16 32Z" fill="#B0B5B3" />
-                    </svg>
-                 </div>
-                 
-                 <div className="card-balance-section">
-                   <div className="card-balance">12,347.23 $</div>
-                   <div className="card-balance-label">Combined balance</div>
-                 </div>
-                 
-                 <div className="card-primary">
-                   <div className="card-primary-info">
-                     <div className="card-primary-label">Primary Card</div>
-                     <div className="card-primary-number">3495 **** **** 6917</div>
-                   </div>
-                   <div className="card-primary-amount">2,546.64$</div>
-                 </div>
-                 
-                 <div className="card-footer">
-                   <div className="card-brand">VISA</div>
-                   <button className="card-view-all">View All</button>
-                 </div>
+                  <div className="card-top-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A4D39" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '750', color: '#1A4D39', letterSpacing: '0.5px' }}>AUDIO ENGINE</span>
+                  </div>
+                  
+                  <div className="card-balance-section">
+                    <div className="card-balance">99.8%</div>
+                    <div className="card-balance-label">STT transcription accuracy</div>
+                  </div>
+                  
+                  <div className="card-primary" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+                    <div className="card-primary-info">
+                      <div className="card-primary-label">Current Deposition</div>
+                      <div className="card-primary-number">Smith_v_Jones_final.mp3</div>
+                    </div>
+                    <div className="card-primary-amount" style={{ color: '#1A4D39', fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'rgba(26, 77, 57, 0.1)', borderRadius: '6px', fontWeight: 'bold' }}>Active</div>
+                  </div>
+                  
+                  <div className="card-footer" style={{ marginTop: '12px' }}>
+                    <div className="card-brand" style={{ fontSize: '0.8rem', color: '#111827', fontWeight: '700' }}>VerbaLex AI</div>
+                    <button className="card-view-all" style={{ backgroundColor: '#1A4D39', color: 'white' }}>View Task</button>
+                  </div>
                </div>
             </div>
           </div>

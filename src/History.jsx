@@ -1,6 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import './History.css';
-import { FileText, Download, Calendar, MoreVertical, Tag } from 'lucide-react';
+import { FileText, Download, Calendar, MoreVertical, Tag, PlusCircle } from 'lucide-react';
+import { api } from './services/api';
+
+// Module-level trackers for deduplication across StrictMode double-mounts
+const activeListSessions = new Map();
+
+const registerListSession = (orgId) => {
+  let session = activeListSessions.get(orgId);
+  if (session) {
+    if (session.timeoutId) {
+      clearTimeout(session.timeoutId);
+      session.timeoutId = null;
+    }
+    session.count += 1;
+    return session;
+  }
+
+  const controller = new AbortController();
+  session = {
+    controller,
+    count: 1,
+    fetchPromise: null,
+    timeoutId: null
+  };
+  activeListSessions.set(orgId, session);
+  return session;
+};
+
+const deregisterListSession = (orgId) => {
+  const session = activeListSessions.get(orgId);
+  if (!session) return;
+
+  session.count -= 1;
+  if (session.count <= 0) {
+    session.timeoutId = setTimeout(() => {
+      session.controller.abort();
+      activeListSessions.delete(orgId);
+    }, 100);
+  }
+};
 
 export default function History({ onViewDetails, onNewTask }) {
   const [tasks, setTasks] = useState([]);
@@ -8,38 +47,46 @@ export default function History({ onViewDetails, onNewTask }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      const orgId = localStorage.getItem('organization_id');
-      const token = localStorage.getItem('bearer_token');
+    const orgId = localStorage.getItem('organization_id');
 
-      if (!orgId || !token) {
-        setError('Missing organization ID or authentication token.');
-        setLoading(false);
-        return;
+    if (!orgId) {
+      setError('Missing organization ID.');
+      setLoading(false);
+      return;
+    }
+
+    const session = registerListSession(orgId);
+    const controller = session.controller;
+
+    const fetchTasks = async () => {
+      if (!session.fetchPromise) {
+        session.fetchPromise = api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=20`, {
+          signal: controller.signal
+        }).then(res => {
+          if (!res.ok) throw new Error('Failed to fetch tasks.');
+          return res.json();
+        });
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}/tasks/?page=1&page_size=20`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch tasks.');
-        }
-
-        const data = await response.json();
+        const data = await session.fetchPromise;
         setTasks(data.items || []);
       } catch (err) {
-        setError(err.message);
+        if (err.name !== 'AbortError') {
+          session.fetchPromise = null; // Clear on error so future retries can run
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchTasks();
+    return () => {
+      deregisterListSession(orgId);
+    };
   }, []);
 
   if (loading) {
@@ -115,8 +162,78 @@ export default function History({ onViewDetails, onNewTask }) {
 
       <div className="history-list">
         {tasks.length === 0 && !error && (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280', backgroundColor: '#f9fafb', borderRadius: '0.5rem', border: '1px dashed #d1d5db' }}>
-            No tasks found.
+          <div style={{ 
+            padding: '40px 32px', 
+            textAlign: 'center', 
+            backgroundColor: '#F9FAFB', 
+            borderRadius: '16px', 
+            border: '2px dashed #E5E7EB',
+            maxWidth: '600px',
+            margin: '40px auto',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+          }}>
+            <div style={{ 
+              width: '56px', 
+              height: '56px', 
+              borderRadius: '50%', 
+              backgroundColor: 'rgba(26, 77, 57, 0.08)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 20px auto',
+              color: '#1A4D39'
+            }}>
+              <PlusCircle size={28} />
+            </div>
+            
+            <h3 style={{ fontSize: '1.25rem', color: '#111827', fontWeight: '700', marginBottom: '8px' }}>
+              Create your first transcription task
+            </h3>
+            
+            <p style={{ fontSize: '0.9rem', color: '#6B7280', lineHeight: '1.5', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px auto' }}>
+              Welcome to VerbaLex AI! The Scopist page is where you upload audio files, generate legal transcripts, and run AI-powered analysis. Let's get started.
+            </p>
+            
+            <div style={{ 
+              textAlign: 'left', 
+              backgroundColor: '#FFFFFF', 
+              border: '1px solid #E5E7EB', 
+              borderRadius: '12px', 
+              padding: '20px', 
+              marginBottom: '28px',
+              maxWidth: '440px',
+              margin: '0 auto 28px auto'
+            }}>
+              <h4 style={{ fontSize: '0.85rem', color: '#111827', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                How it works:
+              </h4>
+              <ol style={{ fontSize: '0.825rem', color: '#4B5563', paddingLeft: '16px', margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <li>Click <strong>Create New Task</strong> below to start.</li>
+                <li>Upload your deposition audio file or raw STT transcript.</li>
+                <li>Let our pipeline transcribe and analyze the speech.</li>
+                <li>Refine the text in the <strong>Review and Edit</strong> workstation.</li>
+              </ol>
+            </div>
+            
+            <button 
+              onClick={onNewTask} 
+              style={{ 
+                backgroundColor: '#1A4D39', 
+                color: 'white', 
+                padding: '12px 24px', 
+                borderRadius: '8px', 
+                fontSize: '0.9rem', 
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px rgba(26, 77, 57, 0.15)',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Create New Task
+            </button>
           </div>
         )}
         

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Admin.css';
 import { UserPlus, Mail, Shield, MoreHorizontal, CheckCircle2, Clock, Trash2 } from 'lucide-react';
+import { api } from './services/api';
 
 export default function Admin() {
   const [members, setMembers] = useState([]);
@@ -23,12 +24,7 @@ export default function Admin() {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}/members`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
+      const response = await api(`/api/v1/organizations/${orgId}/members`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch members.');
@@ -50,12 +46,7 @@ export default function Admin() {
     if (!orgId || !token) return;
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}/invitations`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
+      const response = await api(`/api/v1/organizations/${orgId}/invitations`);
 
       if (!response.ok) throw new Error('Failed to fetch invitations');
       const data = await response.json();
@@ -75,12 +66,8 @@ export default function Admin() {
     const token = localStorage.getItem('bearer_token');
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}/members/${userId}`, {
+      const response = await api(`/api/v1/organizations/${orgId}/members/${userId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ role: newRole })
       });
 
@@ -102,11 +89,8 @@ export default function Admin() {
     const token = localStorage.getItem('bearer_token');
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}/members/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await api(`/api/v1/organizations/${orgId}/members/${userId}`, {
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -127,12 +111,8 @@ export default function Admin() {
 
     setSendingInvite(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}/invitations`, {
+      const response = await api(`/api/v1/organizations/${orgId}/invitations`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole })
       });
 

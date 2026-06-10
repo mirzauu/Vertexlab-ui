@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Settings.css';
-import { User, Smartphone, Globe, Lock, Save, Camera, Bell } from 'lucide-react';
+import { User, Smartphone, Globe, Save, Camera } from 'lucide-react';
+import { api } from './services/api';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('user');
@@ -15,8 +16,7 @@ export default function Settings() {
   const tabs = [
     { id: 'user', label: 'User', icon: <User size={18} /> },
     { id: 'app', label: 'App Setting', icon: <Smartphone size={18} /> },
-    { id: 'organization', label: 'Organization', icon: <Globe size={18} /> },
-    { id: 'password', label: 'Password', icon: <Lock size={18} /> }
+    { id: 'organization', label: 'Organization', icon: <Globe size={18} /> }
   ];
 
   useEffect(() => {
@@ -31,9 +31,7 @@ export default function Settings() {
     const fetchData = async () => {
       try {
         // Fetch user
-        const userRes = await fetch('http://127.0.0.1:8000/api/v1/users/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const userRes = await api('/api/v1/users/me');
         if (userRes.ok) {
           const userData = await userRes.json();
           setUser({
@@ -46,9 +44,7 @@ export default function Settings() {
 
         // Fetch org
         if (orgId) {
-          const orgRes = await fetch(`http://127.0.0.1:8000/api/v1/organizations/${orgId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          const orgRes = await api(`/api/v1/organizations/${orgId}`);
           if (orgRes.ok) {
             const orgData = await orgRes.json();
             setOrg({
@@ -76,12 +72,8 @@ export default function Settings() {
     setMessage('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/users/me', {
+      const response = await api('/api/v1/users/me', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           first_name: user.first_name,
           last_name: user.last_name,
@@ -116,7 +108,7 @@ export default function Settings() {
         <div className="settings-layout">
           {/* Settings Sidebar */}
           <div className="settings-nav">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3].map(i => (
               <div key={i} className="settings-nav-item skeleton-item">
                 <div className="skeleton-icon"></div>
                 <div className="skeleton-line"></div>
@@ -300,29 +292,6 @@ export default function Settings() {
                 <div className="form-group-settings">
                   <label>Timezone</label>
                   <input type="text" value={org.timezone} disabled style={{ backgroundColor: '#f9fafb' }} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'password' && (
-            <div className="settings-card">
-              <div className="card-header-settings">
-                <h3>Security</h3>
-                <button className="save-btn"><Save size={16} /> Update Password</button>
-              </div>
-              <div className="settings-form">
-                <div className="form-group-settings">
-                  <label>Current Password</label>
-                  <input type="password" placeholder="••••••••" />
-                </div>
-                <div className="form-group-settings">
-                  <label>New Password</label>
-                  <input type="password" placeholder="••••••••" />
-                </div>
-                <div className="form-group-settings">
-                  <label>Confirm New Password</label>
-                  <input type="password" placeholder="••••••••" />
                 </div>
               </div>
             </div>

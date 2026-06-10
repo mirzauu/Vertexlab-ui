@@ -1,34 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-dark: #101012;
-  --bg-light: #F7F7F9;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  --bg-dark: #090A0C;
+  --bg-light: #F4F6FA; /* Soft Slate-tinted background */
   --card-bg: #FFFFFF;
-  --text-dark: #111827;
-  --text-gray: #6B7280;
-  --text-light: #A0AEC0;
-  --border-color: #F1F1F4;
+  --text-dark: #0F172A; /* Slate-900 */
+  --text-gray: #475569; /* Slate-600 */
+  --text-light: #94A3B8; /* Slate-400 */
+  --border-color: #E2E8F0; /* Slate-200 */
   --primary: #5B44E9;
-  --green: #A3E635;
-  --red: #FF4D4F;
+  --green: #22C55E; /* Vibrant Green */
+  --red: #EF4444; /* Modern Red */
   --sidebar-bg: #FFFFFF;
-  --sidebar-text: #111827;
-  --sidebar-hover: #F9FAFB;
-  --sidebar-active: #F3F4F6;
-  --sidebar-icon: #6B7280;
+  --sidebar-text: #0F172A;
+  --sidebar-hover: #F8FAFC;
+  --sidebar-active: #F1F5F9;
+  --sidebar-icon: #64748B;
 }
 
 .app-container.dark-mode {
-  --bg-light: #161619;
-  --card-bg: #1D1D20;
-  --text-dark: #F9FAFB;
-  --text-gray: #9CA3AF;
-  --border-color: #2A2A30;
-  --sidebar-bg: #101012;
-  --sidebar-text: #FFFFFF;
-  --sidebar-hover: #1D1D20;
-  --sidebar-active: #1D1D20;
-  --sidebar-icon: #8C8C9A;
+  --bg-light: #0D0E11;
+  --card-bg: #15161A;
+  --text-dark: #F8FAFC;
+  --text-gray: #94A3B8;
+  --border-color: #22252A;
+  --sidebar-bg: #090A0C;
+  --sidebar-text: #F8FAFC;
+  --sidebar-hover: #15161A;
+  --sidebar-active: #1D1F24;
+  --sidebar-icon: #64748B;
 }
 
 * {
@@ -38,7 +40,7 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--bg-dark);
   color: var(--text-dark);
   overflow: hidden;
@@ -357,8 +359,9 @@ body {
 }
 
 .overview-title h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 700;
   margin-bottom: 8px;
 }
 
@@ -958,4 +961,22 @@ body {
   100% {
     opacity: 0.6;
   }
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  background: linear-gradient(135deg, var(--text-dark) 40%, #5B44E9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark-mode h1 {
+  background: linear-gradient(135deg, #FFFFFF 40%, #818CF8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
