@@ -13,10 +13,10 @@ pydantic-settings
 
 # Authentication
 python-jose[cryptography]
-passlib[bcrypt]
+bcrypt
 python-multipart
 
-# HTTP Client (Google OAuth)
+# HTTP Client (Google OAuth & Testing)
 httpx
 
 # Async file I/O
@@ -31,7 +31,6 @@ python-dotenv
 # Testing
 pytest
 pytest-asyncio
-httpx
 
 # PDF Parsing
 PyMuPDF
@@ -42,9 +41,6 @@ python-docx
 # Embeddings & Vector DB
 sentence-transformers
 pinecone
-
-# Matching
-rapidfuzz
 
 # SSE / Streaming
 sse-starlette
