@@ -1,6 +1,6 @@
-/* History.css */
+/* ReviewPage.css */
 
-.history-page-container {
+.review-page-container {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -46,7 +46,7 @@
 }
 
 /* Header */
-.history-page-header {
+.review-page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -348,7 +348,7 @@
   border-color: #2A6F4D;
 }
 
-/* Booking/Task Number Column */
+/* Booking Number Column */
 .booking-no-cell {
   font-weight: 600;
   color: #111827;
@@ -524,15 +524,4 @@
   text-align: center;
   padding: 48px 24px;
   color: #6B7280;
-}
-.skeleton-title, .skeleton-text, .skeleton-button, .skeleton-icon {
-  background-color: #E5E7EB;
-  border-radius: 4px;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
 }

@@ -311,7 +311,7 @@ export default function Auth({ onLogin }) {
                     type="button" 
                     onClick={() => { setError(''); setStep('login'); }} 
                     className="auth-submit" 
-                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#1A4D39', border: '1px solid #1A4D39'}}
+                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#5B44E9', border: '1px solid #5B44E9'}}
                   >
                     Back
                   </button>
@@ -385,7 +385,7 @@ export default function Auth({ onLogin }) {
                     type="button" 
                     onClick={() => { setError(''); setStep('signup'); }} 
                     className="auth-submit" 
-                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#1A4D39', border: '1px solid #1A4D39'}}
+                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#5B44E9', border: '1px solid #5B44E9'}}
                   >
                     Back
                   </button>
@@ -413,7 +413,7 @@ export default function Auth({ onLogin }) {
                         backgroundColor: '#F9FAFB',
                         transition: 'all 0.2s'
                       }}
-                      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#1A4D39'; e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#5B44E9'; e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
                       onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.backgroundColor = '#F9FAFB'; }}
                     >
                       <h3 style={{margin: 0, fontSize: '1rem', color: '#111827'}}>{org.name}</h3>
@@ -424,7 +424,7 @@ export default function Auth({ onLogin }) {
                 <button 
                   onClick={() => { setError(''); setStep('create_org'); }} 
                   className="auth-submit" 
-                  style={{marginTop: '1.5rem', backgroundColor: 'transparent', color: '#1A4D39', border: '1px solid #1A4D39'}}
+                  style={{marginTop: '1.5rem', backgroundColor: 'transparent', color: '#5B44E9', border: '1px solid #5B44E9'}}
                 >
                   Create New Organization
                 </button>
@@ -496,8 +496,8 @@ export default function Auth({ onLogin }) {
                   <div className="toolbar-bottom-icon">
                     <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect width="48" height="48" rx="12" fill="white" />
-                      <path d="M30.5 18C30.5 18 25.5 15 19.5 18C13.5 21 13 28.5 13 28.5C13 28.5 15.5 24.5 19.5 24.5C23.5 24.5 29 27.5 30.5 33.5C30.5 33.5 33.5 28.5 30.5 18Z" fill="#1A4D39" />
-                      <path d="M16 32C16 32 21 35 27 32C33 29 33.5 21.5 33.5 21.5C33.5 21.5 31 25.5 27 25.5C23 25.5 17.5 22.5 16 16.5C16 16.5 13 21.5 16 32Z" fill="#1A4D39" />
+                      <path d="M30.5 18C30.5 18 25.5 15 19.5 18C13.5 21 13 28.5 13 28.5C13 28.5 15.5 24.5 19.5 24.5C23.5 24.5 29 27.5 30.5 33.5C30.5 33.5 33.5 28.5 30.5 18Z" fill="#5B44E9" />
+                      <path d="M16 32C16 32 21 35 27 32C33 29 33.5 21.5 33.5 21.5C33.5 21.5 31 25.5 27 25.5C23 25.5 17.5 22.5 16 16.5C16 16.5 13 21.5 16 32Z" fill="#5B44E9" />
                     </svg>
                   </div>
                </div>
@@ -505,8 +505,8 @@ export default function Auth({ onLogin }) {
                {/* Legal Transcription Widget */}
                <div className="auth-credit-card">
                   <div className="card-top-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A4D39" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                    <span style={{ fontSize: '0.85rem', fontWeight: '750', color: '#1A4D39', letterSpacing: '0.5px' }}>AUDIO ENGINE</span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B44E9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '750', color: '#5B44E9', letterSpacing: '0.5px' }}>AUDIO ENGINE</span>
                   </div>
                   
                   <div className="card-balance-section">
@@ -519,12 +519,12 @@ export default function Auth({ onLogin }) {
                       <div className="card-primary-label">Current Deposition</div>
                       <div className="card-primary-number">Smith_v_Jones_final.mp3</div>
                     </div>
-                    <div className="card-primary-amount" style={{ color: '#1A4D39', fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'rgba(26, 77, 57, 0.1)', borderRadius: '6px', fontWeight: 'bold' }}>Active</div>
+                    <div className="card-primary-amount" style={{ color: '#5B44E9', fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'rgba(91, 68, 233, 0.1)', borderRadius: '6px', fontWeight: 'bold' }}>Active</div>
                   </div>
                   
                   <div className="card-footer" style={{ marginTop: '12px' }}>
                     <div className="card-brand" style={{ fontSize: '0.8rem', color: '#111827', fontWeight: '700' }}>VerbaLex AI</div>
-                    <button className="card-view-all" style={{ backgroundColor: '#1A4D39', color: 'white' }}>View Task</button>
+                    <button className="card-view-all" style={{ backgroundColor: '#5B44E9', color: 'white' }}>View Task</button>
                   </div>
                </div>
             </div>

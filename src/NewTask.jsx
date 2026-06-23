@@ -286,7 +286,7 @@ export default function NewTask({ onCancel, onTaskCreated }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>
-                  {apiStep === 5 ? "Task Ready!" : "Initializing Pipeline..."}
+                  {apiStep === 5 ? "Task Ready!" : "Handing over to AI..."}
                 </h3>
                 <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
                   {apiStep === 5 

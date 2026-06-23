@@ -4,6 +4,7 @@ import NewTask from './NewTask';
 import History from './History';
 import HistoryDetails from './HistoryDetails';
 import ReviewEdit from './ReviewEdit';
+import './ReviewPage.css';
 import Admin from './Admin';
 import SettingsView from './Settings';
 import Usage from './Usage';
@@ -13,45 +14,355 @@ import {
   Search, Bell, MessageSquare, ArrowUpRight, ArrowDownRight, 
   CreditCard, RefreshCw, XCircle, Minus, Plus, Mic, Send, Loader2,
   ChevronDown, ChevronUp, Activity, PieChart, TrendingUp,
-  Sidebar, PlusCircle, CheckSquare, Edit
+  Sidebar, PlusCircle, CheckSquare, Edit,
+  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal
 } from 'lucide-react';
 
-const reviewTasks = [
-  { id: 1, name: "Quarterly Analysis Report - Q2 2026", status: "In Progress", date: "Jun 22, 2026" },
-  { id: 2, name: "Annual Marketing Strategy", status: "Completed", date: "Jun 21, 2026" },
-  { id: 3, name: "Product Launch Feedback", status: "Not Started", date: "Jun 20, 2026" },
-];
+
+
+
 
 function ReviewPage({ onSelect }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    const orgId = localStorage.getItem('organization_id');
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
+    
+    let isMounted = true;
+    const loadTasks = async () => {
+      try {
+        const res = await api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=50`);
+        if (!res.ok) throw new Error("Failed to fetch tasks");
+        const data = await res.json();
+        if (isMounted) {
+          setTasks(data.items || []);
+        }
+      } catch (err) {
+        console.error("Error loading tasks for ReviewPage:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    loadTasks();
+    return () => { isMounted = false; };
+  }, []);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const getAvatarProps = (name) => {
+    const cleanName = name || "Untitled Task";
+    const parts = cleanName.trim().split(/\s+/);
+    let initials = "";
+    if (parts.length > 0) {
+      initials += parts[0][0];
+      if (parts.length > 1) {
+        initials += parts[parts.length - 1][0];
+      }
+    }
+    initials = initials.toUpperCase().slice(0, 2);
+
+    let hash = 0;
+    for (let i = 0; i < cleanName.length; i++) {
+      hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      { bg: '#E2E8F0', text: '#475569' },
+      { bg: '#FEE2E2', text: '#991B1B' },
+      { bg: '#FEF3C7', text: '#92400E' },
+      { bg: '#D1FAE5', text: '#065F46' },
+      { bg: '#DBEAFE', text: '#1E40AF' },
+      { bg: '#E0E7FF', text: '#3730A3' },
+      { bg: '#F3E8FF', text: '#6B21A8' },
+      { bg: '#FCE7F3', text: '#9D174D' },
+    ];
+    const colorIndex = Math.abs(hash) % colors.length;
+    return { initials, ...colors[colorIndex] };
+  };
+
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = 
+      (task.name || "Untitled Task").toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (task.id || "").toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const lowerStatus = task.status?.toLowerCase() || "";
+    let isStatusMatch = statusFilter === "all";
+    if (statusFilter === "completed") {
+      isStatusMatch = lowerStatus === "completed" || lowerStatus === "success";
+    } else if (statusFilter === "in_progress") {
+      isStatusMatch = lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing";
+    } else if (statusFilter === "failed") {
+      isStatusMatch = lowerStatus === "failed";
+    } else if (statusFilter === "queued") {
+      isStatusMatch = lowerStatus === "queued" || lowerStatus === "in queue" || lowerStatus === "queued";
+    }
+    
+    return matchesSearch && isStatusMatch;
+  });
+
   return (
-    <div className="history-container">
-      <div className="history-header">
-        <div>
-          <h1>Review & Edit Tasks</h1>
-          <p>Select a task to review and edit in the human in the loop interface.</p>
+    <div className="review-page-container">
+      {/* Breadcrumb Navigation */}
+      <div className="breadcrumb-nav">
+        <a href="#" onClick={(e) => e.preventDefault()}>
+          <Home size={14} /> Home
+        </a>
+        <span className="breadcrumb-separator">/</span>
+        <a href="#" onClick={(e) => e.preventDefault()}>Tasks</a>
+        <span className="breadcrumb-separator">/</span>
+        <span className="active-crumb">Review & Edit Tasks</span>
+      </div>
+
+      {/* Header Section */}
+      <div className="review-page-header" style={{ marginBottom: '16px' }}>
+        <div className="header-title-block">
+          <div className="header-icon-wrapper" style={{ background: 'linear-gradient(135deg, #5B44E9 0%, #3B2DA1 100%)', boxShadow: '0 4px 12px rgba(91, 68, 233, 0.25)' }}>
+            <CheckSquare size={24} />
+          </div>
+          <div className="header-text-info">
+            <h1>Review & Edit Tasks</h1>
+            <p>Select a task to review and edit in the human in the loop interface.</p>
+          </div>
         </div>
       </div>
-      <div className="history-list">
-        {reviewTasks.map(task => (
-          <div key={task.id} className="history-card" style={{ cursor: 'pointer' }} onClick={() => onSelect(task)}>
-            <div className="history-card-main">
-              <h3 className="task-name">{task.name}</h3>
-              <div className="task-info-top" style={{ marginTop: '8px' }}>
-                <div className="task-type-badge" style={{ 
-                  backgroundColor: task.status === 'Completed' ? 'rgba(34, 197, 94, 0.2)' : task.status === 'In Progress' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(156, 163, 175, 0.2)',
-                  color: task.status === 'Completed' ? '#22c55e' : task.status === 'In Progress' ? '#3b82f6' : '#9ca3af'
-                }}>
-                  {task.status}
-                </div>
-                <div className="task-date">{task.date}</div>
-              </div>
-            </div>
-            <div className="history-card-actions">
-              <button className="view-btn">Review</button>
-            </div>
-          </div>
-        ))}
+
+      {/* Search and Filters Toolbar */}
+      <div className="filters-actions-bar" style={{ display: 'flex', gap: '16px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="search-input-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1, maxWidth: '400px' }}>
+          <Search size={18} className="search-icon" style={{ position: 'absolute', left: '12px', color: '#9CA3AF' }} />
+          <input 
+            type="text" 
+            placeholder="Search tasks by name or ID..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input-field"
+            style={{
+              width: '100%',
+              padding: '10px 16px 10px 40px',
+              border: '1px solid var(--border-color)',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              outline: 'none',
+              backgroundColor: 'white',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#5B44E9'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+          />
+        </div>
+
+        <div className="filter-dropdown-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-gray)' }}>Status:</span>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{
+              padding: '10px 16px',
+              border: '1px solid var(--border-color)',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              fontWeight: '550',
+              color: 'var(--text-dark)',
+              outline: 'none',
+              backgroundColor: 'white',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#5B44E9'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+          >
+            <option value="all">All Tasks</option>
+            <option value="completed">Completed</option>
+            <option value="in_progress">In Progress</option>
+            <option value="queued">In Queue</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
       </div>
+
+      {/* Table Card */}
+      <div className="table-card-wrapper" style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)' }}>
+        <table className="redesigned-table">
+          <thead>
+            <tr>
+              <th style={{ paddingLeft: '24px' }}>Task ID</th>
+              <th>Task Name</th>
+              <th>Created Date</th>
+              <th>Status</th>
+              <th style={{ width: '120px', textAlign: 'right', paddingRight: '24px' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="5" className="table-empty-state">
+                  <Loader2 className="animate-spin" size={24} style={{ color: '#5B44E9', margin: '0 auto 12px auto' }} />
+                  <span>Loading tasks...</span>
+                </td>
+              </tr>
+            ) : filteredTasks.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="table-empty-state" style={{ padding: '48px 24px' }}>
+                  <span>No tasks found matching your search.</span>
+                </td>
+              </tr>
+            ) : (
+              filteredTasks.map((task) => {
+                const avatar = getAvatarProps(task.name);
+                
+                let statusClass = "status-queued";
+                let statusText = "In Queue";
+                const lowerStatus = task.status?.toLowerCase();
+                if (lowerStatus === "completed" || lowerStatus === "success") {
+                  statusClass = "status-completed";
+                  statusText = "Completed";
+                } else if (lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing") {
+                  statusClass = "status-inprogress";
+                  statusText = "In Progress";
+                } else if (lowerStatus === "failed") {
+                  statusClass = "status-failed";
+                  statusText = "Failed";
+                }
+
+                return (
+                  <tr key={task.id} style={{ cursor: 'pointer' }} onClick={() => onSelect(task)}>
+                    <td style={{ paddingLeft: '24px' }} className="booking-no-cell">
+                      #{task.id ? task.id.substring(0, 6) : 'N/A'}
+                    </td>
+                    <td>
+                      <div className="capsule-user-cell" style={{ border: '1px solid var(--border-color)' }}>
+                        <div className="avatar-circle" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
+                          {avatar.initials}
+                        </div>
+                        <span className="capsule-name-text">{task.name || "Untitled Task"}</span>
+                      </div>
+                    </td>
+                    <td>{formatDate(task.created_at)}</td>
+                    <td>
+                      <span className={`status-pill ${statusClass}`}>{statusText}</span>
+                    </td>
+                    <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                      <button 
+                        className="view-btn" 
+                        style={{ 
+                          padding: '6px 16px', 
+                          borderRadius: '8px', 
+                          fontSize: '0.85rem', 
+                          fontWeight: '600',
+                          backgroundColor: 'white',
+                          border: '1px solid var(--border-color)',
+                          color: 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = 'var(--text-dark)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                      >
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+const reviewTasks = []; // Kept for reference but unused now
+
+function MarkdownText({ text }) {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  const parseInline = (str) => {
+    const parts = str.split('**');
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return <strong key={index} style={{ fontWeight: '600', color: '#FFFFFF' }}>{part}</strong>;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {lines.map((line, lineIndex) => {
+        const trimmed = line.trim();
+        
+        if (trimmed.startsWith('### ')) {
+          return (
+            <h3 key={lineIndex} style={{ margin: '8px 0 2px 0', fontSize: '1rem', fontWeight: '600', color: '#A3E635' }}>
+              {parseInline(trimmed.substring(4))}
+            </h3>
+          );
+        }
+        if (trimmed.startsWith('## ')) {
+          return (
+            <h2 key={lineIndex} style={{ margin: '12px 0 4px 0', fontSize: '1.1rem', fontWeight: '600', color: '#A3E635' }}>
+              {parseInline(trimmed.substring(3))}
+            </h2>
+          );
+        }
+        if (trimmed.startsWith('# ')) {
+          return (
+            <h1 key={lineIndex} style={{ margin: '16px 0 6px 0', fontSize: '1.25rem', fontWeight: '700', color: '#A3E635' }}>
+              {parseInline(trimmed.substring(2))}
+            </h1>
+          );
+        }
+        if (trimmed.startsWith('- ')) {
+          return (
+            <div key={lineIndex} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', paddingLeft: '8px' }}>
+              <span style={{ color: '#A3E635' }}>•</span>
+              <span style={{ flex: 1 }}>{parseInline(trimmed.substring(2))}</span>
+            </div>
+          );
+        }
+        const numListMatch = trimmed.match(/^(\d+)\.\s(.*)$/);
+        if (numListMatch) {
+          const num = numListMatch[1];
+          const content = numListMatch[2];
+          return (
+            <div key={lineIndex} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', paddingLeft: '8px' }}>
+              <span style={{ color: '#A3E635', fontWeight: '500' }}>{num}.</span>
+              <span style={{ flex: 1 }}>{parseInline(content)}</span>
+            </div>
+          );
+        }
+
+        if (trimmed === '') {
+          return <div key={lineIndex} style={{ height: '4px' }} />;
+        }
+
+        return (
+          <p key={lineIndex} style={{ margin: 0, lineHeight: '1.5' }}>
+            {parseInline(line)}
+          </p>
+        );
+      })}
     </div>
   );
 }
@@ -61,12 +372,36 @@ function App() {
     return !!localStorage.getItem('bearer_token');
   });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState(() => {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'dashboard';
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      const newView = hash || 'dashboard';
+      if (newView !== activeView) {
+        setActiveView(newView);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [activeView]);
+
+  useEffect(() => {
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash !== activeView) {
+      window.location.hash = activeView;
+    }
+  }, [activeView]);
+
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [scopistTab, setScopistTab] = useState('new');
   const [selectedReviewTask, setSelectedReviewTask] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAiOpen, setIsAiOpen] = useState(false);
 
   const [dashboardData, setDashboardData] = useState({
     revenue: null,
@@ -112,32 +447,20 @@ function App() {
     const fetchDashboardData = async () => {
       setDashboardData(prev => ({ ...prev, loading: true, error: null }));
       try {
-        const [revRes, distRes, salesRes, actRes, funnelRes] = await Promise.all([
-          api(`/api/v1/organizations/${orgId}/dashboard/revenue`),
-          api(`/api/v1/organizations/${orgId}/dashboard/revenue-distribution`),
-          api(`/api/v1/organizations/${orgId}/dashboard/sales-performance`),
-          api(`/api/v1/organizations/${orgId}/dashboard/activity?limit=5`),
-          api(`/api/v1/organizations/${orgId}/dashboard/funnel`),
-        ]);
+        const res = await api(`/api/v1/organizations/${orgId}/dashboard/all`);
 
-        if (!revRes.ok || !distRes.ok || !salesRes.ok || !actRes.ok || !funnelRes.ok) {
+        if (!res.ok) {
           throw new Error('Failed to load dashboard metrics');
         }
 
-        const [revenue, distribution, salesPerformance, activity, funnel] = await Promise.all([
-          revRes.json(),
-          distRes.json(),
-          salesRes.json(),
-          actRes.json(),
-          funnelRes.json(),
-        ]);
+        const data = await res.json();
 
         setDashboardData({
-          revenue: revenue.overview,
-          distribution: distribution.items,
-          salesPerformance: salesPerformance.performers,
-          activity: activity.items,
-          funnel: funnel.stages,
+          revenue: data.revenue,
+          distribution: data.distribution,
+          salesPerformance: data.performers,
+          activity: data.activity,
+          funnel: data.funnel,
           loading: false,
           error: null,
         });
@@ -563,7 +886,8 @@ function App() {
                         const count = stageItem.count;
                         
                         const stageLabels = {
-                          'not_started': 'Not Started',
+                          'queued': 'In Queue',
+                          'not_started': 'In Queue',
                           'in_progress': 'In Progress',
                           'completed': 'Completed',
                           'failed': 'Failed'
@@ -571,6 +895,7 @@ function App() {
                         const label = stageLabels[stageItem.stage] || stageItem.stage;
                         
                         const barColors = {
+                          'queued': '#A0AEC0',
                           'not_started': '#A0AEC0',
                           'in_progress': '#5B44E9',
                           'completed': '#A3E635',
@@ -595,6 +920,7 @@ function App() {
                         const heightPercent = maxFunnelCount > 0 ? (count / maxFunnelCount) * 100 : 0;
                         
                         const barColors = {
+                          'queued': '#A0AEC0',
                           'not_started': '#A0AEC0',
                           'in_progress': '#5B44E9',
                           'completed': '#A3E635',
@@ -614,75 +940,120 @@ function App() {
                       })}
                     </div>
                   </div>
+                </div>
 
-                  {/* VerbaLex AI Assistant */}
-                  <div className="ai-card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div className="ai-header">
-                      <div className="ai-icon-btn"><Minus size={16} /></div>
-                      <div className="ai-title">VerbaLex AI Assistant</div>
-                      <div className="ai-icon-btn"><Plus size={16} /></div>
-                    </div>
-                    
-                    <div className="ai-chat-history" style={{ 
-                      flex: 1, 
-                      overflowY: 'auto', 
-                      padding: '12px 16px', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      gap: '8px', 
-                      maxHeight: '210px',
-                      fontSize: '0.825rem',
-                      color: 'white',
-                      textAlign: 'left'
+                {/* Floating VerbaLex AI Assistant */}
+                <div className="ai-floating-container" style={{ position: 'fixed', bottom: '32px', right: '32px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                  {isAiOpen && (
+                    <div className="ai-card floating-chat" style={{
+                      width: '380px',
+                      height: '480px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      boxShadow: '0 12px 48px rgba(0, 0, 0, 0.25)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '24px',
                     }}>
-                      {chatHistory.map((chat, idx) => (
-                        <div key={idx} style={{ 
-                          alignSelf: chat.role === 'user' ? 'flex-end' : 'flex-start',
-                          backgroundColor: chat.role === 'user' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(91, 68, 233, 0.45)',
-                          padding: '8px 12px',
-                          borderRadius: '12px',
-                          maxWidth: '85%',
-                          wordBreak: 'break-word',
-                          lineHeight: '1.4',
-                          border: chat.role === 'user' ? '1px solid rgba(255, 255, 255, 0.15)' : 'none'
+                      <div className="ai-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#A3E635"/>
+                            <path d="M2 17L12 22L22 17" stroke="#A3E635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="#A3E635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span className="ai-title" style={{ fontWeight: '600' }}>VerbaLex AI Assistant</span>
+                        </div>
+                        <div className="ai-icon-btn" onClick={() => setIsAiOpen(false)} style={{ cursor: 'pointer' }}>
+                          <Minus size={16} />
+                        </div>
+                      </div>
+                      
+                      <div className="ai-chat-history" style={{ 
+                        flex: 1, 
+                        overflowY: 'auto', 
+                        padding: '16px 0', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '12px', 
+                        fontSize: '0.85rem',
+                        color: 'white',
+                        textAlign: 'left'
+                      }}>
+                        {chatHistory.map((chat, idx) => (
+                          <div key={idx} style={{ 
+                            alignSelf: chat.role === 'user' ? 'flex-end' : 'flex-start',
+                            backgroundColor: chat.role === 'user' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(91, 68, 233, 0.45)',
+                            padding: '10px 14px',
+                            borderRadius: '16px',
+                            maxWidth: '85%',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.4',
+                            border: chat.role === 'user' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
+                          }}>
+                            <MarkdownText text={chat.content} />
+                          </div>
+                        ))}
+                        {isChatSending && (
+                          <div style={{ alignSelf: 'flex-start', color: '#A3E635', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', paddingLeft: '4px' }}>
+                            <Loader2 className="animate-spin" size={12} />
+                            <span>VerbaLex is thinking...</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="ai-actions" style={{ display: 'flex', gap: '8px', padding: '8px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <button type="button" className="ai-action-btn" style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem', padding: '6px 10px' }} onClick={() => {
+                          setChatMessage('Provide a smart analysis of our revenue and completed tasks.');
                         }}>
-                          {chat.content}
-                        </div>
-                      ))}
-                      {isChatSending && (
-                        <div style={{ alignSelf: 'flex-start', color: '#A3E635', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}>
-                          <Loader2 className="animate-spin" size={12} />
-                          <span>VerbaLex is thinking...</span>
-                        </div>
-                      )}
+                          <PieChart size={14} /> Smart Analysis
+                        </button>
+                        <button type="button" className="ai-action-btn" style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem', padding: '6px 10px' }} onClick={() => {
+                          setChatMessage('Write a brief report summarizing current task stages.');
+                        }}>
+                          <FileText size={14} /> Generate Report
+                        </button>
+                      </div>
+                      
+                      <form onSubmit={handleSendChatMessage} className="ai-input-container" style={{ margin: '8px 0 0 0' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Ask anything..." 
+                          value={chatMessage} 
+                          onChange={e => setChatMessage(e.target.value)}
+                          disabled={isChatSending}
+                          style={{ borderRadius: '12px' }}
+                        />
+                        <button type="submit" className="ai-voice-btn" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={isChatSending}>
+                          <Send size={16} />
+                        </button>
+                      </form>
                     </div>
-                    
-                    <div className="ai-actions" style={{ padding: '8px 16px' }}>
-                      <button className="ai-action-btn" onClick={() => {
-                        setChatMessage('Provide a smart analysis of our revenue and completed tasks.');
-                      }}>
-                        <PieChart size={16} /> Smart Analysis
-                      </button>
-                      <button className="ai-action-btn" onClick={() => {
-                        setChatMessage('Write a brief report summarizing current task stages.');
-                      }}>
-                        <FileText size={16} /> Generate Report
-                      </button>
-                    </div>
-                    
-                    <form onSubmit={handleSendChatMessage} className="ai-input-container" style={{ margin: '0 16px 16px 16px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Ask anything..." 
-                        value={chatMessage} 
-                        onChange={e => setChatMessage(e.target.value)}
-                        disabled={isChatSending}
-                      />
-                      <button type="submit" className="ai-voice-btn" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={isChatSending}>
-                        <Send size={16} />
-                      </button>
-                    </form>
-                  </div>
+                  )}
+
+                  {/* Circular Floating Logo Button */}
+                  <button 
+                    onClick={() => setIsAiOpen(!isAiOpen)} 
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      backgroundColor: '#161619',
+                      border: '1px solid var(--border-color)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px rgba(91, 68, 233, 0.2)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      outline: 'none',
+                    }}
+                    className="ai-floating-btn"
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#A3E635"/>
+                      <path d="M2 17L12 22L22 17" stroke="#A3E635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M2 12L12 17L22 12" stroke="#A3E635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
               </>
             );

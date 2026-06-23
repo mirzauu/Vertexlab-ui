@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './History.css';
-import { FileText, Download, Calendar, MoreVertical, Tag, PlusCircle } from 'lucide-react';
+import { 
+  FileText, Calendar, MoreHorizontal, Users, Plus, Star, 
+  ChevronDown, SlidersHorizontal, Search, FileSpreadsheet, 
+  Loader2, Home, Edit 
+} from 'lucide-react';
 import { api } from './services/api';
 
-// Module-level trackers for deduplication across StrictMode double-mounts
 const activeListSessions = new Map();
 
 const registerListSession = (orgId) => {
@@ -60,7 +63,7 @@ export default function History({ onViewDetails, onNewTask }) {
 
     const fetchTasks = async () => {
       if (!session.fetchPromise) {
-        session.fetchPromise = api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=20`, {
+        session.fetchPromise = api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=50`, {
           signal: controller.signal
         }).then(res => {
           if (!res.ok) throw new Error('Failed to fetch tasks.');
@@ -73,7 +76,7 @@ export default function History({ onViewDetails, onNewTask }) {
         setTasks(data.items || []);
       } catch (err) {
         if (err.name !== 'AbortError') {
-          session.fetchPromise = null; // Clear on error so future retries can run
+          session.fetchPromise = null;
           setError(err.message);
         }
       } finally {
@@ -89,63 +92,84 @@ export default function History({ onViewDetails, onNewTask }) {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="history-container skeleton">
-        <div className="history-header">
-          <div>
-            <div className="skeleton-title" style={{ marginBottom: '8px' }}></div>
-            <div className="skeleton-text" style={{ width: '300px' }}></div>
-          </div>
-          <div className="history-filters">
-            <div className="filter-chip" style={{ width: '80px', height: '32px', backgroundColor: 'var(--border-color)', border: 'none' }}></div>
-            <div className="filter-chip" style={{ width: '100px', height: '32px', backgroundColor: 'var(--border-color)', border: 'none' }}></div>
-            <div className="filter-chip" style={{ width: '100px', height: '32px', backgroundColor: 'var(--border-color)', border: 'none' }}></div>
-          </div>
-        </div>
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "N/A";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
 
-        <div className="history-list">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="history-card" style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem', opacity: 0.7 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
-                  <div className="skeleton-button" style={{ width: '80px', height: '24px' }}></div>
-                  <div className="skeleton-text" style={{ width: '100px', height: '14px' }}></div>
-                </div>
-                <div className="skeleton-title" style={{ width: '250px', marginBottom: '0.5rem', height: '24px' }}></div>
-                <div className="skeleton-text" style={{ width: '400px', marginBottom: '1rem', height: '14px' }}></div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div className="skeleton-button" style={{ width: '60px', height: '24px' }}></div>
-                  <div className="skeleton-button" style={{ width: '60px', height: '24px' }}></div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div className="skeleton-button" style={{ width: '100px' }}></div>
-                <div className="skeleton-icon" style={{ width: '24px', height: '24px' }}></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const getAvatarProps = (name) => {
+    const cleanName = name || "Untitled Task";
+    const parts = cleanName.trim().split(/\s+/);
+    let initials = "";
+    if (parts.length > 0) {
+      initials += parts[0][0];
+      if (parts.length > 1) {
+        initials += parts[parts.length - 1][0];
+      }
+    }
+    initials = initials.toUpperCase().slice(0, 2);
+
+    let hash = 0;
+    for (let i = 0; i < cleanName.length; i++) {
+      hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      { bg: '#E2E8F0', text: '#475569' },
+      { bg: '#FEE2E2', text: '#991B1B' },
+      { bg: '#FEF3C7', text: '#92400E' },
+      { bg: '#D1FAE5', text: '#065F46' },
+      { bg: '#DBEAFE', text: '#1E40AF' },
+      { bg: '#E0E7FF', text: '#3730A3' },
+      { bg: '#F3E8FF', text: '#6B21A8' },
+      { bg: '#FCE7F3', text: '#9D174D' },
+    ];
+    const colorIndex = Math.abs(hash) % colors.length;
+    return { initials, ...colors[colorIndex] };
+  };
+
+  const handleRowClick = (item) => {
+    onViewDetails(item);
+  };
 
   return (
-    <div className="history-container">
-      <div className="history-header">
-        <div>
-          <h1>Task History</h1>
-          <p>Review and manage your previously completed tasks and reports.</p>
-        </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <div className="history-filters">
-            <div className="filter-chip active">All Time</div>
-            <div className="filter-chip">Last 30 Days</div>
-            <div className="filter-chip">Reports Only</div>
+    <div className="history-page-container">
+      {/* Breadcrumbs */}
+      <nav className="breadcrumb-nav">
+        <a href="#home" onClick={(e) => { e.preventDefault(); }}>
+          <Home size={14} />
+          <span>Home</span>
+        </a>
+        <span className="breadcrumb-separator">/</span>
+        <span>Tasks</span>
+        <span className="breadcrumb-separator">/</span>
+        <span className="active-crumb">Task History</span>
+      </nav>
+
+      {/* Header */}
+      <header className="history-page-header">
+        <div className="header-title-block">
+          <div className="header-icon-wrapper">
+            <Edit size={24} />
           </div>
-          <button className="view-btn" onClick={onNewTask}>New Task</button>
+          <div className="header-text-info">
+            <h1>
+              Task History
+            </h1>
+            <p>View all pipeline tasks and their statuses.</p>
+          </div>
         </div>
-      </div>
+        <div className="header-actions">
+          <button className="btn-add-new" onClick={onNewTask}>
+            <Plus size={16} />
+            <span>Add New Task</span>
+          </button>
+        </div>
+      </header>
 
       {error && (
         <div style={{
@@ -160,117 +184,88 @@ export default function History({ onViewDetails, onNewTask }) {
         </div>
       )}
 
-      <div className="history-list">
-        {tasks.length === 0 && !error && (
-          <div style={{ 
-            padding: '40px 32px', 
-            textAlign: 'center', 
-            backgroundColor: '#F9FAFB', 
-            borderRadius: '16px', 
-            border: '2px dashed #E5E7EB',
-            maxWidth: '600px',
-            margin: '40px auto',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ 
-              width: '56px', 
-              height: '56px', 
-              borderRadius: '50%', 
-              backgroundColor: 'rgba(26, 77, 57, 0.08)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              margin: '0 auto 20px auto',
-              color: '#1A4D39'
-            }}>
-              <PlusCircle size={28} />
-            </div>
-            
-            <h3 style={{ fontSize: '1.25rem', color: '#111827', fontWeight: '700', marginBottom: '8px' }}>
-              Create your first transcription task
-            </h3>
-            
-            <p style={{ fontSize: '0.9rem', color: '#6B7280', lineHeight: '1.5', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px auto' }}>
-              Welcome to VerbaLex AI! The Scopist page is where you upload audio files, generate legal transcripts, and run AI-powered analysis. Let's get started.
-            </p>
-            
-            <div style={{ 
-              textAlign: 'left', 
-              backgroundColor: '#FFFFFF', 
-              border: '1px solid #E5E7EB', 
-              borderRadius: '12px', 
-              padding: '20px', 
-              marginBottom: '28px',
-              maxWidth: '440px',
-              margin: '0 auto 28px auto'
-            }}>
-              <h4 style={{ fontSize: '0.85rem', color: '#111827', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                How it works:
-              </h4>
-              <ol style={{ fontSize: '0.825rem', color: '#4B5563', paddingLeft: '16px', margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <li>Click <strong>Create New Task</strong> below to start.</li>
-                <li>Upload your deposition audio file or raw STT transcript.</li>
-                <li>Let our pipeline transcribe and analyze the speech.</li>
-                <li>Refine the text in the <strong>Review and Edit</strong> workstation.</li>
-              </ol>
-            </div>
-            
-            <button 
-              onClick={onNewTask} 
-              style={{ 
-                backgroundColor: '#1A4D39', 
-                color: 'white', 
-                padding: '12px 24px', 
-                borderRadius: '8px', 
-                fontSize: '0.9rem', 
-                fontWeight: '600',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 4px 6px rgba(26, 77, 57, 0.15)',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              Create New Task
-            </button>
-          </div>
-        )}
-        
-        {tasks.map(task => (
-          <div key={task.id} className="history-card">
-            <div className="history-card-main">
-              <div className="task-info-top">
-                <div className="task-type-badge" style={{ textTransform: 'capitalize' }}>
-                  {task.status || 'unknown'}
-                </div>
-                <div className="task-date">
-                  <Calendar size={14} />
-                  {task.created_at ? new Date(task.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown date'}
-                </div>
-              </div>
-              
-              <h3 className="task-name">{task.name || 'Untitled Task'}</h3>
-              <p className="task-description">{task.description || 'No description provided.'}</p>
-              
-              <div className="task-files">
-                {task.tags && task.tags.map((tag, index) => (
-                  <div key={index} className="file-pill">
-                    <Tag size={14} />
-                    <span>{tag}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="history-card-actions">
-              <button className="view-btn" onClick={() => onViewDetails(task)}>View Details</button>
-              <div className="more-btn">
-                <MoreVertical size={18} />
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Table Card */}
+      <div className="table-card-wrapper">
+        <table className="redesigned-table">
+          <thead>
+            <tr>
+              <th style={{ paddingLeft: '24px' }}>Task ID</th>
+              <th>Task Name</th>
+              <th>Created Date</th>
+              <th>Status</th>
+              <th style={{ textAlign: 'right', paddingRight: '24px' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="5" className="table-empty-state">
+                  <Loader2 className="animate-spin" size={24} style={{ color: '#2A6F4D', margin: '0 auto 12px auto' }} />
+                  <span>Loading tasks...</span>
+                </td>
+              </tr>
+            ) : tasks.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="table-empty-state" style={{ padding: '48px 24px' }}>
+                  <span>No tasks found. Create a new task to get started.</span>
+                </td>
+              </tr>
+            ) : (
+              tasks.map((item) => {
+                const avatar = getAvatarProps(item.name);
+                
+                let statusClass = "status-queued";
+                let statusText = "In Queue";
+                const lowerStatus = item.status?.toLowerCase();
+                if (lowerStatus === "completed" || lowerStatus === "success") {
+                  statusClass = "status-completed";
+                  statusText = "Completed";
+                } else if (lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing") {
+                  statusClass = "status-inprogress";
+                  statusText = "In Progress";
+                } else if (lowerStatus === "failed") {
+                  statusClass = "status-failed";
+                  statusText = "Failed";
+                }
+
+                return (
+                  <tr key={item.id} style={{ cursor: 'pointer' }} onClick={() => handleRowClick(item)}>
+                    <td className="booking-no-cell" style={{ paddingLeft: '24px' }}>
+                      #{item.id ? item.id.substring(0, 6) : 'N/A'}
+                    </td>
+                    <td>
+                      <div className="capsule-user-cell">
+                        <div className="avatar-circle" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
+                          {avatar.initials}
+                        </div>
+                        <span className="capsule-name-text">{item.name || "Untitled Task"}</span>
+                      </div>
+                    </td>
+                    <td>{formatDate(item.created_at)}</td>
+                    <td>
+                      <span className={`status-pill ${statusClass}`}>{statusText}</span>
+                    </td>
+                    <td style={{ textAlign: 'right', paddingRight: '24px' }} onClick={(e) => e.stopPropagation()}>
+                      <button className="view-btn" style={{ 
+                        padding: '6px 16px', 
+                        borderRadius: '8px', 
+                        fontSize: '0.85rem', 
+                        fontWeight: '600',
+                        backgroundColor: 'white',
+                        border: '1px solid #D1D5DB',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        color: '#2A6F4D'
+                      }} onClick={() => handleRowClick(item)}>
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

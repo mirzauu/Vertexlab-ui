@@ -283,6 +283,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
   
   const displayFiles = pipelineData?.task?.files || task.files || [];
   const steps = pipelineData?.steps || [];
+  const isDocGenCompleted = steps.find(s => s.step_name === 'document_generation')?.status === 'completed' || task.status?.toLowerCase() === 'completed';
   
   // Extract summaries if available
   const sttStep = steps.find(s => s.step_name === 'stt');
@@ -334,9 +335,11 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                 <RefreshCw size={16} className={isReloading ? "animate-spin" : ""} />
                 Reload
               </button>
-              <button className="view-btn" style={{ backgroundColor: '#5B44E9', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }} onClick={onWorkstation}>
-                Workstation
-              </button>
+              {isDocGenCompleted && (
+                <button className="view-btn" style={{ backgroundColor: '#5B44E9', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }} onClick={onWorkstation}>
+                  Workstation
+                </button>
+              )}
             </div>
             {reloadError && (
               <div style={{ fontSize: '0.8rem', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', padding: '6px 10px', maxWidth: '300px', textAlign: 'right', lineHeight: '1.4' }}>
@@ -358,7 +361,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
             const status = isStatusLoading ? 'loading' : (actualStep?.status || 'pending');
             
             const isCompleted = status === 'completed';
-            const isProcessing = status === 'processing';
+            const isProcessing = status === 'processing' || status === 'in_progress';
             const isFailed = status === 'failed';
             const isPending = status === 'pending';
             const isLoading = status === 'loading';
