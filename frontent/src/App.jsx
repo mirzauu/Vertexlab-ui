@@ -379,18 +379,15 @@ function App() {
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      const newView = hash || 'dashboard';
-      if (newView !== activeView) {
-        setActiveView(newView);
-      }
+      const hash = window.location.hash.replace('#', '') || 'dashboard';
+      setActiveView(prev => prev === hash ? prev : hash);
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [activeView]);
+  }, []);
 
   useEffect(() => {
-    const currentHash = window.location.hash.replace('#', '');
+    const currentHash = window.location.hash.replace('#', '') || 'dashboard';
     if (currentHash !== activeView) {
       window.location.hash = activeView;
     }

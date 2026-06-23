@@ -130,9 +130,11 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
               if (!dataStr) continue;
               try {
                 const data = JSON.parse(dataStr);
-                setPipelineData(data);
-                // Update cache with latest SSE data
-                sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                setPipelineData(prev => {
+                  const merged = (prev?.task && !data.task) ? { ...data, task: prev.task } : data;
+                  sessionStorage.setItem(cacheKey, JSON.stringify(merged));
+                  return merged;
+                });
                 // Normalize to lowercase — backend always sends lowercase status
                 const normalizedStatus = data.status?.toLowerCase();
                 if (normalizedStatus === 'completed' || normalizedStatus === 'failed') {
@@ -199,8 +201,10 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
           session.fetchPromise = null; // reset to allow retries
         }
         setLoading(false);
+        // Do NOT open SSE on error — the task state is unknown.
+        // The user can manually refresh if needed.
         if (err.name !== 'AbortError') {
-          connectSSE();
+          console.warn('[HistoryDetails] Initial status fetch failed. SSE not opened to avoid leaked connections.');
         }
       }
     };

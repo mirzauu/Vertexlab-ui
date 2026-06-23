@@ -1,0 +1,195 @@
+Paper Size
+Letter (8.5" × 11")
+Margins (approximate)
+Top:    0.45"
+Bottom: 0.50"
+Left:   0.40"
+Right:  0.45"
+
+The transcript uses almost the full page width.
+
+Header
+
+Appears on every page:
+
+Veritext Legal Solutions
+800-567-8568 WWW.VERITEXT.COM 973-410-4040
+
+Centered.
+
+Line Numbers
+
+Left side contains:
+
+1
+2
+3
+...
+25
+
+Exactly 25 numbered lines per page.
+
+Line Number Column Width
+0.30" - 0.35"
+Gap Between Numbers And Transcript
+0.15"
+Main Transcript Area
+
+Page number appears immediately after the header:
+
+5
+
+Then transcript starts.
+
+Font
+
+The original looks like:
+
+Courier New
+or
+Courier
+or
+Nimbus Mono
+
+Monospaced font.
+
+Font Size
+
+Most likely:
+
+10 pt
+
+NOT 12pt.
+NOT 14pt.
+
+Definitely around:
+
+9.5pt - 10pt
+
+based on page density.
+
+Line Spacing
+
+Very tight.
+
+Approximately:
+
+11 pt leading
+
+or
+
+line_height = font_size * 1.1
+
+Example:
+
+10pt font
+11pt line height
+Character Width
+
+Typical deposition layout:
+
+~65–70 characters per line
+
+excluding line numbers.
+
+Q/A Format
+
+Questions:
+
+Q. Good afternoon Mr. Sakhai.
+
+Answers:
+
+A. Yes.
+
+Rules:
+
+Q. begins at left transcript margin
+
+A. begins at left transcript margin
+
+wrapped lines start under text
+not under Q. or A.
+
+Example:
+
+Q. My name is John Anello and I'm
+   an attorney with the law firm of
+   Callahan & Fusco...
+
+Speaker Format
+
+Attorney statements:
+
+MR. TAIWO:
+
+Witness statements:
+
+THE WITNESS:
+
+Centered examination headings:
+
+EXAMINATION
+
+B Y M R . ANELLO :
+
+Letter spacing is intentionally expanded.
+
+First Page Title Block
+
+Centered.
+
+Example:
+
+SUPREME COURT OF THE STATE OF NEW YORK
+COUNTY OF QUEENS
+
+BENJAMIN SAKHAI,
+
+Plaintiff,
+
+-against-
+
+DELKAP MANAGEMENT, INC.
+...
+
+Uses same monospaced font.
+
+Mostly uppercase.
+
+Court Reporter Industry Standard Layout
+
+If you're generating this in ReportLab, I'd start with:
+
+PAGE_SIZE = letter
+
+FONT = "Courier"
+FONT_SIZE = 10
+
+LEFT_MARGIN = 28
+RIGHT_MARGIN = 30
+
+TOP_MARGIN = 32
+BOTTOM_MARGIN = 36
+
+LINE_HEIGHT = 11
+
+LINE_NUMBER_WIDTH = 22
+
+MAX_LINES_PER_PAGE = 25
+If you want the EXACT values
+
+I can extract the actual PDF coordinates, font names, font sizes, line heights, margins, and character positions directly from the uploaded PDF and give you a JSON like:
+
+{
+  "font_name": "Courier",
+  "font_size": 9.96,
+  "line_height": 10.98,
+  "left_margin": 27.8,
+  "right_margin": 29.1,
+  "header_y": 18.4,
+  "line_number_x": 14.2,
+  "transcript_x": 42.7
+}
+
+That would be far more accurate than visual estimation.

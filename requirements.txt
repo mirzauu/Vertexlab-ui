@@ -1,0 +1,53 @@
+# FastAPI & Server
+fastapi[standard]
+uvicorn[standard]
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# Validation & Settings
+pydantic[email]
+pydantic-settings
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# HTTP Client (Google OAuth)
+httpx
+
+# Async file I/O
+aiofiles
+
+# Speech to Text
+deepgram-sdk
+
+# Environment
+python-dotenv
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# PDF Parsing
+PyMuPDF
+
+# DOCX Parsing
+python-docx
+
+# Embeddings & Vector DB
+sentence-transformers
+pinecone
+
+# Matching
+rapidfuzz
+
+# SSE / Streaming
+sse-starlette
+
+# AI / LLM
+openai

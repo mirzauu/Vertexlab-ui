@@ -4,9 +4,12 @@
  * and intercepts 401 Unauthorized responses to dynamically clear credentials.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-export const api = async (endpoint, options = {}) => {
+// Deduplication map for active/in-flight GET requests
+const inflightRequests = new Map();
+
+const executeRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem('bearer_token');
   
   // Set default content type if not specified and not FormData
@@ -45,4 +48,30 @@ export const api = async (endpoint, options = {}) => {
     console.error(`[API ERROR] Failure calling ${url}:`, error);
     throw error;
   }
+};
+
+export const api = async (endpoint, options = {}) => {
+  const method = (options.method || 'GET').toUpperCase();
+  
+  // Only deduplicate GET requests
+  if (method === 'GET') {
+    const cacheKey = endpoint;
+    if (inflightRequests.has(cacheKey)) {
+      const existingPromise = inflightRequests.get(cacheKey);
+      const response = await existingPromise;
+      return response.clone();
+    }
+    
+    const promise = executeRequest(endpoint, options);
+    inflightRequests.set(cacheKey, promise);
+    
+    try {
+      const response = await promise;
+      return response.clone();
+    } finally {
+      inflightRequests.delete(cacheKey);
+    }
+  }
+  
+  return executeRequest(endpoint, options);
 };
