@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+  <style>
+    .filled {
+      fill: #0F172A;
+    }
+    .stroked {
+      stroke: #0F172A;
+    }
+    @media (prefers-color-scheme: dark) {
+      .filled {
+        fill: #F8FAFC;
+      }
+      .stroked {
+        stroke: #F8FAFC;
+      }
+    }
+  </style>
+  <path class="filled" d="M12 2L2 7L12 12L22 7L12 2Z" />
+  <path class="stroked" d="M2 17L12 22L22 17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="stroked" d="M2 12L12 17L22 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
