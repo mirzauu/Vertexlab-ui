@@ -289,3 +289,68 @@
   background-color: #2A2A30;
 }
 
+/* Dark Mode Overrides for History Details Page */
+.dark-mode .back-btn {
+  color: var(--text-gray);
+}
+.dark-mode .back-btn:hover {
+  color: var(--primary);
+}
+
+.dark-mode .task-meta {
+  color: var(--text-gray);
+}
+
+.dark-mode .step-circle {
+  background-color: #2D2D35;
+  color: var(--text-gray);
+}
+
+.dark-mode .history-step-item.completed .step-circle {
+  background-color: #10B981;
+  color: white;
+}
+
+.dark-mode .step-line {
+  background-color: var(--border-color);
+}
+
+.dark-mode .history-step-item.completed .step-line {
+  background-color: #10B981;
+}
+
+.dark-mode .step-info p {
+  color: var(--text-gray);
+}
+
+.dark-mode .details-card {
+  background-color: var(--card-bg);
+  box-shadow: none;
+  border: 1px solid var(--border-color);
+}
+
+.dark-mode .summary-item label {
+  color: var(--text-gray);
+}
+
+.dark-mode .details-file-item {
+  border-color: var(--border-color);
+}
+
+.dark-mode .details-file-item:hover {
+  border-color: #4B5563;
+}
+
+.dark-mode .file-icon-wrapper {
+  background-color: #2D2D35;
+  color: #818CF8;
+}
+
+.dark-mode .file-download-btn:hover {
+  background-color: #2D2D35;
+  color: white;
+}
+
+.dark-mode .description-text {
+  color: var(--text-gray);
+}

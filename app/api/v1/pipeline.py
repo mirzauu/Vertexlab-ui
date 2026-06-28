@@ -16,6 +16,7 @@ from app.schemas.pipeline import (
     AIDocumentRead,
     AIDocumentUpdate,
     PipelineDetailedResultRead,
+    WorkstationRead,
 )
 from app.schemas.auth import MessageResponse
 
@@ -165,6 +166,23 @@ async def get_document_versions(
 ):
     """List all versions of the AI document (V1, V2, V3...)."""
     return await service.get_document_versions(task_id, org_id)
+
+
+@router.get("/workstation", response_model=WorkstationRead)
+async def get_workstation_data(
+    org_id: UUID,
+    task_id: UUID,
+    org: Organization = Depends(get_current_org),
+    service: PipelineService = Depends(get_pipeline_service),
+):
+    """
+    Combined workstation payload for the Task Review page.
+
+    Returns pipeline results (transcription, matches, document) AND the
+    resolved audio file metadata in a single request — replacing the previous
+    two-call pattern (pipeline/results + tasks/{id}/files).
+    """
+    return await service.get_workstation_data(task_id, org_id)
 
 
 @router.get("/results", response_model=PipelineDetailedResultRead)

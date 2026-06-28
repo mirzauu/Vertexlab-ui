@@ -189,6 +189,7 @@ async def upload_document(
     org_id: UUID,
     task_id: UUID,
     file: UploadFile = File(...),
+    examination_start_page: Optional[int] = Query(None, ge=1),
     org: Organization = Depends(get_current_org),
     task_service: TaskService = Depends(get_task_service),
     file_service: FileService = Depends(get_file_service),
@@ -220,45 +221,47 @@ async def upload_document(
             import logging
             logging.getLogger(__name__).warning(f"Failed to extract page count from PDF: {e}")
 
-    # Process deposition (split into cover and examination)
-    try:
-        from app.services.deposition_splitter import process_deposition
-        split_result = process_deposition(os.path.abspath(full_path), os.path.abspath(settings.STORAGE_PATH))
-        
-        if split_result:
-            if not page_count:
-                page_count = split_result.total_pages
-                
-            # Create TaskFile for Cover
-            cover_abs_path = os.path.join(settings.STORAGE_PATH, split_result.cover_pdf_path)
-            cover_size = os.path.getsize(cover_abs_path) if os.path.exists(cover_abs_path) else 0
-            await task_service.add_file(
-                task_id=task_id,
-                org_id=org_id,
-                file_name=os.path.basename(split_result.cover_pdf_path),
-                file_path=split_result.cover_pdf_path,
-                file_type=file_type,
-                file_size=cover_size,
-                mime_type="application/pdf",
-                page_count=split_result.cover_page_count,
-            )
+    # Process deposition (split into cover and examination manually if page number is provided)
+    exam_task_file = None
+    if examination_start_page is not None:
+        try:
+            from app.services.deposition_splitter import split_at_page
+            split_result = split_at_page(os.path.abspath(full_path), examination_start_page, os.path.abspath(settings.STORAGE_PATH))
+            
+            if split_result:
+                # Create TaskFile for Cover (with page_count=None so it doesn't count in total_pages metrics)
+                cover_abs_path = os.path.join(settings.STORAGE_PATH, split_result.cover_pdf_path)
+                cover_size = os.path.getsize(cover_abs_path) if os.path.exists(cover_abs_path) else 0
+                await task_service.add_file(
+                    task_id=task_id,
+                    org_id=org_id,
+                    file_name=os.path.basename(split_result.cover_pdf_path),
+                    file_path=split_result.cover_pdf_path,
+                    file_type=file_type,
+                    file_size=cover_size,
+                    mime_type="application/pdf",
+                    page_count=None,
+                )
 
-            # Create TaskFile for Examination
-            exam_abs_path = os.path.join(settings.STORAGE_PATH, split_result.examination_pdf_path)
-            exam_size = os.path.getsize(exam_abs_path) if os.path.exists(exam_abs_path) else 0
-            await task_service.add_file(
-                task_id=task_id,
-                org_id=org_id,
-                file_name=os.path.basename(split_result.examination_pdf_path),
-                file_path=split_result.examination_pdf_path,
-                file_type=file_type,
-                file_size=exam_size,
-                mime_type="application/pdf",
-                page_count=split_result.exam_page_count,
-            )
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"Failed to split deposition: {e}")
+                # Create TaskFile for Examination (with page_count=split_result.exam_page_count)
+                exam_abs_path = os.path.join(settings.STORAGE_PATH, split_result.examination_pdf_path)
+                exam_size = os.path.getsize(exam_abs_path) if os.path.exists(exam_abs_path) else 0
+                exam_task_file = await task_service.add_file(
+                    task_id=task_id,
+                    org_id=org_id,
+                    file_name=os.path.basename(split_result.examination_pdf_path),
+                    file_path=split_result.examination_pdf_path,
+                    file_type=file_type,
+                    file_size=exam_size,
+                    mime_type="application/pdf",
+                    page_count=split_result.exam_page_count,
+                )
+                
+                # Set page_count to None so original file registers with null page count
+                page_count = None
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to split deposition: {e}")
 
     # Register in database
     task_file = await task_service.add_file(
@@ -273,7 +276,14 @@ async def upload_document(
     )
 
     # Record billing usage
-    if page_count and page_count > 0:
+    if exam_task_file and exam_task_file.page_count:
+        await billing_service.record_usage(
+            org_id=org_id,
+            task_id=task_id,
+            file_id=exam_task_file.id,
+            pages=exam_task_file.page_count,
+        )
+    elif page_count and page_count > 0:
         await billing_service.record_usage(
             org_id=org_id,
             task_id=task_id,

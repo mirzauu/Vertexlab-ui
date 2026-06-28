@@ -69,6 +69,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isReloading, setIsReloading] = useState(false);
   const [reloadError, setReloadError] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     const orgId = localStorage.getItem('organization_id') || task.organization_id;
@@ -217,7 +218,12 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
   }, [task.id, refreshKey]); // ← task.id not task — avoids re-trigger on parent re-render
 
 
-  const handleReload = async () => {
+  const handleReload = () => {
+    setShowConfirm(true);
+  };
+
+  const executeReload = async () => {
+    setShowConfirm(false);
     setIsReloading(true);
     setReloadError(null);
     const orgId = localStorage.getItem('organization_id') || task.organization_id;
@@ -328,7 +334,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
               <span className="task-date">Completed on {displayDate}</span>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', position: 'relative' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
                 className="view-btn" 
@@ -339,12 +345,24 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                 <RefreshCw size={16} className={isReloading ? "animate-spin" : ""} />
                 Reload
               </button>
-              {isDocGenCompleted && (
-                <button className="view-btn" style={{ backgroundColor: '#5B44E9', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }} onClick={onWorkstation}>
-                  Workstation
-                </button>
-              )}
+              <button 
+                className="view-btn" 
+                style={{ backgroundColor: isDocGenCompleted ? '#5B44E9' : '#9ca3af', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: isDocGenCompleted ? 'pointer' : 'not-allowed', opacity: isDocGenCompleted ? 1 : 0.6 }} 
+                onClick={onWorkstation}
+                disabled={!isDocGenCompleted}
+              >
+                Workstation
+              </button>
             </div>
+            {showConfirm && (
+              <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', zIndex: 50, width: '320px', textAlign: 'left' }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#374151', lineHeight: '1.4' }}>Reloading will restart the task and remove previous work. Are you sure you want to proceed?</p>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setShowConfirm(false)} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white', color: '#4b5563', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
+                  <button onClick={executeReload} style={{ padding: '6px 12px', border: 'none', borderRadius: '6px', backgroundColor: '#ef4444', color: 'white', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>Confirm</button>
+                </div>
+              </div>
+            )}
             {reloadError && (
               <div style={{ fontSize: '0.8rem', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', padding: '6px 10px', maxWidth: '300px', textAlign: 'right', lineHeight: '1.4' }}>
                 ⚠️ {reloadError}

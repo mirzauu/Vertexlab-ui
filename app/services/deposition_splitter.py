@@ -460,3 +460,58 @@ def process_deposition(
     )
 
     return result
+
+
+def split_at_page(
+    file_path: str,
+    exam_start_page: int,  # 1-indexed, user-selected
+    storage_path: str,
+) -> Optional[DepositionSplitResult]:
+    """Split a PDF/DOCX/TXT at a user-specified page number.
+
+    No keyword detection — the user has already identified the page.
+    """
+    logger.info(f"Manually splitting deposition at page {exam_start_page}: {file_path}")
+
+    pages = extract_pages(file_path)
+    if not pages:
+        logger.warning("No pages extracted from document.")
+        return None
+
+    total_pages = len(pages)
+
+    if exam_start_page < 1 or exam_start_page > total_pages:
+        raise ValueError(f"Page {exam_start_page} is out of range (1-{total_pages})")
+
+    output_dir = os.path.join(storage_path, "raw_data")
+    os.makedirs(output_dir, exist_ok=True)
+
+    ext = os.path.splitext(file_path)[1].lower()
+
+    if ext == ".pdf":
+        cover_path, exam_path = _split_pdf(file_path, exam_start_page, output_dir)
+    elif ext in (".docx", ".doc"):
+        cover_path, exam_path = _split_docx(file_path, exam_start_page, output_dir)
+    else:
+        cover_path, exam_path = _split_txt(file_path, exam_start_page, output_dir)
+
+    cover_page_count = exam_start_page - 1
+    exam_page_count = total_pages - cover_page_count
+
+    result = DepositionSplitResult(
+        cover_pdf_path=cover_path,
+        examination_pdf_path=exam_path,
+        exam_start_page=exam_start_page,
+        confidence_score=100,  # user-selected = 100% confidence
+        total_pages=total_pages,
+        cover_page_count=cover_page_count,
+        exam_page_count=exam_page_count,
+    )
+
+    logger.info(
+        f"Deposition manual split complete: exam starts at page {exam_start_page}, "
+        f"cover={cover_page_count} pages, exam={exam_page_count} pages"
+    )
+
+    return result
+

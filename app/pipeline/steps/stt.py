@@ -87,5 +87,31 @@ class STTStep(BasePipelineStep):
             "confidence": result.confidence,
         }
 
+        # Persist STT output to DB immediately so downstream steps
+        # (especially MatchingStep) can read it from the Transcript table
+        # instead of relying on the in-memory context fallback.
+        if context.db:
+            from sqlalchemy import select
+            from app.models.transcript import Transcript
+
+            result_row = await context.db.execute(
+                select(Transcript).where(Transcript.task_id == context.task_id)
+            )
+            existing = result_row.scalar_one_or_none()
+
+            if existing:
+                existing.content = {"segments": segments}
+                existing.language = "en"
+                existing.confidence_score = result.confidence
+            else:
+                new_transcript = Transcript(
+                    task_id=context.task_id,
+                    content={"segments": segments},
+                    language="en",
+                    confidence_score=result.confidence,
+                )
+                context.db.add(new_transcript)
+            # Orchestrator will commit after step completes
+
         return context
 

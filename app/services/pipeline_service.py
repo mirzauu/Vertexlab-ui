@@ -112,7 +112,8 @@ class PipelineService:
             orchestrator = PipelineOrchestrator(session)
             await orchestrator.run(pipeline_run, context)
 
-            # Save transcript if generated
+            # Safety net: persist transcript content if it wasn't already saved
+            # by the STT step (it should have been, but this ensures nothing is lost).
             if context.transcript:
                 existing_transcript = await pipeline_repo.get_transcript(task_id)
                 if not existing_transcript:
@@ -123,7 +124,8 @@ class PipelineService:
                         confidence_score=context.transcript.get("confidence"),
                     )
                     await pipeline_repo.save_transcript(transcript)
-                else:
+                elif not existing_transcript.content:
+                    # Only update if content is still missing
                     existing_transcript.content = {"segments": context.transcript.get("segments", [])}
                     existing_transcript.language = context.transcript.get("language", "en")
                     existing_transcript.confidence_score = context.transcript.get("confidence")
@@ -341,7 +343,45 @@ class PipelineService:
             # Silently exit the generator so SQLAlchemy can close cleanly.
             logger.debug("SSE client disconnected for task %s", task_id)
 
+    async def get_workstation_data(self, task_id: UUID, org_id: UUID) -> dict:
+        """
+        Combined endpoint payload for the workstation (Review/Edit) page.
+
+        Returns pipeline results AND the resolved audio file metadata in a
+        single DB round-trip, replacing the previous two-request pattern
+        (pipeline/results + tasks/{id}/files) on the frontend.
+        """
+        from app.models.task import TaskFile, FileType
+        from sqlalchemy import select
+
+        # Re-use the existing detailed results aggregator (already optimised)
+        results = await self.get_detailed_results(task_id, org_id)
+
+        # Fetch only the audio file row — a lightweight targeted query
+        audio_result = await self.db.execute(
+            select(TaskFile)
+            .where(
+                TaskFile.task_id == task_id,
+                TaskFile.file_type == FileType.AUDIO,
+            )
+        )
+        audio_file = audio_result.scalar_one_or_none()
+
+        audio_file_info = None
+        if audio_file:
+            audio_file_info = {
+                "id": str(audio_file.id),
+                "file_path": audio_file.file_path,
+                "file_type": audio_file.file_type.value,
+            }
+
+        return {
+            "results": results,
+            "audio_file": audio_file_info,
+        }
+
     async def get_document_pdf(self, task_id: UUID, org_id: UUID) -> bytes:
+
         """Fetch the latest AI document and generate a beautifully formatted PDF."""
         from sqlalchemy import select
         from sqlalchemy.orm import selectinload

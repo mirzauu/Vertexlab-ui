@@ -135,6 +135,11 @@ async def get_activity_repository(db: AsyncSession = Depends(get_db)):
     return ActivityRepository(db)
 
 
+async def get_help_repository(db: AsyncSession = Depends(get_db)):
+    from app.repositories.help_repo import HelpRepository
+    return HelpRepository(db)
+
+
 # ---------- Service Factories ----------
 
 
@@ -211,3 +216,11 @@ async def get_billing_service(
 ):
     from app.services.billing_service import BillingService
     return BillingService(db=db)
+
+
+async def get_help_service(
+    help_repo=Depends(get_help_repository),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.services.help_service import HelpService
+    return HelpService(help_repo=help_repo, db=db)

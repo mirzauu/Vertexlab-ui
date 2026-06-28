@@ -8,14 +8,15 @@ import './ReviewPage.css';
 import Admin from './Admin';
 import SettingsView from './Settings';
 import Usage from './Usage';
+import Help, { HelpChat } from './Help';
 import { api } from './services/api';
 import { 
   LayoutDashboard, Users, FileText, HelpCircle, Moon, Settings, LogOut, 
   Search, Bell, MessageSquare, ArrowUpRight, ArrowDownRight, 
-  CreditCard, RefreshCw, XCircle, Minus, Plus, Mic, Send, Loader2,
+  CreditCard, RefreshCw, XCircle, AlertCircle, Minus, Plus, Mic, Send, Loader2,
   ChevronDown, ChevronUp, Activity, PieChart, TrendingUp,
   Sidebar, PlusCircle, CheckSquare, Edit,
-  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal
+  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield
 } from 'lucide-react';
 
 
@@ -519,7 +520,12 @@ function App() {
               <path d="M2 17L12 22L22 17" stroke="var(--text-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="var(--text-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            {!isCollapsed && "VerbaLex AI"}
+            {!isCollapsed && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1.1' }}>
+                <span style={{ fontWeight: '700', fontSize: '1.1rem', letterSpacing: '-0.02em', color: 'var(--sidebar-text)' }}>VerbaLex AI</span>
+                <span className="beta-badge">Beta</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -560,6 +566,11 @@ function App() {
           <div className={`nav-item ${activeView === 'usage' ? 'active' : ''}`} onClick={() => { setActiveView('usage'); setSelectedTask(null); }}>
             <Activity className="nav-icon" />
             {!isCollapsed && <span>Usage</span>}
+          </div>
+
+          <div className={`nav-item ${activeView === 'help' ? 'active' : ''}`} onClick={() => { setActiveView('help'); setSelectedTask(null); }}>
+            <HelpCircle className="nav-icon" />
+            {!isCollapsed && <span>Help</span>}
           </div>
 
           <div className={`nav-item ${activeView === 'admin' ? 'active' : ''}`} onClick={() => { setActiveView('admin'); setSelectedTask(null); }}>
@@ -687,6 +698,19 @@ function App() {
 
             return (
               <>
+                {/* Beta Free Usage Banner */}
+                <div className="beta-banner-container" style={{ margin: '0 0 24px 0' }}>
+                  <div className="beta-banner-icon-wrap">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div className="beta-banner-content">
+                    <h4>Beta Preview Mode — Free of Charge</h4>
+                    <p>
+                      VerbaLex AI is currently in active development. During this beta phase, you can process tasks, run speech transcriptions, and utilize all platform features completely free of charge. No actual charges will be processed, and no invoices will be generated.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Revenue Overview */}
                 <div className="overview-section">
                   <div className="overview-title">
@@ -939,91 +963,32 @@ function App() {
                   </div>
                 </div>
 
-                {/* Floating VerbaLex AI Assistant */}
                 <div className="ai-floating-container" style={{ position: 'fixed', bottom: '32px', right: '32px', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
                   {isAiOpen && (
                     <div className="ai-card floating-chat" style={{
-                      width: '380px',
-                      height: '480px',
+                      width: '420px',
+                      height: '520px',
                       display: 'flex',
                       flexDirection: 'column',
                       boxShadow: '0 12px 48px rgba(0, 0, 0, 0.25)',
                       border: '1px solid var(--border-color)',
                       borderRadius: '24px',
+                      backgroundColor: 'var(--card-bg)',
+                      overflow: 'hidden'
                     }}>
-                      <div className="ai-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                      <div className="ai-header" style={{ borderBottom: '1px solid var(--border-color)', padding: '16px 20px', backgroundColor: 'var(--card-bg)', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#A3E635"/>
-                            <path d="M2 17L12 22L22 17" stroke="#A3E635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M2 12L12 17L22 12" stroke="#A3E635" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          <span className="ai-title" style={{ fontWeight: '600' }}>VerbaLex AI Assistant</span>
+                          <Shield size={20} color="#5B44E9" />
+                          <span className="ai-title" style={{ fontWeight: '600', color: 'var(--text-dark)' }}>Support Chat</span>
                         </div>
-                        <div className="ai-icon-btn" onClick={() => setIsAiOpen(false)} style={{ cursor: 'pointer' }}>
-                          <Minus size={16} />
+                        <div className="ai-icon-btn" onClick={() => setIsAiOpen(false)} style={{ cursor: 'pointer', color: 'var(--text-gray)' }}>
+                          <Minus size={18} />
                         </div>
                       </div>
                       
-                      <div className="ai-chat-history" style={{ 
-                        flex: 1, 
-                        overflowY: 'auto', 
-                        padding: '16px 0', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: '12px', 
-                        fontSize: '0.85rem',
-                        color: 'white',
-                        textAlign: 'left'
-                      }}>
-                        {chatHistory.map((chat, idx) => (
-                          <div key={idx} style={{ 
-                            alignSelf: chat.role === 'user' ? 'flex-end' : 'flex-start',
-                            backgroundColor: chat.role === 'user' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(91, 68, 233, 0.45)',
-                            padding: '10px 14px',
-                            borderRadius: '16px',
-                            maxWidth: '85%',
-                            wordBreak: 'break-word',
-                            lineHeight: '1.4',
-                            border: chat.role === 'user' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none'
-                          }}>
-                            <MarkdownText text={chat.content} />
-                          </div>
-                        ))}
-                        {isChatSending && (
-                          <div style={{ alignSelf: 'flex-start', color: '#A3E635', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', paddingLeft: '4px' }}>
-                            <Loader2 className="animate-spin" size={12} />
-                            <span>VerbaLex is thinking...</span>
-                          </div>
-                        )}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <HelpChat isWidget={true} />
                       </div>
-                      
-                      <div className="ai-actions" style={{ display: 'flex', gap: '8px', padding: '8px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                        <button type="button" className="ai-action-btn" style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem', padding: '6px 10px' }} onClick={() => {
-                          setChatMessage('Provide a smart analysis of our revenue and completed tasks.');
-                        }}>
-                          <PieChart size={14} /> Smart Analysis
-                        </button>
-                        <button type="button" className="ai-action-btn" style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem', padding: '6px 10px' }} onClick={() => {
-                          setChatMessage('Write a brief report summarizing current task stages.');
-                        }}>
-                          <FileText size={14} /> Generate Report
-                        </button>
-                      </div>
-                      
-                      <form onSubmit={handleSendChatMessage} className="ai-input-container" style={{ margin: '8px 0 0 0' }}>
-                        <input 
-                          type="text" 
-                          placeholder="Ask anything..." 
-                          value={chatMessage} 
-                          onChange={e => setChatMessage(e.target.value)}
-                          disabled={isChatSending}
-                          style={{ borderRadius: '12px' }}
-                        />
-                        <button type="submit" className="ai-voice-btn" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={isChatSending}>
-                          <Send size={16} />
-                        </button>
-                      </form>
                     </div>
                   )}
 
@@ -1103,6 +1068,7 @@ function App() {
         {activeView === 'admin' && <Admin />}
         {activeView === 'settings' && <SettingsView />}
         {activeView === 'usage' && <Usage />}
+        {activeView === 'help' && <Help />}
         {activeView === 'scopist' && (
           <div className="scopist-page">
             

@@ -1066,6 +1066,25 @@
   background-color: rgba(91, 68, 233, 0.12) !important;
 }
 
+.dark-mode .accordion-title {
+  color: white;
+}
+
+.dark-mode .transcript-segment {
+  color: var(--text-gray);
+}
+
+.dark-mode .back-btn {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .back-btn:hover {
+  background-color: #2D2D35;
+  color: white;
+}
+
 /* ─── Compact FX Toggle Icon ───────────────────────────────── */
 .fx-toggle-icon {
   width: 34px;
@@ -1162,4 +1181,49 @@
   font-size: 0.85rem;
 }
 
+/* Additional Dark Mode Overrides for Review Edit Page */
+.dark-mode .review-card {
+  box-shadow: none;
+  border: 1px solid var(--border-color);
+}
 
+.dark-mode .timeline-slider {
+  background: #2D2D35;
+}
+.dark-mode .timeline-slider::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.dark-mode .timeline-slider::-moz-range-track {
+  background: transparent;
+}
+
+.dark-mode .volume-slider {
+  background: #2D2D35;
+}
+
+.dark-mode .play-btn {
+  background-color: var(--primary);
+  color: white;
+}
+.dark-mode .play-btn:hover {
+  background-color: #4732D6;
+}
+
+.dark-mode .fx-toggle-icon.fx-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.dark-mode .data-table th,
+.dark-mode .data-table td {
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .doc-summary-card {
+  background: linear-gradient(135deg, rgba(91, 68, 233, 0.08) 0%, rgba(0, 59, 255, 0.04) 100%);
+}
+
+.dark-mode .doc-empty-state {
+  border-color: #4B5563;
+}

@@ -213,6 +213,8 @@ class DataProcessingStep(BasePipelineStep):
             transcript = result.scalar_one_or_none()
             
             if not transcript:
+                # STT step should have already created this row with content (audio segments).
+                # If it hasn't run yet or didn't create one, create with content=None.
                 transcript = Transcript(
                     task_id=context.task_id,
                     content=None,
@@ -222,10 +224,12 @@ class DataProcessingStep(BasePipelineStep):
                 )
                 context.db.add(transcript)
             else:
+                # Preserve existing content (audio segments from STT step)
+                # Only update the fields this step is responsible for.
                 transcript.cleaned_content = cleaned_text
                 transcript.chunks = qa_chunks
 
-            # We don't commit here, orchestrator flushes/commits
+            # Orchestrator will commit after step completes
         else:
             logger.warning("Database session not available in context.")
 

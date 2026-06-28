@@ -3,7 +3,7 @@ import './Auth.css';
 import { api } from './services/api';
 
 export default function Auth({ onLogin }) {
-  const [email, setEmail] = useState('user@example.com');
+  const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);

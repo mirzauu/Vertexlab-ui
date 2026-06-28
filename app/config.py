@@ -44,6 +44,7 @@ class Settings(BaseSettings):
 
     # App
     APP_NAME: str = Field(default="VerbaLex AI")
+    SUPPORT_EMAIL: str = Field(default="mirzamailbox0@gmail.com")
     DEBUG: bool = Field(default=False)
 
     @property

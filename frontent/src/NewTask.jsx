@@ -1,10 +1,104 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './NewTask.css';
 import { 
   Mic, FileText, ArrowLeft, UploadCloud, CheckCircle2, 
-  AlertCircle, Loader2, Plus, X, Tag, Sparkles, FolderOpen 
+  AlertCircle, Loader2, Plus, X, Tag, Sparkles, FolderOpen, Maximize2 
 } from 'lucide-react';
 import { api } from './services/api';
+
+function PdfThumbnail({ pdfDoc, pageNum, onSelect, isSelected, isBeforeSelected, isAfterSelected }) {
+  const canvasRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const renderPage = async () => {
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+        if (!active) return;
+        
+        const viewport = page.getViewport({ scale: 0.35 });
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport
+        };
+        await page.render(renderContext).promise;
+        if (active) setLoading(false);
+      } catch (err) {
+        console.error("Error rendering PDF thumbnail:", err);
+      }
+    };
+
+    renderPage();
+    return () => {
+      active = false;
+    };
+  }, [pdfDoc, pageNum]);
+
+  return (
+    <div 
+      className={`pdf-page-card ${isSelected ? 'selected' : ''} ${isBeforeSelected ? 'cover-sec' : ''} ${isAfterSelected ? 'exam-sec' : ''}`}
+      onClick={() => onSelect(pageNum)}
+      style={{
+        border: isSelected ? '2.5px solid #5B44E9' : '1px solid #e5e7eb',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        backgroundColor: 'white',
+        transition: 'all 0.2s ease-in-out',
+        boxShadow: isSelected ? '0 0 0 4px rgba(91, 68, 233, 0.25)' : 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative'
+      }}
+      onMouseOver={(e) => {
+        if (!isSelected) e.currentTarget.style.borderColor = '#5B44E9';
+      }}
+      onMouseOut={(e) => {
+        if (!isSelected) e.currentTarget.style.borderColor = '#e5e7eb';
+      }}
+    >
+      <div style={{
+        padding: '6px 10px',
+        borderBottom: '1px solid #f3f4f6',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: isSelected ? '#EEF2FF' : '#f9fafb'
+      }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#374151' }}>Page {pageNum}</span>
+        {isSelected && (
+          <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#5B44E9', color: 'white', fontWeight: 'bold' }}>
+            Starts Here
+          </span>
+        )}
+        {isBeforeSelected && (
+          <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#f3f4f6', color: '#6b7280', fontWeight: '500' }}>
+            Cover
+          </span>
+        )}
+        {isAfterSelected && (
+          <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#EEF2FF', color: '#5B44E9', fontWeight: '500' }}>
+            Exam
+          </span>
+        )}
+      </div>
+      <div className="canvas-container" style={{ flex: 1, position: 'relative', minHeight: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', padding: '6px' }}>
+        {loading && (
+          <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Rendering...</div>
+        )}
+        <canvas ref={canvasRef} style={{ display: loading ? 'none' : 'block', width: '100%', height: 'auto', borderRadius: '4px' }} />
+      </div>
+    </div>
+  );
+}
+
 
 export default function NewTask({ onCancel, onTaskCreated }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,9 +111,16 @@ export default function NewTask({ onCancel, onTaskCreated }) {
   const [taskName, setTaskName] = useState('');
   const [description, setDescription] = useState('');
   
-  // Tags State
-  const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState([]);
+  // PDF manual split state
+  const [pdfDocument, setPdfDocument] = useState(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [examStartPage, setExamStartPage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pagesPerPage = 30;
+  const [showFullViewModal, setShowFullViewModal] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState(null);
+
+
 
   // Pipeline execution & lifecycle state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -77,13 +178,53 @@ export default function NewTask({ onCancel, onTaskCreated }) {
     }
   };
 
+  useEffect(() => {
+    if (currentStep === 3) {
+      const firstPdf = docFiles.find(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (firstPdf) {
+        setLoadingPdf(true);
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        const fileReader = new FileReader();
+        fileReader.onload = async function() {
+          try {
+            const typedarray = new Uint8Array(this.result);
+            const pdf = await window.pdfjsLib.getDocument({ data: typedarray }).promise;
+            setPdfDocument(pdf);
+          } catch (err) {
+            console.error("Failed to load PDF document:", err);
+          } finally {
+            setLoadingPdf(false);
+          }
+        };
+        fileReader.readAsArrayBuffer(firstPdf);
+      } else {
+        setPdfDocument(null);
+      }
+    }
+  }, [currentStep, docFiles]);
+
   const togglePresetTag = (preset) => {
-    if (tags.includes(preset)) {
-      setTags(prev => prev.filter(t => t !== preset));
-    } else {
-      setTags(prev => [...prev, preset]);
+    // Deprecated tag toggle helper
+  };
+
+  const handleOpenFullView = () => {
+    const firstPdf = docFiles.find(f => f.name.toLowerCase().endsWith('.pdf'));
+    if (firstPdf) {
+      const url = URL.createObjectURL(firstPdf);
+      setPdfUrl(url);
+      setShowFullViewModal(true);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 Bytes';
@@ -130,7 +271,7 @@ export default function NewTask({ onCancel, onTaskCreated }) {
         body: JSON.stringify({
           name: taskName.trim(),
           description: description.trim(),
-          tags: tags
+          tags: []
         })
       });
 
@@ -161,7 +302,13 @@ export default function NewTask({ onCancel, onTaskCreated }) {
           const docFormData = new FormData();
           docFormData.append('file', doc);
 
-          const docUploadRes = await api(`/api/v1/organizations/${orgId}/tasks/${taskId}/documents`, {
+          const isPdf = doc.name.toLowerCase().endsWith('.pdf');
+          let uploadUrl = `/api/v1/organizations/${orgId}/tasks/${taskId}/documents`;
+          if (isPdf && examStartPage) {
+            uploadUrl += `?examination_start_page=${examStartPage}`;
+          }
+
+          const docUploadRes = await api(uploadUrl, {
             method: 'POST',
             body: docFormData
           });
@@ -247,16 +394,16 @@ export default function NewTask({ onCancel, onTaskCreated }) {
           <div className={`step-item ${currentStep === 3 ? 'active' : currentStep > 3 ? 'completed' : ''}`}>
             <div className="step-circle">{currentStep > 3 ? '✓' : '3'}</div>
             <div className="step-content">
-              <h4>Category Tags</h4>
-              <p>Add labels to structure reports</p>
+              <h4>Examination Start</h4>
+              <p>Select examination start page</p>
             </div>
             <div className="step-line"></div>
           </div>
           <div className={`step-item ${currentStep === 4 ? 'active' : ''}`}>
             <div className="step-circle">4</div>
             <div className="step-content">
-              <h4>Launch Review</h4>
-              <p>Verify pipeline items and process</p>
+              <h4>Start AI Scoping</h4>
+              <p>Verify items and analyze with AI</p>
             </div>
           </div>
         </div>
@@ -286,11 +433,11 @@ export default function NewTask({ onCancel, onTaskCreated }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>
-                  {apiStep === 5 ? "Task Ready!" : "Handing over to AI..."}
+                  {apiStep === 5 ? "Task Scope Ready!" : "Handing over to AI..."}
                 </h3>
                 <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
                   {apiStep === 5 
-                    ? "The background intelligence pipeline has been triggered successfully." 
+                    ? "AI analysis and scoping has been triggered successfully." 
                     : "Connecting to Verbalex API and processing speech audio data..."
                   }
                 </p>
@@ -307,7 +454,7 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                       backgroundColor: apiStep > 1 ? '#22c55e' : apiStep === 1 ? '#5B44E9' : '#e5e7eb',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
                     }}>
-                      {apiStep > 1 ? "✓" : apiStep === 1 ? <Loader2 size={12} className="animate-spin" /> : "1"}
+                      {apiStep > 1 ? "✓" : apiStep === 1 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "1"}
                     </div>
                   </div>
                   <div>
@@ -324,7 +471,7 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                       backgroundColor: apiStep > 2 ? '#22c55e' : apiStep === 2 ? '#5B44E9' : '#e5e7eb',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
                     }}>
-                      {apiStep > 2 ? "✓" : apiStep === 2 ? <Loader2 size={12} className="animate-spin" /> : "2"}
+                      {apiStep > 2 ? "✓" : apiStep === 2 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "2"}
                     </div>
                   </div>
                   <div>
@@ -346,7 +493,7 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                       backgroundColor: apiStep > 3 ? '#22c55e' : apiStep === 3 ? '#5B44E9' : '#e5e7eb',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
                     }}>
-                      {apiStep > 3 ? "✓" : apiStep === 3 ? <Loader2 size={12} className="animate-spin" /> : "3"}
+                      {apiStep > 3 ? "✓" : apiStep === 3 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "3"}
                     </div>
                   </div>
                   <div>
@@ -368,12 +515,12 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                       backgroundColor: apiStep > 4 ? '#22c55e' : apiStep === 4 ? '#5B44E9' : '#e5e7eb',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
                     }}>
-                      {apiStep > 4 ? "✓" : apiStep === 4 ? <Loader2 size={12} className="animate-spin" /> : "4"}
+                      {apiStep > 4 ? "✓" : apiStep === 4 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "4"}
                     </div>
                   </div>
                   <div>
-                    <h5 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>⚡ Activating background AI pipeline</h5>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Triggers 7-step analysis flow (embedding chunks, matching evidence, drafting document).</p>
+                    <h5 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>⚡ Initiating AI analysis engine</h5>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Triggers 7-step scoping & analysis flow (embedding chunks, matching evidence, drafting document).</p>
                   </div>
                 </div>
 
@@ -383,8 +530,8 @@ export default function NewTask({ onCancel, onTaskCreated }) {
               {apiStep === 5 && (
                 <div style={{ textAlign: 'center', marginTop: '20px' }}>
                   <CheckCircle2 size={48} color="#22c55e" style={{ margin: '0 auto 16px auto' }} />
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>Pipeline Launched!</h4>
-                  <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '24px' }}>Your report is now being assembled in the background.</p>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>AI Analysis Started!</h4>
+                  <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '24px' }}>Your document analysis and scoping report is now being compiled by the AI.</p>
                   <button 
                     className="btn-next" 
                     style={{ width: '100%', padding: '14px' }}
@@ -555,93 +702,100 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                 </div>
               )}
 
-              {/* STEP 3: CATEGORY TAGS */}
+              {/* STEP 3: EXAMINATION START */}
               {currentStep === 3 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>Category Tags</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Scope your document and classify reports by adding category metadata tags.</p>
-                  </div>
-
-                  {/* Dynamic Tags Input */}
-                  <div className="form-group">
-                    <label>Add Custom Tag</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input 
-                        type="text" 
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleAddTag}
-                        placeholder="e.g. Boardroom, Diagnostics" 
-                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB' }} 
-                      />
-                      <button 
-                        onClick={handleAddTag}
-                        style={{ 
-                          backgroundColor: '#5B44E9', color: 'white', 
-                          border: 'none', padding: '0 20px', borderRadius: '8px', 
-                          fontWeight: '600', cursor: 'pointer', display: 'flex', 
-                          alignItems: 'center', gap: '4px' 
-                        }}
-                      >
-                        <Plus size={16} /> Add
-                      </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', margin: 0 }}>Examination Start</h3>
+                      {pdfDocument && (
+                        <button 
+                          onClick={handleOpenFullView}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'white', border: '1px solid #d1d5db', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, color: '#4b5563', cursor: 'pointer', transition: 'all 0.2s' }}
+                          onMouseOver={(e) => { e.currentTarget.style.borderColor = '#5B44E9'; e.currentTarget.style.color = '#5B44E9'; }}
+                          onMouseOut={(e) => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#4b5563'; }}
+                        >
+                          <Maximize2 size={14} /> Full View
+                        </button>
+                      )}
                     </div>
+                    <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Select the page where the examination begins. Content before this page will form the cover section.</p>
                   </div>
-
-                  {/* Selected Tags Display */}
-                  {tags.length > 0 && (
-                    <div>
-                      <h4 className="form-section-title" style={{ fontSize: '0.85rem', color: '#6B7280' }}>Selected Labels</h4>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {tags.map(tag => (
-                          <div 
-                            key={tag}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: '6px',
-                              backgroundColor: '#EEF2FF', color: '#5B44E9',
-                              padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem',
-                              fontWeight: 600, border: '1px solid #C7D2FE'
-                            }}
-                          >
-                            <Tag size={12} />
-                            <span>{tag}</span>
-                            <button 
-                              onClick={() => togglePresetTag(tag)}
-                              style={{ background: 'transparent', border: 'none', color: '#5B44E9', cursor: 'pointer', padding: 0 }}
+                  
+                  {loadingPdf ? (
+                    <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                      <Loader2 className="animate-spin" size={32} style={{ color: '#5B44E9', margin: '0 auto 12px' }} />
+                      <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Loading reference PDF pages...</p>
+                    </div>
+                  ) : !pdfDocument ? (
+                    <div style={{ padding: '24px', border: '1.5px dashed #d1d5db', borderRadius: '12px', textAlign: 'center', backgroundColor: '#f9fafb' }}>
+                      <p style={{ color: '#6B7280', fontSize: '0.9rem', margin: '0 0 12px 0' }}>No PDF reference document uploaded.</p>
+                      <p style={{ color: '#9CA3AF', fontSize: '0.8rem', margin: 0 }}>You can skip this step or go back to upload a PDF.</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {/* Pagination Controls */}
+                      {Math.ceil(pdfDocument.numPages / pagesPerPage) > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#4B5563', fontWeight: '500' }}>
+                            Pages {(currentPage - 1) * pagesPerPage + 1} - {Math.min(currentPage * pagesPerPage, pdfDocument.numPages)} of {pdfDocument.numPages}
+                          </span>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              disabled={currentPage === 1}
+                              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                              style={{ padding: '4px 10px', fontSize: '0.8rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: 'white', color: currentPage === 1 ? '#d1d5db' : '#4b5563', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
                             >
-                              <X size={12} />
+                              Prev
+                            </button>
+                            <button
+                              disabled={currentPage === Math.ceil(pdfDocument.numPages / pagesPerPage)}
+                              onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(pdfDocument.numPages / pagesPerPage)))}
+                              style={{ padding: '4px 10px', fontSize: '0.8rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: 'white', color: currentPage === Math.ceil(pdfDocument.numPages / pagesPerPage) ? '#d1d5db' : '#4b5563', cursor: currentPage === Math.ceil(pdfDocument.numPages / pagesPerPage) ? 'not-allowed' : 'pointer' }}
+                            >
+                              Next
                             </button>
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      {/* PDF Thumbnail Grid */}
+                      <div className="pdf-page-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px', maxHeight: '420px', overflowY: 'auto', padding: '4px' }}>
+                        {Array.from({ length: Math.min(pagesPerPage, pdfDocument.numPages - (currentPage - 1) * pagesPerPage) }).map((_, i) => {
+                          const pageNum = (currentPage - 1) * pagesPerPage + i + 1;
+                          const isSelected = examStartPage === pageNum;
+                          const isBeforeSelected = examStartPage !== null && pageNum < examStartPage;
+                          const isAfterSelected = examStartPage !== null && pageNum > examStartPage;
+                          
+                          return (
+                            <PdfThumbnail
+                              key={pageNum}
+                              pdfDoc={pdfDocument}
+                              pageNum={pageNum}
+                              onSelect={setExamStartPage}
+                              isSelected={isSelected}
+                              isBeforeSelected={isBeforeSelected}
+                              isAfterSelected={isAfterSelected}
+                            />
+                          );
+                        })}
                       </div>
+
+                      {examStartPage && (
+                        <div style={{ padding: '12px 16px', backgroundColor: '#EEF2FF', borderRadius: '8px', border: '1px solid #C7D2FE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: '#374151' }}>
+                            Selected starting page: <strong style={{ color: '#5B44E9' }}>Page {examStartPage}</strong>
+                          </span>
+                          <button
+                            onClick={() => setExamStartPage(null)}
+                            style={{ background: 'transparent', border: 'none', color: '#dc2626', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            Clear Selection
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-
-                  {/* Preset Tags Suggestions */}
-                  <div>
-                    <h4 className="form-section-title" style={{ fontSize: '0.85rem', color: '#6B7280', marginBottom: '10px' }}>Suggestions</h4>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {PRESET_TAGS.map(preset => {
-                        const active = tags.includes(preset);
-                        return (
-                          <button
-                            key={preset}
-                            onClick={() => togglePresetTag(preset)}
-                            style={{
-                              border: active ? '1px solid #5B44E9' : '1px solid #e5e7eb',
-                              backgroundColor: active ? '#EEF2FF' : 'white',
-                              color: active ? '#5B44E9' : '#4B5563',
-                              padding: '8px 14px', borderRadius: '12px', fontSize: '0.8rem',
-                              fontWeight: active ? 600 : 500, cursor: 'pointer', transition: 'all 0.2s'
-                            }}
-                          >
-                            {preset}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -649,8 +803,8 @@ export default function NewTask({ onCancel, onTaskCreated }) {
               {currentStep === 4 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>Launch Verification</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Please verify the pipeline parameters below before triggering the AI flow.</p>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>Start AI Analysis & Scoping</h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Please review the parameters below before sending the document for AI analysis.</p>
                   </div>
 
                   {/* Overview Cards */}
@@ -713,22 +867,27 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                       )}
                     </div>
 
-                    {/* Category Tags Count */}
-                    {tags.length > 0 && (
-                      <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', backgroundColor: 'white' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', marginBottom: '10px' }}>
-                          <Tag size={16} color="#5B44E9" />
-                          <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>Category Scopes</h4>
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {tags.map(t => (
-                            <span key={t} style={{ fontSize: '0.75rem', fontWeight: 600, color: '#5B44E9', backgroundColor: '#EEF2FF', padding: '4px 10px', borderRadius: '20px' }}>
-                              {t}
-                            </span>
-                          ))}
-                        </div>
+                    {/* Examination Split Parameters */}
+                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', backgroundColor: 'white' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', marginBottom: '10px' }}>
+                        <FileText size={16} color="#5B44E9" />
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>Examination Split Parameters</h4>
                       </div>
-                    )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Examination Start Page:</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-dark)' }}>
+                            {examStartPage ? `Page ${examStartPage}` : 'Auto-detected / Full Document'}
+                          </span>
+                        </div>
+                        {examStartPage && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#4B5563', marginTop: '4px' }}>
+                            <span>Cover Pages: 1 - {examStartPage - 1}</span>
+                            <span>Examination Pages: {examStartPage} - {pdfDocument ? pdfDocument.numPages : 'End'}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
                   </div>
                 </div>
@@ -744,10 +903,38 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                   onClick={currentStep === 4 ? handleLaunchPipeline : nextStep}
                   style={{ backgroundColor: currentStep === 4 ? '#22c55e' : '#5B44E9' }}
                 >
-                  {currentStep === 4 ? 'Launch Pipeline' : 'Next Step'}
+                  {currentStep === 4 ? 'Start AI Analysis' : 'Next Step'}
                 </button>
               </div>
             </>
+          )}
+          {showFullViewModal && (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
+              <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', height: '100%', backgroundColor: 'white', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+                {/* Modal Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-dark)' }}>PDF Full View</h3>
+                  <button 
+                    onClick={() => {
+                      setShowFullViewModal(false);
+                      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+                      setPdfUrl(null);
+                    }} 
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px' }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                {/* Modal Body (Iframe) */}
+                <div style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
+                  <iframe 
+                    src={pdfUrl} 
+                    style={{ width: '100%', height: '100%', border: 'none' }} 
+                    title="PDF Document"
+                  />
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

@@ -114,6 +114,27 @@ body {
   position: relative;
 }
 
+.sidebar-logo .beta-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #EF4444;
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-top: 3px;
+  display: inline-block;
+  line-height: 1;
+}
+
+.app-container.dark-mode .sidebar-logo .beta-badge {
+  color: #FCA5A5;
+  background-color: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 .sidebar-logo .toggle-icon {
   position: absolute;
   right: 20px;
@@ -1022,4 +1043,73 @@ h1 {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Beta Banner Alert */
+.beta-banner-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%);
+  border: 1px solid #FEE2E2;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.02);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.beta-banner-container:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.05);
+}
+
+.app-container.dark-mode .beta-banner-container {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-color: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.beta-banner-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+  flex-shrink: 0;
+}
+
+.app-container.dark-mode .beta-banner-icon-wrap {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #F87171;
+}
+
+.beta-banner-content {
+  flex: 1;
+}
+
+.beta-banner-content h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #991B1B;
+}
+
+.app-container.dark-mode .beta-banner-content h4 {
+  color: #FCA5A5;
+}
+
+.beta-banner-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #B91C1C;
+  line-height: 1.45;
+}
+
+.app-container.dark-mode .beta-banner-content p {
+  color: #FCA5A5;
+  opacity: 0.85;
 }

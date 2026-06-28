@@ -211,6 +211,19 @@ export default function Usage() {
           <span>Enterprise Pay-As-You-Go ($1.00/page)</span>
         </div>
       </div>
+      
+      {/* Beta Free Usage Banner */}
+      <div className="beta-banner-container">
+        <div className="beta-banner-icon-wrap">
+          <AlertCircle size={20} />
+        </div>
+        <div className="beta-banner-content">
+          <h4>Beta Preview Mode — Free of Charge</h4>
+          <p>
+            VerbaLex AI is currently in active development. During this beta phase, you can process tasks, run speech transcriptions, and utilize all platform features completely free of charge. No actual charges will be processed, and no invoices will be generated.
+          </p>
+        </div>
+      </div>
 
       {/* Aggregate Overview Metrics Cards */}
       <div className="overview-cards-grid">

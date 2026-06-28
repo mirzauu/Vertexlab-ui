@@ -536,3 +536,140 @@
   50% { opacity: 1; }
   100% { opacity: 0.6; }
 }
+
+/* Dark Mode Overrides for History Page */
+.dark-mode .history-page-container {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+.dark-mode .breadcrumb-nav a,
+.dark-mode .breadcrumb-nav span.active-crumb {
+  color: var(--text-gray);
+}
+
+.dark-mode .breadcrumb-nav a:hover,
+.dark-mode .breadcrumb-nav span.active-crumb {
+  color: #34D399;
+}
+
+.dark-mode .header-icon-wrapper {
+  background: linear-gradient(135deg, #374151 0%, #111827 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.dark-mode .header-text-info h1 {
+  color: white;
+}
+
+.dark-mode .btn-more-circle {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-gray);
+}
+
+.dark-mode .btn-more-circle:hover {
+  background-color: #2D2D35;
+}
+
+.dark-mode .filter-dropdown-btn,
+.dark-mode .filter-funnel-btn,
+.dark-mode .btn-export {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .filter-dropdown-btn:hover,
+.dark-mode .filter-funnel-btn:hover,
+.dark-mode .btn-export:hover {
+  background-color: #2D2D35;
+  border-color: #4B5563;
+}
+
+.dark-mode .search-input-field {
+  background-color: #1F2025;
+  border-color: var(--border-color);
+  color: white;
+}
+
+.dark-mode .search-input-field:focus {
+  background-color: var(--card-bg);
+  border-color: var(--primary);
+}
+
+.dark-mode .table-card-wrapper {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .redesigned-table th {
+  background-color: #1F2025;
+  color: var(--text-gray);
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .redesigned-table td {
+  border-bottom-color: var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .redesigned-table tr:hover {
+  background-color: #1F2025;
+}
+
+.dark-mode .rounded-checkbox {
+  background-color: var(--card-bg);
+  border-color: #4B5563;
+}
+
+.dark-mode .booking-no-cell {
+  color: white;
+}
+
+.dark-mode .capsule-user-cell {
+  background-color: #1F2025;
+  border-color: var(--border-color);
+}
+
+.dark-mode .capsule-name-text {
+  color: var(--text-dark);
+}
+
+.dark-mode .btn-row-menu:hover {
+  background-color: #2D2D35;
+  color: white;
+}
+
+.dark-mode .btn-pagination {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+
+.dark-mode .btn-pagination:hover:not(:disabled) {
+  background-color: #2D2D35;
+  border-color: #4B5563;
+  color: white;
+}
+
+.dark-mode .btn-page-number {
+  color: var(--text-gray);
+}
+
+.dark-mode .btn-page-number:hover:not(.active-page) {
+  background-color: #2D2D35;
+  color: white;
+}
+
+.dark-mode .btn-page-number.active-page {
+  background-color: var(--primary);
+  color: white;
+}
+
+.dark-mode .skeleton-title, 
+.dark-mode .skeleton-text, 
+.dark-mode .skeleton-button, 
+.dark-mode .skeleton-icon {
+  background-color: #2D2D35;
+}

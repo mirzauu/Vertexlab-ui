@@ -126,31 +126,26 @@ export default function ReviewEdit({ task, onBack }) {
 
     if (!session.dataPromise) {
       session.dataPromise = (async () => {
-        // Fetch results & files in parallel
-        const [res, filesRes] = await Promise.all([
-          api(`/api/v1/organizations/${orgId}/tasks/${task.id}/pipeline/results`, { signal }),
-          api(`/api/v1/organizations/${orgId}/tasks/${task.id}/files`, { signal })
-        ]);
+        // Single request: replaces the old Promise.all([pipeline/results, tasks/files]) pattern
+        const res = await api(
+          `/api/v1/organizations/${orgId}/tasks/${task.id}/pipeline/workstation`,
+          { signal }
+        );
 
-        let resultsData = null;
-        if (res.ok) {
-          resultsData = await res.json();
+        if (!res.ok) {
+          throw new Error(`Workstation fetch failed: ${res.status}`);
         }
 
-        let taskFiles = [];
-        if (filesRes.ok) {
-          taskFiles = await filesRes.json();
-        }
-
-        session.resultsData = resultsData;
-        session.taskFiles = taskFiles;
-        return { resultsData, taskFiles };
+        const payload = await res.json();
+        // payload = { results: {...}, audio_file: { id, file_path, file_type } | null }
+        session.resultsData = payload.results ?? null;
+        session.audioFileInfo = payload.audio_file ?? null;
+        return { resultsData: session.resultsData, audioFileInfo: session.audioFileInfo };
       })();
     }
 
-    const startAudioDownload = (taskFiles, resultsData) => {
+    const startAudioDownload = (audioFileInfo) => {
       if (session.audioPromise) {
-        // If promise exists, hook the .then handler to this mount instance
         session.audioPromise.then((url) => {
           if (!signal.aborted) {
             if (url) setAudioUrl(url);
@@ -160,20 +155,15 @@ export default function ReviewEdit({ task, onBack }) {
         return;
       }
 
-      const audioFile = taskFiles.find(f => 
-        f.file_type === 'audio' || 
-        (resultsData && f.file_path === resultsData.audio_file_path)
-      );
-
-      if (!audioFile) {
-        console.warn("No audio files attached to this task to play.");
+      if (!audioFileInfo) {
+        console.warn("No audio file attached to this task.");
         return;
       }
 
       setAudioLoading(true);
       session.audioPromise = (async () => {
         try {
-          const audioRes = await api(`/api/v1/files/${audioFile.id}/download`, { signal });
+          const audioRes = await api(`/api/v1/files/${audioFileInfo.id}/download`, { signal });
           if (audioRes.ok) {
             const blob = await audioRes.blob();
             const url = URL.createObjectURL(blob);
@@ -202,7 +192,7 @@ export default function ReviewEdit({ task, onBack }) {
 
     const loadWorkstationData = async () => {
       try {
-        const { resultsData, taskFiles } = await session.dataPromise;
+        const { resultsData, audioFileInfo } = await session.dataPromise;
         if (!signal.aborted) {
           if (resultsData) setResults(resultsData);
           setLoading(false);
@@ -211,8 +201,8 @@ export default function ReviewEdit({ task, onBack }) {
         if (session.audioUrl) {
           setAudioUrl(session.audioUrl);
           setAudioLoading(false);
-        } else if (taskFiles) {
-          startAudioDownload(taskFiles, resultsData);
+        } else {
+          startAudioDownload(audioFileInfo);
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -752,15 +742,12 @@ export default function ReviewEdit({ task, onBack }) {
           className="back-btn" 
           onClick={onBack} 
           style={{ 
+            padding: '8px 16px', 
+            borderRadius: '10px', 
+            fontWeight: '600', 
             display: 'flex', 
             alignItems: 'center', 
             gap: '8px', 
-            background: 'white', 
-            border: '1px solid var(--border-color)', 
-            borderRadius: '10px',
-            color: 'var(--text-dark)', 
-            fontSize: '0.88rem', 
-            fontWeight: '600', 
             cursor: 'pointer', 
             padding: '8px 16px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',

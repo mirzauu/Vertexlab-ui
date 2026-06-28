@@ -89,3 +89,22 @@ class PipelineDetailedResultRead(BaseModel):
     matches: Optional[list] = None
     document: Optional[AIDocumentRead] = None
 
+
+class AudioFileInfo(BaseModel):
+    """Minimal audio file info embedded in the workstation payload."""
+    id: str
+    file_path: str
+    file_type: str
+
+    model_config = {"from_attributes": True}
+
+
+class WorkstationRead(BaseModel):
+    """
+    Combined workstation payload: pipeline results + audio file metadata.
+    Replaces the two-request pattern (pipeline/results + tasks/files) with a
+    single round-trip so the ReviewEdit page loads faster.
+    """
+    results: PipelineDetailedResultRead
+    audio_file: Optional[AudioFileInfo] = None
+

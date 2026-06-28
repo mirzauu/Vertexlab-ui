@@ -33,11 +33,11 @@ Your task:
 3. Do NOT add information that isn't in either source.
 4. Do NOT remove content — correct it.
 
-Return ONLY a valid JSON array where each element has:
+Return ONLY a valid JSON object with a single key "corrections", which contains an array where each element has:
 - "raw_chunk_id": same as input
 - "corrected_text": your corrected version of the raw_chunk_text
 
-No extra commentary, no markdown fences, ONLY the JSON array."""
+No extra commentary, no markdown fences, ONLY the JSON object."""
 
 
 class DocumentGenerationStep(BasePipelineStep):
@@ -118,7 +118,6 @@ class DocumentGenerationStep(BasePipelineStep):
                             {"role": "system", "content": SYSTEM_PROMPT},
                             {"role": "user", "content": json.dumps(input_entries, ensure_ascii=False)},
                         ],
-                        temperature=0.2,
                         response_format={"type": "json_object"},
                     )
 

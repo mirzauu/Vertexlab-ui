@@ -12,3 +12,5 @@ from app.models.ai_document import AIDocument  # noqa: F401
 from app.models.subscription import Subscription  # noqa: F401
 from app.models.activity import ActivityLog, UsageMetric  # noqa: F401
 from app.models.usage import UsageRecord, BillingSummary, Payment  # noqa: F401
+from app.models.help_message import HelpMessage  # noqa: F401
+
