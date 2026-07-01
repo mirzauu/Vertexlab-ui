@@ -712,7 +712,7 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="main-content" style={(activeView === 'history' || activeView === 'history-details') ? { paddingTop: '32px' } : activeView === 'review' ? { paddingTop: '16px', overflow: 'hidden' } : activeView === 'scopist' ? { padding: 0 } : {}}>
+      <main className="main-content" style={(activeView === 'history' || activeView === 'history-details') ? { paddingTop: '32px' } : (activeView === 'review' && selectedReviewTask) ? { paddingTop: '16px', overflow: 'hidden' } : activeView === 'review' ? { paddingTop: '16px' } : activeView === 'scopist' ? { padding: 0 } : {}}>
         {/* Header */}
         {activeView !== 'scopist' && activeView !== 'history' && activeView !== 'history-details' && activeView !== 'review' && <header className="header"></header>}
 

@@ -296,7 +296,6 @@ export default function Auth({ onLogin }) {
                     <label>OTP Code</label>
                     <input 
                       type="text" 
-                      placeholder="1234" 
                       maxLength="4"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -370,7 +369,6 @@ export default function Auth({ onLogin }) {
                     <label>OTP Code</label>
                     <input 
                       type="text" 
-                      placeholder="1234" 
                       maxLength="4"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
