@@ -1227,3 +1227,55 @@
 .dark-mode .doc-empty-state {
   border-color: #4B5563;
 }
+
+/* Verify toggle styling */
+.verify-toggle-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.verify-toggle-wrapper .verify-tick-default {
+  display: flex !important;
+}
+
+.verify-toggle-wrapper .verify-pen-hover {
+  display: none !important;
+}
+
+.doc-paragraph:hover .verify-toggle-wrapper .verify-tick-default {
+  display: none !important;
+}
+
+.doc-paragraph:hover .verify-toggle-wrapper .verify-pen-hover {
+  display: flex !important;
+}
+
+.verify-tick-hover {
+  display: none !important;
+}
+
+.doc-paragraph:hover .verify-tick-hover {
+  display: flex !important;
+}
+
+/* Verified state styles */
+.doc-paragraph.verified {
+  border-left: 3px solid #10B981 !important;
+  background-color: rgba(16, 185, 129, 0.015) !important;
+}
+
+.dark-mode .doc-paragraph.verified {
+  background-color: rgba(16, 185, 129, 0.05) !important;
+}
+
+.doc-paragraph.verified .doc-paragraph-text {
+  color: #059669 !important;
+  cursor: default;
+}
+
+.dark-mode .doc-paragraph.verified .doc-paragraph-text {
+  color: #34d399 !important;
+}
+

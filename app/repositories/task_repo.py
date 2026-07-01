@@ -5,6 +5,7 @@ Task repository with organization-scoped queries and file management.
 from uuid import UUID
 from typing import Optional, Sequence
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.repositories.base import BaseRepository
 from app.models.task import Task, TaskFile, TaskStatus
@@ -22,7 +23,9 @@ class TaskRepository(BaseRepository[Task]):
         search: Optional[str] = None,
     ) -> Sequence[Task]:
         """Get tasks for an organization with optional filters."""
-        stmt = select(Task).where(Task.organization_id == org_id)
+        stmt = select(Task).where(Task.organization_id == org_id).options(
+            selectinload(Task.ai_documents)
+        )
 
         if status:
             stmt = stmt.where(Task.status == status)

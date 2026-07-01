@@ -43,6 +43,19 @@ class HelpService:
             result = await self.db.execute(select(Organization.name).where(Organization.id == org_id))
             org_name = result.scalar_one_or_none() or "Unknown Organization"
             asyncio.create_task(self._notify_support(org_id, org_name, user_name, content))
+        # Send email notification to user if replied by technician
+        elif sender_type == "support":
+            if message.user and message.user.email:
+                result = await self.db.execute(select(Organization.name).where(Organization.id == org_id))
+                org_name = result.scalar_one_or_none() or "Unknown Organization"
+                asyncio.create_task(
+                    self._notify_user(
+                        user_email=message.user.email,
+                        org_name=org_name,
+                        technician_name=user_name,
+                        content=content
+                    )
+                )
 
         return message
 
@@ -65,6 +78,25 @@ class HelpService:
         support_email = settings.SUPPORT_EMAIL
         if support_email:
             await send_email_async(support_email, subject, html_content)
+
+    async def _notify_user(self, user_email: str, org_name: str, technician_name: str, content: str) -> None:
+        """Helper to send support reply notification email to the user."""
+        subject = f"[VerbaLex Support] New message from {technician_name}"
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <h2 style="color: #5B44E9; margin-top: 0;">New Support Reply</h2>
+          <p>Hi,</p>
+          <p>Our support technician has replied to your support ticket for <strong>{org_name}</strong>:</p>
+          <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #5B44E9; font-size: 15px; color: #1f2937;">
+            {content.replace('\n', '<br/>')}
+          </div>
+          <p>You can view this message and reply by visiting the Help section in your dashboard.</p>
+          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #9ca3af;">This is an automated notification from VerbaLex AI Support System.</p>
+        </div>
+        """
+        await send_email_async(user_email, subject, html_content)
+
 
     async def generate_ai_response(self, org_id: UUID, user_id: UUID, user_message: str) -> HelpMessage:
         """Call OpenAI to generate a support response and save it as an AI reply."""

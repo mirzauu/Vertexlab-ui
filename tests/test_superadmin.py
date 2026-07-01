@@ -181,3 +181,92 @@ class TestSuperAdminEndpoints:
         assert response.status_code == 400
         assert "deactivated user" in response.json()["detail"].lower()
 
+    async def test_help_desk_endpoints_success(self, client: AsyncClient):
+        """Test help threads retrieval, history retrieval, and replying as support."""
+        # 1. Create a user and workspace, and send a help message from the user
+        email = f"helpuser_{uuid4().hex[:6]}@example.com"
+        user_token = await self._get_auth_token(client, email, "HelpUser")
+        user_headers = {"Authorization": f"Bearer {user_token}"}
+
+        # Create workspace org
+        org_resp = await client.post(
+            "/api/v1/organizations/",
+            json={"name": "Help Desk Org"},
+            headers=user_headers,
+        )
+        assert org_resp.status_code == 201
+        org_id = org_resp.json()["id"]
+
+        # Send support message
+        send_msg_resp = await client.post(
+            f"/api/v1/organizations/{org_id}/help/messages",
+            json={"content": "Need help with STT pipeline."},
+            headers=user_headers,
+        )
+        assert send_msg_resp.status_code == 200
+
+        # Retrieve user ID
+        users_resp = await client.get("/api/v1/users/me", headers=user_headers)
+        user_id = users_resp.json()["id"]
+
+        # 2. Authenticate as Super Admin and get threads
+        super_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        super_headers = {"Authorization": f"Bearer {super_token}"}
+
+        threads_resp = await client.get("/api/v1/superadmin/help/threads", headers=super_headers)
+        assert threads_resp.status_code == 200
+        threads = threads_resp.json()
+        assert len(threads) > 0
+        target_thread = next(t for t in threads if t["organization_id"] == org_id)
+        assert target_thread["user_name"] == "HelpUser Test"
+        assert target_thread["last_message_content"] != ""
+
+        # 3. Retrieve thread message history as Super Admin
+        history_resp = await client.get(
+            f"/api/v1/superadmin/help/threads/{org_id}/messages",
+            headers=super_headers,
+        )
+        assert history_resp.status_code == 200
+        history = history_resp.json()
+        assert len(history) > 0
+        assert history[0]["content"] == "Need help with STT pipeline."
+
+        # 4. Reply to the thread as technician
+        reply_payload = {"content": "We are investigating the STT issue.", "user_id": user_id}
+        reply_resp = await client.post(
+            f"/api/v1/superadmin/help/threads/{org_id}/reply",
+            json=reply_payload,
+            headers=super_headers,
+        )
+        assert reply_resp.status_code == 200
+        reply_data = reply_resp.json()
+        assert reply_data["content"] == "We are investigating the STT issue."
+        assert reply_data["sender_type"] == "support"
+        assert reply_data["user_name"] == "Support Technician"
+
+        # 5. Verify the user sees the reply as a support technician
+        user_history_resp = await client.get(
+            f"/api/v1/organizations/{org_id}/help/messages",
+            headers=user_headers,
+        )
+        assert user_history_resp.status_code == 200
+        user_history = user_history_resp.json()
+        tech_reply = next(m for m in user_history if m["sender_type"] == "support")
+        assert tech_reply["user_name"] == "Support Technician"
+        assert tech_reply["content"] == "We are investigating the STT issue."
+
+    async def test_help_desk_denied_for_regular_user(self, client: AsyncClient):
+        """Test that regular users cannot access support desk routes."""
+        email = f"reg_{uuid4().hex[:6]}@example.com"
+        token = await self._get_auth_token(client, email, "Regular")
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Try threads
+        resp = await client.get("/api/v1/superadmin/help/threads", headers=headers)
+        assert resp.status_code == 403
+
+        # Try reply
+        resp = await client.post(f"/api/v1/superadmin/help/threads/{uuid4()}/reply", json={"content": "test", "user_id": str(uuid4())}, headers=headers)
+        assert resp.status_code == 403
+
+

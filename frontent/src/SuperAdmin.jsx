@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from './services/api';
 import './SuperAdmin.css';
 import { 
   Users, Building2, ListTodo, ShieldAlert, ShieldCheck, 
   Search, RefreshCw, CheckCircle, XCircle, Loader2, UserMinus, UserCheck, 
-  ArrowLeft, Calendar, HelpCircle, Activity, Globe, Mail, LogIn
+  ArrowLeft, Calendar, HelpCircle, Activity, Globe, Mail, LogIn, MessageSquare, Bot, Shield, Send
 } from 'lucide-react';
 
 export default function SuperAdmin() {
@@ -141,6 +141,98 @@ export default function SuperAdmin() {
     }
   };
 
+  // Support help desk states
+  const [threads, setThreads] = useState([]);
+  const [selectedThread, setSelectedThread] = useState(null);
+  const [threadMessages, setThreadMessages] = useState([]);
+  const [replyText, setReplyText] = useState('');
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
+  const chatEndRef = useRef(null);
+
+  const fetchThreads = async () => {
+    setLoading(true);
+    try {
+      const res = await api('/api/v1/superadmin/help/threads');
+      if (res.ok) {
+        const data = await res.json();
+        setThreads(data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching help threads:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchThreadMessages = async (orgId) => {
+    setLoadingMessages(true);
+    try {
+      const res = await api(`/api/v1/superadmin/help/threads/${orgId}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        setThreadMessages(data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching thread messages:', err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const handleSelectThread = (thread) => {
+    setSelectedThread(thread);
+    fetchThreadMessages(thread.organization_id);
+  };
+
+  const handleSendReply = async (e) => {
+    if (e) e.preventDefault();
+    if (!replyText.trim() || sendingReply || !selectedThread) return;
+    
+    const textToSend = replyText.trim();
+    setReplyText('');
+    setSendingReply(true);
+    
+    try {
+      const res = await api(`/api/v1/superadmin/help/threads/${selectedThread.organization_id}/reply`, {
+        method: 'POST',
+        body: JSON.stringify({
+          content: textToSend,
+          user_id: selectedThread.user_id
+        })
+      });
+      if (res.ok) {
+        const newMsg = await res.json();
+        setThreadMessages(prev => [...prev, newMsg]);
+        
+        // Refresh the threads list to update snippet
+        const resThreads = await api('/api/v1/superadmin/help/threads');
+        if (resThreads.ok) {
+          const dataThreads = await resThreads.json();
+          setThreads(dataThreads || []);
+          const updatedThread = dataThreads.find(t => t.organization_id === selectedThread.organization_id);
+          if (updatedThread) {
+            setSelectedThread(updatedThread);
+          }
+        }
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to send reply.');
+        setReplyText(textToSend);
+      }
+    } catch (err) {
+      console.error('Error sending reply:', err);
+      setReplyText(textToSend);
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  // Scroll to bottom of chat when new message is added or thread is loaded
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [threadMessages]);
+
   useEffect(() => {
     fetchStats();
   }, []);
@@ -148,6 +240,8 @@ export default function SuperAdmin() {
   useEffect(() => {
     setSearchQuery('');
     setSelectedItemDetail(null);
+    setSelectedThread(null);
+    setThreadMessages([]);
     if (activeTab === 'overview') {
       fetchStats();
     } else if (activeTab === 'users') {
@@ -156,6 +250,8 @@ export default function SuperAdmin() {
       fetchOrganizations(1);
     } else if (activeTab === 'tasks') {
       fetchTasks(1);
+    } else if (activeTab === 'support') {
+      fetchThreads();
     }
   }, [activeTab]);
 
@@ -244,6 +340,7 @@ export default function SuperAdmin() {
           else if (activeTab === 'users') fetchUsers(currentPage);
           else if (activeTab === 'orgs') fetchOrganizations(currentPage);
           else if (activeTab === 'tasks') fetchTasks(currentPage);
+          else if (activeTab === 'support') fetchThreads();
         }} className="diag-refresh-btn" title="Refresh Current View">
           <RefreshCw size={16} />
           Refresh
@@ -274,6 +371,13 @@ export default function SuperAdmin() {
           Organizations Audit
         </button>
         <button 
+          className={`sa-tab-btn ${activeTab === 'support' ? 'active' : ''}`}
+          onClick={() => setActiveTab('support')}
+        >
+          <MessageSquare size={16} />
+          Support Help Desk
+        </button>
+        <button 
           className={`sa-tab-btn ${activeTab === 'tasks' ? 'active' : ''}`}
           onClick={() => setActiveTab('tasks')}
         >
@@ -282,8 +386,8 @@ export default function SuperAdmin() {
         </button>
       </div>
 
-      {/* SEARCH BAR (if not overview tab) */}
-      {activeTab !== 'overview' && !selectedItemDetail && (
+      {/* SEARCH BAR (if not overview or support tab) */}
+      {activeTab !== 'overview' && activeTab !== 'support' && !selectedItemDetail && (
         <div className="sa-search-bar-wrap">
           <Search size={18} className="sa-search-icon" />
           <input 
@@ -673,8 +777,167 @@ export default function SuperAdmin() {
         </div>
       )}
 
+      {/* TAB CONTENT: SUPPORT TICKETS DESK */}
+      {activeTab === 'support' && !loading && (
+        <div className="sa-helpdesk-container">
+          {/* Left panel - threads */}
+          <div className="sa-helpdesk-sidebar">
+            <div className="sa-sidebar-header">
+              <h3>Incoming Tickets</h3>
+              <span className="sa-sidebar-badge">{threads.length} active</span>
+            </div>
+            
+            <div className="sa-threads-list">
+              {threads.length === 0 ? (
+                <div className="sa-threads-empty">
+                  No active support requests.
+                </div>
+              ) : (
+                threads.map(t => {
+                  const isSelected = selectedThread && selectedThread.organization_id === t.organization_id;
+                  const needsReply = t.last_sender_type === 'user';
+                  
+                  return (
+                    <div 
+                      key={`${t.organization_id}-${t.user_id}`}
+                      className={`sa-thread-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => handleSelectThread(t)}
+                    >
+                      <div className="sa-thread-meta-row">
+                        <span className="sa-thread-org-name">{t.organization_name}</span>
+                        {t.latest_message_at && (
+                          <span className="sa-thread-time">
+                            {new Date(t.latest_message_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="sa-thread-user-row">
+                        <span className="sa-thread-user-name">{t.user_name}</span>
+                        <span className="sa-thread-email">({t.user_email})</span>
+                      </div>
+                      
+                      <div className="sa-thread-snippet-row">
+                        <p className="sa-thread-snippet">{t.last_message_content || 'No message content'}</p>
+                        {needsReply && (
+                          <span className="sa-badge-needs-reply">Needs Reply</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Right panel - chat log */}
+          <div className="sa-helpdesk-chatview">
+            {selectedThread ? (
+              <div className="sa-chat-wrapper">
+                {/* Header */}
+                <div className="sa-chat-header">
+                  <div className="sa-chat-header-info">
+                    <h4>{selectedThread.organization_name}</h4>
+                    <div className="sa-chat-header-meta">
+                      <span><strong>Sender:</strong> {selectedThread.user_name}</span>
+                      <span className="separator">•</span>
+                      <span>{selectedThread.user_email}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Messages Log */}
+                <div className="sa-chat-messages-flow">
+                  {loadingMessages ? (
+                    <div className="sa-chat-loading">
+                      <Loader2 className="animate-spin" size={24} />
+                      <span>Loading conversation history...</span>
+                    </div>
+                  ) : (
+                    <div className="sa-chat-messages-list">
+                      {threadMessages.length === 0 ? (
+                        <p className="sa-chat-messages-empty">No messages in this conversation.</p>
+                      ) : (
+                        threadMessages.map((msg, idx) => {
+                          const isSupport = msg.sender_type === 'support';
+                          const isUser = msg.sender_type === 'user';
+                          
+                          const showDateSeparator = idx === 0 || 
+                            new Date(threadMessages[idx - 1].created_at).toDateString() !== new Date(msg.created_at).toDateString();
+
+                          const formatMsgTime = (dtStr) => {
+                            if (!dtStr) return '';
+                            return new Date(dtStr).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                          };
+
+                          const formatMsgDate = (dtStr) => {
+                            if (!dtStr) return '';
+                            return new Date(dtStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                          };
+
+                          return (
+                            <React.Fragment key={msg.id}>
+                              {showDateSeparator && (
+                                <div className="sa-chat-date-separator">
+                                  <span>{formatMsgDate(msg.created_at)}</span>
+                                </div>
+                              )}
+                              
+                              <div className={`sa-chat-message-row ${isSupport ? 'support-row' : msg.sender_type === 'ai' ? 'ai-row' : 'user-row'}`}>
+                                <div className="sa-chat-avatar">
+                                  {isSupport ? <Shield size={14} /> : msg.sender_type === 'ai' ? <Bot size={14} /> : <Users size={14} />}
+                                </div>
+                                
+                                <div className="sa-chat-bubble-container">
+                                  <div className="sa-chat-bubble-header">
+                                    <span className="sa-chat-sender-name">{msg.user_name}</span>
+                                    <span className="sa-chat-msg-time">{formatMsgTime(msg.created_at)}</span>
+                                  </div>
+                                  <div className="sa-chat-bubble-content">
+                                    {msg.content}
+                                  </div>
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          );
+                        })
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Form */}
+                <form onSubmit={handleSendReply} className="sa-chat-input-form">
+                  <input
+                    type="text"
+                    placeholder={`Reply to ${selectedThread.user_name} (Shows as Support Technician)...`}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={sendingReply || loadingMessages}
+                    required
+                  />
+                  <button type="submit" disabled={sendingReply || !replyText.trim() || loadingMessages}>
+                    {sendingReply ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+                    Send Reply
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="sa-chat-empty-state">
+                <div className="sa-empty-icon-wrap">
+                  <MessageSquare size={48} />
+                </div>
+                <h3>Technical Support Desk</h3>
+                <p>Select a ticket thread from the sidebar to view user messages and reply as a Support Technician.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Spinner for tab transitions */}
-      {loading && activeTab !== 'overview' && (
+      {loading && activeTab !== 'overview' && activeTab !== 'support' && (
         <div className="sa-tab-spinner">
           <Loader2 className="animate-spin" size={32} />
           <span>Synchronizing records database...</span>

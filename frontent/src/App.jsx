@@ -32,6 +32,7 @@ function ReviewPage({ onSelect }) {
 
   useEffect(() => {
     const orgId = localStorage.getItem('organization_id');
+    console.log("[DEBUG] ReviewPage useEffect mounting, orgId:", orgId);
     if (!orgId) {
       setLoading(false);
       return;
@@ -43,6 +44,15 @@ function ReviewPage({ onSelect }) {
         const res = await api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=50`);
         if (!res.ok) throw new Error("Failed to fetch tasks");
         const data = await res.json();
+        console.log("[DEBUG] ReviewPage loadTasks fetched tasks:", data.items?.map(t => ({
+          name: t.name, 
+          docs: t.ai_documents?.map(d => ({
+            id: d.id, 
+            version: d.version,
+            chunks: d.corrected_chunks?.length, 
+            verified: d.corrected_chunks?.filter(c => c.is_verified).length
+          }))
+        })));
         if (isMounted) {
           setTasks(data.items || []);
         }
@@ -99,20 +109,41 @@ function ReviewPage({ onSelect }) {
   };
 
   const filteredTasks = tasks.filter(task => {
+    const doc = (task.ai_documents || [])
+      .filter(d => d.corrected_chunks && d.corrected_chunks.length > 0)
+      .sort((a, b) => {
+        if (a.version !== b.version) return b.version - a.version;
+        return new Date(b.created_at) - new Date(a.created_at);
+      })[0];
+    if (!doc) return false;
+
     const matchesSearch = 
       (task.name || "Untitled Task").toLowerCase().includes(searchQuery.toLowerCase()) || 
       (task.id || "").toLowerCase().includes(searchQuery.toLowerCase());
       
-    const lowerStatus = task.status?.toLowerCase() || "";
+    // Determine computed status for filtering
+    const chunks = doc.corrected_chunks || [];
+    const verifiedCount = chunks.filter(c => c.is_verified).length;
+    const remainingCount = chunks.length - verifiedCount;
+    
+    let computedStatus = task.status?.toLowerCase() || "queued";
+    if (computedStatus === "completed" || computedStatus === "success") {
+      if (remainingCount === 0) {
+        computedStatus = "completed";
+      } else {
+        computedStatus = "in_progress";
+      }
+    }
+
     let isStatusMatch = statusFilter === "all";
     if (statusFilter === "completed") {
-      isStatusMatch = lowerStatus === "completed" || lowerStatus === "success";
+      isStatusMatch = computedStatus === "completed" || computedStatus === "success";
     } else if (statusFilter === "in_progress") {
-      isStatusMatch = lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing";
+      isStatusMatch = computedStatus === "in progress" || computedStatus === "in_progress" || computedStatus === "processing";
     } else if (statusFilter === "failed") {
-      isStatusMatch = lowerStatus === "failed";
+      isStatusMatch = computedStatus === "failed";
     } else if (statusFilter === "queued") {
-      isStatusMatch = lowerStatus === "queued" || lowerStatus === "in queue" || lowerStatus === "queued";
+      isStatusMatch = computedStatus === "queued";
     }
     
     return matchesSearch && isStatusMatch;
@@ -233,15 +264,38 @@ function ReviewPage({ onSelect }) {
                 let statusClass = "status-queued";
                 let statusText = "In Queue";
                 const lowerStatus = task.status?.toLowerCase();
-                if (lowerStatus === "completed" || lowerStatus === "success") {
-                  statusClass = "status-completed";
-                  statusText = "Completed";
+                
+                if (lowerStatus === "failed") {
+                  statusClass = "status-failed";
+                  statusText = "Failed";
                 } else if (lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing") {
                   statusClass = "status-inprogress";
                   statusText = "In Progress";
-                } else if (lowerStatus === "failed") {
-                  statusClass = "status-failed";
-                  statusText = "Failed";
+                } else {
+                  // Find the latest active document with chunks
+                  const doc = (task.ai_documents || [])
+                    .filter(d => d.corrected_chunks && d.corrected_chunks.length > 0)
+                    .sort((a, b) => {
+                      if (a.version !== b.version) return b.version - a.version;
+                      return new Date(b.created_at) - new Date(a.created_at);
+                    })[0];
+                  const chunks = doc?.corrected_chunks || [];
+                  if (chunks.length > 0) {
+                    const verifiedCount = chunks.filter(c => c.is_verified).length;
+                    const remainingCount = chunks.length - verifiedCount;
+                    if (remainingCount === 0) {
+                      statusClass = "status-completed";
+                      statusText = "Completed";
+                    } else {
+                      statusClass = "status-inprogress";
+                      statusText = `${verifiedCount} verified, ${remainingCount} remaining`;
+                    }
+                  } else {
+                    if (lowerStatus === "completed" || lowerStatus === "success") {
+                      statusClass = "status-completed";
+                      statusText = "Completed";
+                    }
+                  }
                 }
 
                 return (

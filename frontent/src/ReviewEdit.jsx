@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ReviewEdit.css';
-import { Play, Pause, SkipBack, SkipForward, Save, Send, ArrowLeft, Loader2, Volume1, Volume2, VolumeX, Zap, Download, FileText, ChevronDown, Sliders, X, Maximize2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Save, Send, ArrowLeft, Loader2, Volume1, Volume2, VolumeX, Zap, Download, FileText, ChevronDown, Sliders, X, Maximize2, Check, Edit3 } from 'lucide-react';
 import { api } from './services/api';
 
 // Module-level trackers for deduplication across StrictMode double-mounts
@@ -93,6 +93,107 @@ export default function ReviewEdit({ task, onBack }) {
   const [highlightTimeRange, setHighlightTimeRange] = useState(null);
   const [isPlayerFloating, setIsPlayerFloating] = useState(false);
   const [isPlayerClosed, setIsPlayerClosed] = useState(false);
+
+  // Diffs & Comparison states
+  const [showAllDiffs, setShowAllDiffs] = useState(false);
+  const [individualDiffs, setIndividualDiffs] = useState({});
+
+  const toggleIndividualDiff = (chunkId) => {
+    setIndividualDiffs(prev => ({
+      ...prev,
+      [chunkId]: !prev[chunkId]
+    }));
+  };
+
+  const isDiffEnabled = (chunkId) => {
+    if (showAllDiffs) return true;
+    return !!individualDiffs[chunkId];
+  };
+
+  // Word-level LCS diff implementation
+  const diffWords = (original, corrected) => {
+    const tokenize = (str) => {
+      if (!str) return [];
+      return str.split(/(\s+)/);
+    };
+
+    const a = tokenize(original);
+    const b = tokenize(corrected);
+
+    const n = a.length;
+    const m = b.length;
+
+    const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        if (a[i - 1] === b[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+        } else {
+          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        }
+      }
+    }
+
+    let i = n, j = m;
+    const diff = [];
+
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+        diff.unshift({ value: a[i - 1], type: 'unchanged' });
+        i--;
+        j--;
+      } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+        diff.unshift({ value: b[j - 1], type: 'added' });
+        j--;
+      } else {
+        diff.unshift({ value: a[i - 1], type: 'removed' });
+        i--;
+      }
+    }
+
+    return diff;
+  };
+
+  const renderWordDiff = (original, corrected) => {
+    const diff = diffWords(original, corrected);
+    return diff.map((part, index) => {
+      if (part.type === 'added') {
+        return (
+          <ins 
+            key={index} 
+            style={{ 
+              backgroundColor: 'rgba(16, 185, 129, 0.15)', 
+              color: '#059669', 
+              textDecoration: 'none', 
+              borderRadius: '2px', 
+              padding: '1px 2px',
+              fontWeight: 550
+            }}
+          >
+            {part.value}
+          </ins>
+        );
+      }
+      if (part.type === 'removed') {
+        return (
+          <del 
+            key={index} 
+            style={{ 
+              backgroundColor: 'rgba(239, 68, 68, 0.12)', 
+              color: '#dc2626', 
+              textDecoration: 'line-through', 
+              borderRadius: '2px', 
+              padding: '1px 2px'
+            }}
+          >
+            {part.value}
+          </del>
+        );
+      }
+      return <span key={index}>{part.value}</span>;
+    });
+  };
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
     const saved = localStorage.getItem('reviewPanelWidth');
     return saved ? parseFloat(saved) : 35;
@@ -608,14 +709,28 @@ export default function ReviewEdit({ task, onBack }) {
     }));
   };
 
-  const handleSaveDocument = async () => {
+  const handleToggleVerifyChunk = (chunkId) => {
+    setLocalChunks(prev => {
+      const updated = prev.map(c => {
+        if (c.raw_chunk_id === chunkId) {
+          return { ...c, is_verified: !c.is_verified };
+        }
+        return c;
+      });
+      // Automatically trigger a silent background save with the updated array
+      handleSaveDocument(updated, true);
+      return updated;
+    });
+  };
+
+  const handleSaveDocument = async (chunksToSave = localChunks, silent = false) => {
     if (!task) return;
-    setIsSaving(true);
+    if (!silent) setIsSaving(true);
     try {
       const orgId = localStorage.getItem('organization_id') || task?.organization_id;
       const payload = {
         title: results?.document?.title || "AI-Corrected Proof Document",
-        corrected_chunks: localChunks.map(c => ({
+        corrected_chunks: chunksToSave.map(c => ({
           raw_chunk_id: c.raw_chunk_id,
           original_raw_text: c.original_raw_text || c.raw_chunk_text || "",
           corrected_text: c.corrected_text !== undefined ? c.corrected_text : (c.raw_chunk_text || c.original_raw_text || ""),
@@ -624,7 +739,8 @@ export default function ReviewEdit({ task, onBack }) {
           confidence_score: c.confidence_score || 0,
           audio_start_time_sec: c.audio_start_time_sec,
           audio_end_time_sec: c.audio_end_time_sec,
-          speakers: c.speakers || []
+          speakers: c.speakers || [],
+          is_verified: c.is_verified || false
         }))
       };
 
@@ -643,12 +759,16 @@ export default function ReviewEdit({ task, onBack }) {
         ...prev,
         document: updatedDoc
       }));
-      alert('Document draft saved successfully!');
+      if (!silent) {
+        alert('Document draft saved successfully!');
+      }
     } catch (err) {
       console.error('Save document error:', err);
-      alert('Failed to save document.');
+      if (!silent) {
+        alert('Failed to save document.');
+      }
     } finally {
-      setIsSaving(false);
+      if (!silent) setIsSaving(false);
     }
   };
 
@@ -1194,12 +1314,49 @@ export default function ReviewEdit({ task, onBack }) {
                 {loading ? (
                   <div className="skeleton-bar shimmer" style={{ height: '20px', width: '70px', margin: 0, borderRadius: '6px' }} />
                 ) : (
-                  <div className={`doc-badge ${results?.document?.is_draft === false ? 'badge-final' : 'badge-draft'}`}>
-                    {results?.document?.is_draft === false ? 'FINAL' : 'AI DRAFT'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className={`doc-badge ${results?.document?.is_draft === false ? 'badge-final' : 'badge-draft'}`}>
+                      {results?.document?.is_draft === false ? 'FINAL' : 'AI DRAFT'}
+                    </div>
+                    {localChunks.length > 0 && (
+                      <span style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        backgroundColor: 'var(--sidebar-hover)', 
+                        padding: '4px 10px', 
+                        borderRadius: '6px', 
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.8rem',
+                        fontWeight: 650
+                      }}>
+                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Check size={12} style={{ strokeWidth: 3 }} />
+                          {localChunks.filter(c => c.is_verified).length} verified
+                        </span>
+                        <span style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></span>
+                        <span style={{ color: '#ef4444' }}>
+                          {localChunks.filter(c => !c.is_verified).length} remaining
+                        </span>
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
               <div className="doc-actions-group">
+                <button
+                  className={`secondary-btn action-btn-doc ${showAllDiffs ? 'active' : ''}`}
+                  onClick={() => setShowAllDiffs(!showAllDiffs)}
+                  style={{
+                    backgroundColor: showAllDiffs ? 'rgba(91, 68, 233, 0.1)' : 'transparent',
+                    color: showAllDiffs ? 'var(--primary)' : 'var(--text-gray)',
+                    border: '1px solid var(--border-color)',
+                  }}
+                  title="Compare original steno text with AI corrected text"
+                >
+                  <Zap size={16} />
+                  <span>{showAllDiffs ? 'Hide Changes' : 'Show Changes'}</span>
+                </button>
                 <button 
                   className="secondary-btn action-btn-doc" 
                   onClick={handleSaveDocument}
@@ -1325,11 +1482,10 @@ export default function ReviewEdit({ task, onBack }) {
                     const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
                     const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
                     const chunkText = chunk.corrected_text || chunk.raw_chunk_text || chunk.original_raw_text || "";
-
-                    return (
+                      return (
                       <div
                         key={idx}
-                        className={`doc-paragraph ${isActive ? 'active-paragraph' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
+                        className={`doc-paragraph ${chunk.is_verified ? 'verified' : ''} ${isActive ? 'active-paragraph' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
                         onMouseEnter={() => handleCrossPanelHover(chunk.audio_start_time_sec, chunk.audio_end_time_sec)}
                         onMouseLeave={handleCrossPanelLeave}
                         onClick={() => {
@@ -1337,22 +1493,150 @@ export default function ReviewEdit({ task, onBack }) {
                             handleSegmentClick(chunk.audio_start_time_sec);
                           }
                         }}
+                        style={{
+                          borderBottom: '1px solid var(--border-color)',
+                          paddingBottom: '16px',
+                          marginBottom: '16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px'
+                        }}
                       >
-                        <textarea
-                          ref={(el) => {
-                            if (el) {
-                              el.style.height = 'auto';
-                              el.style.height = `${el.scrollHeight}px`;
-                            }
-                          }}
-                          className="doc-paragraph-text"
-                          value={chunkText}
-                          onChange={(e) => {
-                            handleChunkTextChange(chunk.raw_chunk_id, e.target.value);
-                            e.target.style.height = 'auto';
-                            e.target.style.height = `${e.target.scrollHeight}px`;
-                          }}
-                        />
+                        <div className="doc-paragraph-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-gray)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text-dark)' }}>#{chunk.raw_chunk_id}</span>
+                            {chunk.audio_start_time_sec != null && (
+                              <span style={{ backgroundColor: 'var(--sidebar-hover)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 500 }}>
+                                {formatTime(chunk.audio_start_time_sec)} - {formatTime(chunk.audio_end_time_sec)}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {chunk.match_status && (
+                              <span className={`doc-match-status-badge status-${chunk.match_status}`} style={{
+                                fontSize: '0.68rem',
+                                fontWeight: 750,
+                                textTransform: 'uppercase',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: chunk.match_status === 'matched' ? 'rgba(16, 185, 129, 0.1)' : chunk.match_status === 'partial' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                color: chunk.match_status === 'matched' ? '#10b981' : chunk.match_status === 'partial' ? '#f59e0b' : '#ef4444'
+                              }}>
+                                {chunk.match_status}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleIndividualDiff(chunk.raw_chunk_id);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: isDiffEnabled(chunk.raw_chunk_id) ? 'var(--primary)' : '#9CA3AF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '4px',
+                                borderRadius: '6px',
+                                backgroundColor: isDiffEnabled(chunk.raw_chunk_id) ? 'rgba(91, 68, 233, 0.08)' : 'transparent',
+                                transition: 'all 0.2s'
+                              }}
+                              title="Compare original steno text with AI corrected text"
+                            >
+                              <Zap size={14} />
+                            </button>
+
+                            {chunk.is_verified ? (
+                              <div className="verify-toggle-wrapper">
+                                <span className="verify-tick-default" style={{ color: '#10b981', display: 'flex', alignItems: 'center' }} title="Verified chunk">
+                                  <Check size={14} style={{ strokeWidth: 3 }} />
+                                </span>
+                                <button
+                                  type="button"
+                                  className="verify-pen-hover"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleVerifyChunk(chunk.raw_chunk_id);
+                                  }}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--primary)',
+                                    padding: '4px',
+                                    borderRadius: '6px',
+                                    backgroundColor: 'rgba(91, 68, 233, 0.08)',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  title="Unverify chunk to allow edits"
+                                >
+                                  <Edit3 size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="verify-tick-hover"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleVerifyChunk(chunk.raw_chunk_id);
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#10b981',
+                                  padding: '4px',
+                                  borderRadius: '6px',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                  transition: 'all 0.2s'
+                                }}
+                                title="Verify chunk (lock text)"
+                              >
+                                <Check size={14} style={{ strokeWidth: 3 }} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {isDiffEnabled(chunk.raw_chunk_id) ? (
+                          <div className="doc-paragraph-diff-view" style={{
+                            padding: '12px 16px',
+                            backgroundColor: 'var(--sidebar-hover)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '10px',
+                            fontSize: '0.9rem',
+                            lineHeight: '1.5',
+                            whiteSpace: 'pre-wrap',
+                            color: 'var(--text-dark)',
+                            cursor: 'text'
+                          }}>
+                            {renderWordDiff(
+                              chunk.original_raw_text || chunk.raw_chunk_text || "",
+                              chunkText
+                            )}
+                          </div>
+                        ) : (
+                          <textarea
+                            ref={(el) => {
+                              if (el) {
+                                el.style.height = 'auto';
+                                el.style.height = `${el.scrollHeight}px`;
+                              }
+                            }}
+                            className="doc-paragraph-text"
+                            value={chunkText}
+                            readOnly={chunk.is_verified}
+                            onChange={(e) => {
+                              handleChunkTextChange(chunk.raw_chunk_id, e.target.value);
+                              e.target.style.height = 'auto';
+                              e.target.style.height = `${e.target.scrollHeight}px`;
+                            }}
+                          />
+                        )}
                       </div>
                     );
                   })}

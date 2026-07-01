@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.organization import Organization, OrganizationMember
+from app.models.help_message import HelpMessage
 from app.models.task import Task, TaskStatus
 from app.core.exceptions import ForbiddenError, NotFoundError
 
@@ -285,4 +286,146 @@ async def get_all_tasks(
         "total": total_count,
         "page": page,
         "page_size": page_size,
+    }
+
+
+@router.get("/help/threads")
+async def get_help_threads(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Retrieve all help message threads grouped by organization and user."""
+    # Find unique threads
+    stmt = (
+        select(
+            HelpMessage.organization_id,
+            HelpMessage.user_id,
+            Organization.name.label("org_name"),
+            User.email.label("user_email"),
+            User.first_name,
+            User.last_name,
+            func.max(HelpMessage.created_at).label("latest_message_at"),
+        )
+        .join(Organization, Organization.id == HelpMessage.organization_id)
+        .join(User, User.id == HelpMessage.user_id)
+        .group_by(
+            HelpMessage.organization_id,
+            HelpMessage.user_id,
+            Organization.name,
+            User.email,
+            User.first_name,
+            User.last_name,
+        )
+        .order_by(desc("latest_message_at"))
+    )
+    res = await db.execute(stmt)
+    rows = res.all()
+
+    threads = []
+    for row in rows:
+        org_id, user_id, org_name, user_email, first_name, last_name, latest_at = row
+        
+        # Fetch the last message text in this thread
+        last_msg_stmt = (
+            select(HelpMessage.content, HelpMessage.sender_type)
+            .where(
+                HelpMessage.organization_id == org_id,
+                HelpMessage.user_id == user_id,
+            )
+            .order_by(desc(HelpMessage.created_at))
+            .limit(1)
+        )
+        last_msg_res = await db.execute(last_msg_stmt)
+        last_msg_row = last_msg_res.first()
+        last_message_content = last_msg_row[0] if last_msg_row else ""
+        last_sender_type = last_msg_row[1] if last_msg_row else ""
+
+        threads.append({
+            "organization_id": str(org_id),
+            "organization_name": org_name,
+            "user_id": str(user_id),
+            "user_email": user_email,
+            "user_name": f"{first_name} {last_name}",
+            "latest_message_at": latest_at.isoformat() if latest_at else None,
+            "last_message_content": last_message_content,
+            "last_sender_type": last_sender_type,
+        })
+
+    return threads
+
+
+@router.get("/help/threads/{org_id}/messages")
+async def get_help_thread_messages(
+    org_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Retrieve message history for a specific organization support thread."""
+    from app.repositories.help_repo import HelpRepository
+    help_repo = HelpRepository(db)
+    messages = await help_repo.get_by_organization(org_id)
+    
+    result = []
+    for msg in messages:
+        if msg.sender_type == "ai":
+            user_name = "AI Assistant"
+        elif msg.sender_type == "support":
+            user_name = "Support Technician"
+        else:
+            user_name = f"{msg.user.first_name} {msg.user.last_name}" if msg.user else "User"
+            
+        result.append({
+            "id": str(msg.id),
+            "organization_id": str(msg.organization_id),
+            "user_id": str(msg.user_id),
+            "user_name": user_name,
+            "content": msg.content,
+            "sender_type": msg.sender_type,
+            "created_at": msg.created_at.isoformat() if msg.created_at else None,
+        })
+    return result
+
+
+@router.post("/help/threads/{org_id}/reply")
+async def reply_to_help_thread(
+    org_id: UUID,
+    payload: Dict[str, str],
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Submit a technician reply to the support thread."""
+    content = payload.get("content")
+    target_user_id_str = payload.get("user_id")
+    
+    if not content:
+        raise HTTPException(status_code=400, detail="Content is required.")
+        
+    if not target_user_id_str:
+        raise HTTPException(status_code=400, detail="user_id is required.")
+        
+    target_user_id = UUID(target_user_id_str)
+    
+    # Send message as support
+    from app.services.help_service import HelpService
+    from app.repositories.help_repo import HelpRepository
+    
+    help_repo = HelpRepository(db)
+    service = HelpService(help_repo, db)
+    
+    msg = await service.send_message(
+        org_id=org_id,
+        user_id=target_user_id,
+        user_name="Support Technician",
+        content=content,
+        sender_type="support",
+    )
+    
+    return {
+        "id": str(msg.id),
+        "organization_id": str(msg.organization_id),
+        "user_id": str(msg.user_id),
+        "user_name": "Support Technician",
+        "content": msg.content,
+        "sender_type": msg.sender_type,
+        "created_at": msg.created_at.isoformat() if msg.created_at else None,
     }

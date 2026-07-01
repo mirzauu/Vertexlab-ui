@@ -17,6 +17,15 @@ class TaskCreate(BaseModel):
     tags: List[str] = Field(default_factory=list)
 
 
+class AIDocumentTaskRead(BaseModel):
+    id: UUID
+    version: int
+    corrected_chunks: Optional[List[dict]] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class TaskRead(BaseModel):
     """Task details."""
     id: UUID
@@ -28,6 +37,7 @@ class TaskRead(BaseModel):
     tags: list
     created_at: datetime
     updated_at: datetime
+    ai_documents: Optional[List[AIDocumentTaskRead]] = []
 
     model_config = {"from_attributes": True}
 
