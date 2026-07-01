@@ -16,6 +16,7 @@ from app.api.v1.test_stt import router as test_stt_router
 from app.api.v1.test_data_processing import router as test_data_processing_router
 from app.api.v1.billing import router as billing_router
 from app.api.v1.help import router as help_router
+from app.api.v1.superadmin import router as superadmin_router
 
 api_v1_router = APIRouter()
 
@@ -31,3 +32,5 @@ api_v1_router.include_router(test_stt_router)
 api_v1_router.include_router(test_data_processing_router)
 api_v1_router.include_router(billing_router)
 api_v1_router.include_router(help_router)
+api_v1_router.include_router(superadmin_router)
+

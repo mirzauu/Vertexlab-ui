@@ -6,6 +6,7 @@ import HistoryDetails from './HistoryDetails';
 import ReviewEdit from './ReviewEdit';
 import './ReviewPage.css';
 import Admin from './Admin';
+import SuperAdmin from './SuperAdmin';
 import SettingsView from './Settings';
 import Usage from './Usage';
 import Help, { HelpChat } from './Help';
@@ -374,6 +375,9 @@ function App() {
   });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeView, setActiveView] = useState(() => {
+    if (window.location.pathname === '/admin') {
+      return 'superadmin';
+    }
     const hash = window.location.hash.replace('#', '');
     return hash || 'dashboard';
   });
@@ -388,9 +392,18 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const currentHash = window.location.hash.replace('#', '') || 'dashboard';
-    if (currentHash !== activeView) {
-      window.location.hash = activeView;
+    if (activeView === 'superadmin') {
+      if (window.location.pathname !== '/admin') {
+        window.history.pushState(null, '', '/admin');
+      }
+    } else {
+      if (window.location.pathname === '/admin') {
+        window.history.pushState(null, '', '/');
+      }
+      const currentHash = window.location.hash.replace('#', '') || 'dashboard';
+      if (currentHash !== activeView) {
+        window.location.hash = activeView;
+      }
     }
   }, [activeView]);
 
@@ -577,6 +590,13 @@ function App() {
             <Users className="nav-icon" />
             {!isCollapsed && <span>Organization (Admin)</span>}
           </div>
+
+          {currentUser && currentUser.email === 'mirzamailbox0@gmail.com' && (
+            <div className={`nav-item ${activeView === 'superadmin' ? 'active' : ''}`} onClick={() => { setActiveView('superadmin'); setSelectedTask(null); }}>
+              <Shield className="nav-icon" style={{ color: '#A3E635' }} />
+              {!isCollapsed && <span style={{ color: '#A3E635', fontWeight: 'bold' }}>Super Admin</span>}
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-bottom">
@@ -1066,6 +1086,7 @@ function App() {
           }} />
         )}
         {activeView === 'admin' && <Admin />}
+        {activeView === 'superadmin' && <SuperAdmin />}
         {activeView === 'settings' && <SettingsView />}
         {activeView === 'usage' && <Usage />}
         {activeView === 'help' && <Help />}

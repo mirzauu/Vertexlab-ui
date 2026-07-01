@@ -23,6 +23,36 @@ async def lifespan(app: FastAPI):
     import os
     for subdir in ["audio", "raw_data", "output"]:
         os.makedirs(os.path.join(settings.STORAGE_PATH, subdir), exist_ok=True)
+
+    # Seed superadmin user
+    try:
+        from app.db.session import AsyncSessionLocal
+        from app.models.user import User, AuthProvider, UserSettings
+        from sqlalchemy import select
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(User).where(User.email == "mirzamailbox0@gmail.com"))
+            super_user = result.scalar_one_or_none()
+            if not super_user:
+                super_user = User(
+                    email="mirzamailbox0@gmail.com",
+                    first_name="Super",
+                    last_name="Admin",
+                    auth_provider=AuthProvider.LOCAL,
+                    password_hash=None,
+                    is_active=True,
+                )
+                session.add(super_user)
+                await session.commit()
+                await session.refresh(super_user)
+
+                # Create settings
+                user_settings = UserSettings(user_id=super_user.id)
+                session.add(user_settings)
+                await session.commit()
+                print("Superadmin user mirzamailbox0@gmail.com seeded successfully.")
+    except Exception as e:
+        print(f"Error seeding superadmin: {e}")
+
     yield
     # Shutdown: dispose of the database engine
     await engine.dispose()

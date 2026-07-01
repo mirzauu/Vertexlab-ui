@@ -1,0 +1,643 @@
+/* Super Admin Dashboard Stylesheet */
+
+.superadmin-wrapper {
+  animation: fadeIn 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header block */
+.superadmin-header-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 20px;
+}
+
+.title-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.superadmin-shield {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #a3e635 0%, #65a30d 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(163, 230, 53, 0.3);
+}
+
+.title-left h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  letter-spacing: -0.02em;
+}
+
+.title-left p {
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.diag-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.diag-refresh-btn:hover {
+  background-color: var(--sidebar-hover);
+  border-color: var(--text-light);
+}
+
+.diag-refresh-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.diag-refresh-btn:active svg {
+  transform: rotate(180deg);
+}
+
+/* Tabs Navigation */
+.superadmin-tabs-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 4px;
+}
+
+.sa-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px 10px 0 0;
+  border: none;
+  background: transparent;
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.sa-tab-btn:hover {
+  color: var(--text-dark);
+  background-color: var(--sidebar-hover);
+}
+
+.sa-tab-btn.active {
+  color: var(--primary);
+}
+
+.sa-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(91, 68, 233, 0.6);
+}
+
+/* Search bar styling */
+.sa-search-bar-wrap {
+  position: relative;
+  max-width: 480px;
+}
+
+.sa-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+}
+
+.sa-search-field {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  outline: none;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.sa-search-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(91, 68, 233, 0.1);
+}
+
+/* Overview grid and cards */
+.sa-overview-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sa-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.sa-stat-card {
+  border-radius: 20px;
+  padding: 24px;
+  color: white;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+}
+
+.card-purple {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.2);
+}
+
+.card-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.2);
+}
+
+.card-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.2);
+}
+
+.sa-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sa-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.sa-card-inner h2 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.sa-card-inner p {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Detailed analytics layout */
+.sa-detailed-stats {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.sa-data-card {
+  background-color: var(--card-bg);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  padding: 24px;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.01);
+}
+
+.sa-data-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
+
+/* Progress breakdown style */
+.sa-progress-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sa-progress-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-gray);
+}
+
+.stat-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.sa-progress-bar-bg {
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.sa-progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sa-progress-bar-fill.completed {
+  background-color: var(--green);
+}
+
+.sa-progress-bar-fill.failed {
+  background-color: var(--red);
+}
+
+/* System info details card */
+.sa-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-key {
+  font-size: 0.88rem;
+  color: var(--text-gray);
+}
+
+.info-val {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.secure-val {
+  background-color: rgba(163, 230, 53, 0.15);
+  color: #65a30d;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.green-text {
+  color: var(--green);
+}
+
+/* Data Table Structure */
+.sa-table-card {
+  background-color: var(--card-bg);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.sa-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sa-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.sa-data-table th {
+  background-color: var(--sidebar-hover);
+  padding: 14px 18px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sa-data-table td {
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.sa-data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sa-data-table tr:hover td {
+  background-color: var(--sidebar-hover);
+}
+
+.sa-table-empty {
+  text-align: center;
+  color: var(--text-light);
+  padding: 48px 0 !important;
+}
+
+/* User cell customization */
+.sa-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.sa-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.sa-user-name {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.sa-user-email {
+  font-size: 0.78rem;
+  color: var(--text-gray);
+}
+
+/* Organization Tags list */
+.sa-orgs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sa-org-tag {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+}
+
+.sa-org-tag.role-admin {
+  background-color: rgba(91, 68, 233, 0.08);
+  color: var(--primary);
+  border-color: rgba(91, 68, 233, 0.2);
+}
+
+.sa-org-tag.role-editor {
+  background-color: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.sa-org-tag.role-viewer {
+  background-color: var(--sidebar-hover);
+  color: var(--text-gray);
+}
+
+.no-org-tag {
+  font-size: 0.78rem;
+  color: var(--text-light);
+}
+
+/* Link Style */
+.sa-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sa-link:hover {
+  text-decoration: underline;
+}
+
+/* Status Pill Styling */
+.sa-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.auth-local {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+.auth-google {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.sa-status-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.sa-status-completed {
+  background-color: rgba(163, 230, 53, 0.15);
+  color: #65a30d;
+}
+
+.sa-status-failed {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--red);
+}
+
+.sa-status-in_progress {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.sa-status-queued {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* Creator cell */
+.sa-creator-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.sa-creator-cell svg {
+  color: var(--text-light);
+}
+
+/* Action controls */
+.sa-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sa-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deactivate-btn {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: var(--red);
+}
+
+.deactivate-btn:hover:not(:disabled) {
+  background-color: var(--red);
+  color: white;
+}
+
+.activate-btn {
+  background-color: rgba(163, 230, 53, 0.15);
+  color: #65a30d;
+}
+
+.activate-btn:hover:not(:disabled) {
+  background-color: #65a30d;
+  color: white;
+}
+
+/* Organization list name cell */
+.sa-org-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.sa-org-name-cell .org-icon {
+  color: var(--text-light);
+}
+
+/* Pagination bar style */
+.sa-pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--sidebar-hover);
+}
+
+.sa-page-info {
+  font-size: 0.82rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.sa-page-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sa-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-page-btn:hover:not(:disabled) {
+  background-color: var(--sidebar-hover);
+}
+
+/* Telemetry spinner */
+.sa-loader-block, .sa-tab-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 0;
+  gap: 12px;
+  color: var(--text-gray);
+  font-size: 0.95rem;
+}
+
+.sa-tab-spinner {
+  background-color: rgba(255, 255, 255, 0.6);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+  border-radius: 20px;
+}
+
+.dark-mode .sa-tab-spinner {
+  background-color: rgba(21, 22, 26, 0.6);
+}
