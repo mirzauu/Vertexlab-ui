@@ -24,9 +24,20 @@ import {
 
 
 
+// Memory cache for ReviewPage to allow instantaneous view mounting (similar to History tab)
+let _reviewCachedTasks = null;
+let _reviewCachedOrgId = null;
+
 function ReviewPage({ onSelect }) {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState(() => {
+    const orgId = localStorage.getItem('organization_id');
+    if (_reviewCachedTasks && _reviewCachedOrgId === orgId) return _reviewCachedTasks;
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const orgId = localStorage.getItem('organization_id');
+    return !(_reviewCachedTasks && _reviewCachedOrgId === orgId);
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -41,7 +52,7 @@ function ReviewPage({ onSelect }) {
     let isMounted = true;
     const loadTasks = async () => {
       try {
-        const res = await api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=50`);
+        const res = await api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=20`);
         if (!res.ok) throw new Error("Failed to fetch tasks");
         const data = await res.json();
         console.log("[DEBUG] ReviewPage loadTasks fetched tasks:", data.items?.map(t => ({
@@ -49,12 +60,14 @@ function ReviewPage({ onSelect }) {
           docs: t.ai_documents?.map(d => ({
             id: d.id, 
             version: d.version,
-            chunks: d.corrected_chunks?.length, 
-            verified: d.corrected_chunks?.filter(c => c.is_verified).length
+            chunks: d.chunk_count, 
+            verified: d.verified_count
           }))
         })));
         if (isMounted) {
           setTasks(data.items || []);
+          _reviewCachedTasks = data.items || [];
+          _reviewCachedOrgId = orgId;
         }
       } catch (err) {
         console.error("Error loading tasks for ReviewPage:", err);
@@ -109,29 +122,31 @@ function ReviewPage({ onSelect }) {
   };
 
   const filteredTasks = tasks.filter(task => {
-    const doc = (task.ai_documents || [])
-      .filter(d => d.corrected_chunks && d.corrected_chunks.length > 0)
-      .sort((a, b) => {
-        if (a.version !== b.version) return b.version - a.version;
-        return new Date(b.created_at) - new Date(a.created_at);
-      })[0];
-    if (!doc) return false;
-
     const matchesSearch = 
       (task.name || "Untitled Task").toLowerCase().includes(searchQuery.toLowerCase()) || 
       (task.id || "").toLowerCase().includes(searchQuery.toLowerCase());
       
+    if (!matchesSearch) return false;
+
+    // Find the latest active document with chunks if available
+    const doc = (task.ai_documents || [])
+      .filter(d => d.chunk_count > 0)
+      .sort((a, b) => {
+        if (a.version !== b.version) return b.version - a.version;
+        return new Date(b.created_at) - new Date(a.created_at);
+      })[0];
+
     // Determine computed status for filtering
-    const chunks = doc.corrected_chunks || [];
-    const verifiedCount = chunks.filter(c => c.is_verified).length;
-    const remainingCount = chunks.length - verifiedCount;
-    
     let computedStatus = task.status?.toLowerCase() || "queued";
-    if (computedStatus === "completed" || computedStatus === "success") {
-      if (remainingCount === 0) {
-        computedStatus = "completed";
-      } else {
-        computedStatus = "in_progress";
+    if (doc) {
+      const verifiedCount = doc.verified_count || 0;
+      const remainingCount = (doc.chunk_count || 0) - verifiedCount;
+      if (computedStatus === "completed" || computedStatus === "success") {
+        if (remainingCount === 0) {
+          computedStatus = "completed";
+        } else {
+          computedStatus = "in_progress";
+        }
       }
     }
 
@@ -146,7 +161,7 @@ function ReviewPage({ onSelect }) {
       isStatusMatch = computedStatus === "queued";
     }
     
-    return matchesSearch && isStatusMatch;
+    return isStatusMatch;
   });
 
   return (
@@ -192,7 +207,8 @@ function ReviewPage({ onSelect }) {
               borderRadius: '10px',
               fontSize: '0.88rem',
               outline: 'none',
-              backgroundColor: 'white',
+              backgroundColor: 'var(--card-bg)',
+              color: 'var(--text-dark)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
               transition: 'border-color 0.2s'
             }}
@@ -214,7 +230,7 @@ function ReviewPage({ onSelect }) {
               fontWeight: '550',
               color: 'var(--text-dark)',
               outline: 'none',
-              backgroundColor: 'white',
+              backgroundColor: 'var(--card-bg)',
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
               transition: 'border-color 0.2s'
@@ -274,15 +290,15 @@ function ReviewPage({ onSelect }) {
                 } else {
                   // Find the latest active document with chunks
                   const doc = (task.ai_documents || [])
-                    .filter(d => d.corrected_chunks && d.corrected_chunks.length > 0)
+                    .filter(d => d.chunk_count > 0)
                     .sort((a, b) => {
                       if (a.version !== b.version) return b.version - a.version;
                       return new Date(b.created_at) - new Date(a.created_at);
                     })[0];
-                  const chunks = doc?.corrected_chunks || [];
-                  if (chunks.length > 0) {
-                    const verifiedCount = chunks.filter(c => c.is_verified).length;
-                    const remainingCount = chunks.length - verifiedCount;
+                  const chunkCount = doc?.chunk_count || 0;
+                  if (chunkCount > 0) {
+                    const verifiedCount = doc?.verified_count || 0;
+                    const remainingCount = chunkCount - verifiedCount;
                     if (remainingCount === 0) {
                       statusClass = "status-completed";
                       statusText = "Completed";
@@ -298,8 +314,15 @@ function ReviewPage({ onSelect }) {
                   }
                 }
 
+                const hasDocs = (task.ai_documents || []).some(d => d.chunk_count > 0);
+                const isReviewable = hasDocs && task.status !== "failed" && task.status !== "queued";
+
                 return (
-                  <tr key={task.id} style={{ cursor: 'pointer' }} onClick={() => onSelect(task)}>
+                  <tr 
+                    key={task.id} 
+                    style={{ cursor: isReviewable ? 'pointer' : 'default' }} 
+                    onClick={() => { if (isReviewable) onSelect(task); }}
+                  >
                     <td style={{ paddingLeft: '24px' }} className="booking-no-cell">
                       #{task.id ? task.id.substring(0, 6) : 'N/A'}
                     </td>
@@ -318,21 +341,35 @@ function ReviewPage({ onSelect }) {
                     <td style={{ textAlign: 'right', paddingRight: '24px' }}>
                       <button 
                         className="view-btn" 
+                        disabled={!isReviewable}
                         style={{ 
                           padding: '6px 16px', 
                           borderRadius: '8px', 
                           fontSize: '0.85rem', 
                           fontWeight: '600',
-                          backgroundColor: 'white',
+                          backgroundColor: 'var(--card-bg)',
                           border: '1px solid var(--border-color)',
-                          color: 'var(--text-dark)',
-                          cursor: 'pointer',
+                          color: isReviewable ? 'var(--text-dark)' : 'var(--text-gray)',
+                          cursor: isReviewable ? 'pointer' : 'not-allowed',
+                          opacity: isReviewable ? 1 : 0.6,
                           transition: 'all 0.2s'
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--primary)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = 'var(--text-dark)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                        onMouseEnter={(e) => { 
+                          if (isReviewable) {
+                            e.currentTarget.style.backgroundColor = 'var(--primary)'; 
+                            e.currentTarget.style.color = 'white'; 
+                            e.currentTarget.style.borderColor = 'var(--primary)'; 
+                          }
+                        }}
+                        onMouseLeave={(e) => { 
+                          if (isReviewable) {
+                            e.currentTarget.style.backgroundColor = 'var(--card-bg)'; 
+                            e.currentTarget.style.color = 'var(--text-dark)'; 
+                            e.currentTarget.style.borderColor = 'var(--border-color)'; 
+                          }
+                        }}
                       >
-                        Review
+                        {task.status === 'failed' ? 'Failed' : (task.status === 'queued' ? 'Queued' : (isReviewable ? 'Review' : 'Processing...'))}
                       </button>
                     </td>
                   </tr>
@@ -461,8 +498,22 @@ function App() {
     }
   }, [activeView]);
 
+  // Reset selected task when navigating back to the history list via browser navigation (hashchange)
+  useEffect(() => {
+    if (activeView === 'history') {
+      setSelectedTask(null);
+    }
+  }, [activeView]);
+
   const [selectedTask, setSelectedTask] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('theme_preference') === 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme_preference', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
   const [scopistTab, setScopistTab] = useState('new');
   const [selectedReviewTask, setSelectedReviewTask] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);

@@ -51,7 +51,7 @@ class PipelineStep(Base, UUIDMixin):
     __tablename__ = "pipeline_steps"
 
     pipeline_run_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("pipeline_runs.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("pipeline_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
     step_name: Mapped[str] = mapped_column(String(50), nullable=False)
     step_order: Mapped[int] = mapped_column(Integer, nullable=False)

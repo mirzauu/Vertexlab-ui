@@ -5,10 +5,9 @@ Task request/response schemas.
 from uuid import UUID
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.task import TaskStatus, FileType
-
 
 class TaskCreate(BaseModel):
     """Create a new task."""
@@ -20,10 +19,23 @@ class TaskCreate(BaseModel):
 class AIDocumentTaskRead(BaseModel):
     id: UUID
     version: int
-    corrected_chunks: Optional[List[dict]] = None
+    chunk_count: int = 0
+    verified_count: int = 0
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_document(cls, doc):
+        """Build from an AIDocument ORM instance, computing counts server-side."""
+        chunks = doc.corrected_chunks or []
+        return cls(
+            id=doc.id,
+            version=doc.version,
+            chunk_count=len(chunks),
+            verified_count=sum(1 for c in chunks if c.get("is_verified")),
+            created_at=doc.created_at,
+        )
 
 
 class TaskRead(BaseModel):
@@ -40,6 +52,86 @@ class TaskRead(BaseModel):
     ai_documents: Optional[List[AIDocumentTaskRead]] = []
 
     model_config = {"from_attributes": True}
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def _convert_ai_documents(cls, values, handler):
+        """Convert ORM AIDocument objects into lightweight AIDocumentTaskRead
+        with pre-computed chunk_count and verified_count without triggering lazy loading."""
+        if hasattr(values, "__dict__"):
+            # Construct a dictionary from the instance __dict__, excluding private attributes
+            data = {k: v for k, v in values.__dict__.items() if not k.startswith("_")}
+            
+            docs = None
+            is_loaded = False
+            if "ai_documents" in values.__dict__:
+                val = values.__dict__["ai_documents"]
+                if isinstance(val, (list, tuple, set)):
+                    docs = val
+                    is_loaded = True
+
+            if is_loaded and docs:
+                try:
+                    converted = []
+                    for d in docs:
+                        if hasattr(d, "corrected_chunks"):
+                            converted.append(AIDocumentTaskRead.from_document(d))
+                        elif isinstance(d, dict):
+                            chunks = d.get("corrected_chunks") or []
+                            converted.append(AIDocumentTaskRead(
+                                id=d.get("id"),
+                                version=d.get("version", 1),
+                                chunk_count=len(chunks),
+                                verified_count=sum(1 for c in chunks if c.get("is_verified")),
+                                created_at=d.get("created_at")
+                            ))
+                        else:
+                            converted.append(d)
+                    data["ai_documents"] = converted
+                except (IndexError, TypeError):
+                    data["ai_documents"] = []
+            else:
+                data["ai_documents"] = []
+
+            # Prevent lazy loading of files relation if not loaded
+            if "files" not in values.__dict__:
+                data["files"] = []
+
+            return handler(data)
+
+        elif isinstance(values, dict):
+            data = dict(values)
+            docs = data.get("ai_documents")
+            if isinstance(docs, (list, tuple, set)) and docs:
+                try:
+                    converted = []
+                    for d in docs:
+                        if hasattr(d, "corrected_chunks"):
+                            converted.append(AIDocumentTaskRead.from_document(d))
+                        elif isinstance(d, dict):
+                            chunks = d.get("corrected_chunks") or []
+                            converted.append(AIDocumentTaskRead(
+                                id=d.get("id"),
+                                version=d.get("version", 1),
+                                chunk_count=len(chunks),
+                                verified_count=sum(1 for c in chunks if c.get("is_verified")),
+                                created_at=d.get("created_at")
+                            ))
+                        else:
+                            converted.append(d)
+                    data["ai_documents"] = converted
+                except (IndexError, TypeError):
+                    data["ai_documents"] = []
+            elif "ai_documents" not in data:
+                data["ai_documents"] = []
+
+            if "files" not in data:
+                data["files"] = []
+
+            return handler(data)
+
+        # Fallback for other objects (avoid lazy loading where possible)
+        return handler(values)
 
 class TaskReadWithFiles(TaskRead):
     """Task details including files."""

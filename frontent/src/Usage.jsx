@@ -208,7 +208,7 @@ export default function Usage() {
         </div>
         <div className="pricing-tier-badge">
           <Shield size={16} />
-          <span>Enterprise Pay-As-You-Go ($1.00/page)</span>
+          <span>Enterprise Pay-As-You-Go ($0.50/page)</span>
         </div>
       </div>
       

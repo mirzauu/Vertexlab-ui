@@ -355,16 +355,16 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
               </button>
             </div>
             {showConfirm && (
-              <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', zIndex: 50, width: '320px', textAlign: 'left' }}>
-                <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#374151', lineHeight: '1.4' }}>Reloading will restart the task and remove previous work. Are you sure you want to proceed?</p>
+              <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '8px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', zIndex: 50, width: '320px', textAlign: 'left' }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-dark)', lineHeight: '1.4' }}>Reloading will restart the task and remove previous work. Are you sure you want to proceed?</p>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setShowConfirm(false)} style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white', color: '#4b5563', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
-                  <button onClick={executeReload} style={{ padding: '6px 12px', border: 'none', borderRadius: '6px', backgroundColor: '#ef4444', color: 'white', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>Confirm</button>
+                  <button onClick={() => setShowConfirm(false)} style={{ padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--card-bg)', color: 'var(--text-dark)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
+                  <button onClick={executeReload} style={{ padding: '6px 12px', border: 'none', borderRadius: '6px', backgroundColor: 'var(--red)', color: 'white', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}>Confirm</button>
                 </div>
               </div>
             )}
             {reloadError && (
-              <div style={{ fontSize: '0.8rem', color: '#dc2626', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', padding: '6px 10px', maxWidth: '300px', textAlign: 'right', lineHeight: '1.4' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--red)', backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', padding: '6px 10px', maxWidth: '300px', textAlign: 'right', lineHeight: '1.4' }}>
                 ⚠️ {reloadError}
               </div>
             )}
@@ -437,13 +437,13 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                   
                   {/* Additional Metadata Details per Step */}
                   {actualStep?.metadata_json && Object.keys(actualStep.metadata_json).length > 0 && (
-                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#f9fafb', borderRadius: '6px', fontSize: '0.8rem', color: '#4b5563' }}>
+                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: 'var(--sidebar-hover)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-gray)' }}>
                       {Object.entries(actualStep.metadata_json).map(([key, value]) => {
                         if (typeof value === 'object') return null; // Skip complex objects like status_breakdown
                         return (
                           <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                             <span style={{ color: '#9ca3af', textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}:</span>
-                            <span style={{ fontWeight: 500 }}>{String(value)}</span>
+                            <span style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{String(value)}</span>
                           </div>
                         );
                       })}
@@ -451,7 +451,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                   )}
                   {/* Show error message if failed */}
                   {isFailed && actualStep?.error_message && (
-                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fef2f2', borderRadius: '6px', fontSize: '0.8rem', color: '#dc2626', border: '1px solid #fee2e2' }}>
+                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--red)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                       {actualStep.error_message}
                     </div>
                   )}

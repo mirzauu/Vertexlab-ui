@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ReviewEdit.css';
-import { Play, Pause, SkipBack, SkipForward, Save, Send, ArrowLeft, Loader2, Volume1, Volume2, VolumeX, Zap, Download, FileText, ChevronDown, Sliders, X, Maximize2, Check, Edit3 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Save, Send, ArrowLeft, Loader2, Volume1, Volume2, VolumeX, Zap, Download, FileText, ChevronDown, Sliders, X, Maximize2, Check, Edit3, PlayCircle } from 'lucide-react';
 import { api } from './services/api';
 
 // Module-level trackers for deduplication across StrictMode double-mounts
@@ -60,6 +60,8 @@ export default function ReviewEdit({ task, onBack }) {
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const downloadDropdownRef = useRef(null);
 
+
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
@@ -97,6 +99,51 @@ export default function ReviewEdit({ task, onBack }) {
   // Diffs & Comparison states
   const [showAllDiffs, setShowAllDiffs] = useState(false);
   const [individualDiffs, setIndividualDiffs] = useState({});
+
+  // Progressive rendering limits to prevent UI freezing (Flaw #5 fix)
+  const [transcriptionLimit, setTranscriptionLimit] = useState(100);
+  const [matchesLimit, setMatchesLimit] = useState(100);
+  const [documentLimit, setDocumentLimit] = useState(100);
+
+  // Sync render limits with active segment index as the audio plays
+  useEffect(() => {
+    if (results?.transcribed_data) {
+      const activeIdx = results.transcribed_data.findIndex(
+        segment => currentTime >= segment.start && currentTime <= segment.end
+      );
+      if (activeIdx >= 0 && activeIdx >= transcriptionLimit) {
+        setTranscriptionLimit(Math.ceil((activeIdx + 1) / 100) * 100);
+      }
+    }
+    
+    if (results?.matches) {
+      const activeIdx = results.matches.findIndex(
+        match => currentTime >= match.audio_start_time_sec && currentTime <= match.audio_end_time_sec
+      );
+      if (activeIdx >= 0 && activeIdx >= matchesLimit) {
+        setMatchesLimit(Math.ceil((activeIdx + 1) / 100) * 100);
+      }
+    }
+
+    if (localChunks && localChunks.length > 0) {
+      const activeIdx = localChunks.findIndex(
+        chunk => currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec
+      );
+      if (activeIdx >= 0 && activeIdx >= documentLimit) {
+        setDocumentLimit(Math.ceil((activeIdx + 1) / 100) * 100);
+      }
+    }
+  }, [currentTime, results, localChunks]);
+
+  // Autoplay setting (persisted) (default: true)
+  const [isAutoplay, setIsAutoplay] = useState(() => {
+    const saved = localStorage.getItem('reviewAutoplay');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('reviewAutoplay', isAutoplay);
+  }, [isAutoplay]);
 
   const toggleIndividualDiff = (chunkId) => {
     setIndividualDiffs(prev => ({
@@ -246,49 +293,16 @@ export default function ReviewEdit({ task, onBack }) {
     }
 
     const startAudioDownload = (audioFileInfo) => {
-      if (session.audioPromise) {
-        session.audioPromise.then((url) => {
-          if (!signal.aborted) {
-            if (url) setAudioUrl(url);
-            setAudioLoading(false);
-          }
-        });
-        return;
-      }
-
       if (!audioFileInfo) {
         console.warn("No audio file attached to this task.");
         return;
       }
-
-      setAudioLoading(true);
-      session.audioPromise = (async () => {
-        try {
-          const audioRes = await api(`/api/v1/files/${audioFileInfo.id}/download`, { signal });
-          if (audioRes.ok) {
-            const blob = await audioRes.blob();
-            const url = URL.createObjectURL(blob);
-            session.audioUrl = url;
-            return url;
-          } else {
-            console.error("Failed to download audio. Status:", audioRes.status);
-            return null;
-          }
-        } catch (err) {
-          if (err.name !== 'AbortError') {
-            console.error("Audio download error:", err);
-            session.audioPromise = null;
-          }
-          return null;
-        }
-      })();
-
-      session.audioPromise.then((url) => {
-        if (!signal.aborted) {
-          if (url) setAudioUrl(url);
-          setAudioLoading(false);
-        }
-      });
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+      const token = localStorage.getItem('bearer_token');
+      const url = `${BASE_URL}/api/v1/files/${audioFileInfo.id}/download?token=${token}`;
+      session.audioUrl = url;
+      setAudioUrl(url);
+      setAudioLoading(false);
     };
 
     const loadWorkstationData = async () => {
@@ -367,7 +381,7 @@ export default function ReviewEdit({ task, onBack }) {
     }, 150);
   };
 
-  const handleTranscriptScroll = () => {
+  const handleTranscriptScroll = (e) => {
     // Mark that user is manually scrolling the transcript
     userScrollingTranscriptRef.current = true;
     if (userScrollTimeoutRef.current) {
@@ -377,9 +391,15 @@ export default function ReviewEdit({ task, onBack }) {
     userScrollTimeoutRef.current = setTimeout(() => {
       userScrollingTranscriptRef.current = false;
     }, 2000);
+
+    // Load more segments when scrolling close to the bottom
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 150) {
+      setTranscriptionLimit(prev => prev + 100);
+    }
   };
 
-  const handleDataScroll = () => {
+  const handleDataScroll = (e) => {
     // Mark that user is manually scrolling the raw data table
     userScrollingDataRef.current = true;
     if (userScrollDataTimeoutRef.current) {
@@ -389,9 +409,15 @@ export default function ReviewEdit({ task, onBack }) {
     userScrollDataTimeoutRef.current = setTimeout(() => {
       userScrollingDataRef.current = false;
     }, 2000);
+
+    // Load more matches when scrolling close to the bottom
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 150) {
+      setMatchesLimit(prev => prev + 100);
+    }
   };
 
-  const handleDocScroll = () => {
+  const handleDocScroll = (e) => {
     // Mark that user is manually scrolling the doc editor
     userScrollingDocRef.current = true;
     if (userScrollDocTimeoutRef.current) {
@@ -400,6 +426,12 @@ export default function ReviewEdit({ task, onBack }) {
     userScrollDocTimeoutRef.current = setTimeout(() => {
       userScrollingDocRef.current = false;
     }, 2000);
+
+    // Load more document paragraphs when scrolling close to the bottom
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 150) {
+      setDocumentLimit(prev => prev + 100);
+    }
   };
 
   const handleCrossPanelHover = (startTime, endTime) => {
@@ -621,7 +653,7 @@ export default function ReviewEdit({ task, onBack }) {
     if (audioRef.current) {
       audioRef.current.currentTime = start;
       setCurrentTime(start);
-      if (!isPlaying) {
+      if (isAutoplay && !isPlaying) {
         audioRef.current.play();
         setIsPlaying(true);
       }
@@ -861,20 +893,6 @@ export default function ReviewEdit({ task, onBack }) {
         <button 
           className="back-btn" 
           onClick={onBack} 
-          style={{ 
-            padding: '8px 16px', 
-            borderRadius: '10px', 
-            fontWeight: '600', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            cursor: 'pointer', 
-            padding: '8px 16px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)'; e.currentTarget.style.transform = 'translateX(-2px)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.transform = 'none'; }}
         >
           <ArrowLeft size={16} />
           <span>Back to Tasks</span>
@@ -977,8 +995,6 @@ export default function ReviewEdit({ task, onBack }) {
                         width: '36px',
                         height: '36px',
                         borderRadius: '50%',
-                        backgroundColor: 'var(--text-dark)',
-                        color: 'white',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1027,6 +1043,20 @@ export default function ReviewEdit({ task, onBack }) {
                       />
                     </div>
                   </div>
+
+                  <button 
+                    className={`fx-toggle-icon ${isAutoplay ? 'fx-active' : ''}`}
+                    onClick={() => setIsAutoplay(!isAutoplay)}
+                    title={isAutoplay ? "Autoplay is ON (Clicking segment starts audio playback)" : "Autoplay is OFF (Clicking segment only seeks timeline)"}
+                    style={{
+                      backgroundColor: isAutoplay ? 'var(--primary)' : 'transparent',
+                      color: isAutoplay ? 'white' : 'var(--text-dark)',
+                      borderColor: isAutoplay ? 'var(--primary)' : 'var(--border-color)',
+                      marginRight: '4px'
+                    }}
+                  >
+                    <PlayCircle size={16} />
+                  </button>
 
                   <button 
                     className={`fx-toggle-icon ${showFxPanel ? 'fx-active' : ''}`}
@@ -1204,7 +1234,7 @@ export default function ReviewEdit({ task, onBack }) {
                 ) : results?.transcribed_data && results.transcribed_data.length > 0 ? (
                   (() => {
                     let lastSpeaker = null;
-                    return results.transcribed_data.map((segment, index) => {
+                    return results.transcribed_data.slice(0, transcriptionLimit).map((segment, index) => {
                       const isActive = currentTime >= segment.start && currentTime <= segment.end;
                       const isCrossHighlighted = isTimeHighlighted(segment.start, segment.end);
                       const showSpeakerHeader = segment.speaker !== lastSpeaker;
@@ -1261,7 +1291,7 @@ export default function ReviewEdit({ task, onBack }) {
                     <div className="skeleton-bar long shimmer" style={{ height: '40px', borderRadius: '10px' }} />
                   </div>
                 ) : results?.matches && results.matches.length > 0 ? (
-                  results.matches.map((match, index) => {
+                  results.matches.slice(0, matchesLimit).map((match, index) => {
                     const isActive = currentTime >= match.audio_start_time_sec && currentTime <= match.audio_end_time_sec;
                     const isCrossHighlighted = isTimeHighlighted(match.audio_start_time_sec, match.audio_end_time_sec);
                     const score = match.confidence_score || 0;
@@ -1478,7 +1508,7 @@ export default function ReviewEdit({ task, onBack }) {
                 </div>
               ) : localChunks && localChunks.length > 0 ? (
                 <div className="doc-page">
-                  {localChunks.map((chunk, idx) => {
+                  {localChunks.slice(0, documentLimit).map((chunk, idx) => {
                     const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
                     const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
                     const chunkText = chunk.corrected_text || chunk.raw_chunk_text || chunk.original_raw_text || "";

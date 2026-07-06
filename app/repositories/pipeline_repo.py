@@ -24,7 +24,8 @@ class PipelineRepository(BaseRepository[PipelineRun]):
             .where(PipelineRun.task_id == task_id)
             .options(
                 selectinload(PipelineRun.steps),
-                selectinload(PipelineRun.task).selectinload(Task.files)
+                selectinload(PipelineRun.task).selectinload(Task.files),
+                selectinload(PipelineRun.task).selectinload(Task.ai_documents)
             )
         )
         return result.scalar_one_or_none()
@@ -37,7 +38,8 @@ class PipelineRepository(BaseRepository[PipelineRun]):
             .where(PipelineRun.task_id == task_id, Task.organization_id == org_id)
             .options(
                 selectinload(PipelineRun.steps),
-                selectinload(PipelineRun.task).selectinload(Task.files)
+                selectinload(PipelineRun.task).selectinload(Task.files),
+                selectinload(PipelineRun.task).selectinload(Task.ai_documents)
             )
         )
         return result.scalar_one_or_none()

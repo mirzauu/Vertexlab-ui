@@ -76,6 +76,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# GZip compression for responses > 500 bytes
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 # Exception handlers
 register_exception_handlers(app)
 

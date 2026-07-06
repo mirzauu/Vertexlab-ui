@@ -27,7 +27,7 @@ class BillingService:
         task_id: uuid.UUID,
         file_id: uuid.UUID,
         pages: int,
-        cost_per_page: float = 1.00,
+        cost_per_page: float = 0.50,
     ) -> UsageRecord:
         """Record task document processing usage and upsert the monthly billing summary."""
         if pages <= 0:

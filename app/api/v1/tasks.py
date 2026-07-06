@@ -6,7 +6,7 @@ from uuid import UUID
 from typing import Optional, List
 import os
 
-from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException, Response
 from deepgram import DeepgramClient
 
 from app.config import settings
@@ -40,6 +40,7 @@ async def create_task(
 @router.get("/", response_model=TaskListResponse)
 async def list_tasks(
     org_id: UUID,
+    response: Response,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     status: Optional[TaskStatus] = None,
@@ -48,6 +49,7 @@ async def list_tasks(
     service: TaskService = Depends(get_task_service),
 ):
     """List tasks for an organization with pagination and filters."""
+    response.headers["Cache-Control"] = "private, max-age=30"
     return await service.list_tasks(
         org_id=org_id,
         page=page,

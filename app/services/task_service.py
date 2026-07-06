@@ -41,22 +41,18 @@ class TaskService:
         search: Optional[str] = None,
     ) -> dict:
         """List tasks for an org with pagination and filters."""
-        import asyncio
         offset = (page - 1) * page_size
-        # Run both queries in parallel — cuts list load time roughly in half
-        tasks, total = await asyncio.gather(
-            self.task_repo.get_by_org(
-                org_id=org_id,
-                offset=offset,
-                limit=page_size,
-                status=status,
-                search=search,
-            ),
-            self.task_repo.count_by_org(
-                org_id=org_id,
-                status=status,
-                search=search,
-            ),
+        tasks = await self.task_repo.get_by_org(
+            org_id=org_id,
+            offset=offset,
+            limit=page_size,
+            status=status,
+            search=search,
+        )
+        total = await self.task_repo.count_by_org(
+            org_id=org_id,
+            status=status,
+            search=search,
         )
         return {
             "items": list(tasks),

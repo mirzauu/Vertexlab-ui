@@ -435,7 +435,7 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>
                   {apiStep === 5 ? "Task Scope Ready!" : "Handing over to AI..."}
                 </h3>
-                <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>
                   {apiStep === 5 
                     ? "AI analysis and scoping has been triggered successfully." 
                     : "Connecting to Verbalex API and processing speech audio data..."
@@ -444,94 +444,76 @@ export default function NewTask({ onCancel, onTaskCreated }) {
               </div>
 
               {/* Progress Checklist */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f9fafb', padding: '24px', borderRadius: '16px', border: '1px solid #f3f4f6' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: 'var(--bg-light)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                 
                 {/* Stage 1: Container Creation */}
-                <div style={{ display: 'flex', gap: '16px', opacity: apiStep >= 1 ? 1 : 0.4 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ 
-                      width: '24px', height: '24px', borderRadius: '50%', 
-                      backgroundColor: apiStep > 1 ? '#22c55e' : apiStep === 1 ? '#5B44E9' : '#e5e7eb',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}>
-                      {apiStep > 1 ? "✓" : apiStep === 1 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "1"}
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: apiStep >= 1 ? 1 : 0.4 }}>
+                  <div style={{ 
+                    width: '24px', height: '24px', borderRadius: '50%', 
+                    backgroundColor: apiStep > 1 ? '#22c55e' : apiStep === 1 ? '#5B44E9' : 'var(--border-color)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: apiStep >= 1 ? 'white' : 'var(--text-gray)',
+                    fontSize: '0.8rem', fontWeight: 600,
+                    flexShrink: 0
+                  }}>
+                    {apiStep > 1 ? "✓" : apiStep === 1 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "1"}
                   </div>
-                  <div>
-                    <h5 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>📝 Initializing Task Container</h5>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Creates task shell metadata and category tag scope.</p>
-                  </div>
+                  <h5 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>📝 Initializing Task Container</h5>
                 </div>
 
                 {/* Stage 2: Audio Upload & Diarization */}
-                <div style={{ display: 'flex', gap: '16px', opacity: apiStep >= 2 ? 1 : 0.4 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ 
-                      width: '24px', height: '24px', borderRadius: '50%', 
-                      backgroundColor: apiStep > 2 ? '#22c55e' : apiStep === 2 ? '#5B44E9' : '#e5e7eb',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}>
-                      {apiStep > 2 ? "✓" : apiStep === 2 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "2"}
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: apiStep >= 2 ? 1 : 0.4 }}>
+                  <div style={{ 
+                    width: '24px', height: '24px', borderRadius: '50%', 
+                    backgroundColor: apiStep > 2 ? '#22c55e' : apiStep === 2 ? '#5B44E9' : 'var(--border-color)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: apiStep >= 2 ? 'white' : 'var(--text-gray)',
+                    fontSize: '0.8rem', fontWeight: 600,
+                    flexShrink: 0
+                  }}>
+                    {apiStep > 2 ? "✓" : apiStep === 2 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "2"}
                   </div>
-                  <div>
-                    <h5 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>🎙️ Uploading & Transcribing Audio</h5>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
-                      {apiStep === 2 
-                        ? "Uploading speech stream & running Deepgram Nova-3 speaker diarization (can take 20-30s)..." 
-                        : "Uploads audio file & diarizes speakers to establish baseline transcript."
-                      }
-                    </p>
-                  </div>
+                  <h5 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>🎙️ Uploading & Transcribing Audio</h5>
                 </div>
 
                 {/* Stage 3: Supporting Documents */}
-                <div style={{ display: 'flex', gap: '16px', opacity: apiStep >= 3 ? 1 : 0.4 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ 
-                      width: '24px', height: '24px', borderRadius: '50%', 
-                      backgroundColor: apiStep > 3 ? '#22c55e' : apiStep === 3 ? '#5B44E9' : '#e5e7eb',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}>
-                      {apiStep > 3 ? "✓" : apiStep === 3 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "3"}
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: apiStep >= 3 ? 1 : 0.4 }}>
+                  <div style={{ 
+                    width: '24px', height: '24px', borderRadius: '50%', 
+                    backgroundColor: apiStep > 3 ? '#22c55e' : apiStep === 3 ? '#5B44E9' : 'var(--border-color)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: apiStep >= 3 ? 'white' : 'var(--text-gray)',
+                    fontSize: '0.8rem', fontWeight: 600,
+                    flexShrink: 0
+                  }}>
+                    {apiStep > 3 ? "✓" : apiStep === 3 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "3"}
                   </div>
-                  <div>
-                    <h5 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>📄 Uploading Supporting References</h5>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
-                      {docFiles.length === 0 
-                        ? "Skipped (no supporting documents added)." 
-                        : `Uploading ${docFiles.length} supporting reference document(s) to augment intelligence.`
-                      }
-                    </p>
-                  </div>
+                  <h5 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>📄 Uploading Supporting References</h5>
                 </div>
 
                 {/* Stage 4: Run AI Pipeline */}
-                <div style={{ display: 'flex', gap: '16px', opacity: apiStep >= 4 ? 1 : 0.4 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ 
-                      width: '24px', height: '24px', borderRadius: '50%', 
-                      backgroundColor: apiStep > 4 ? '#22c55e' : apiStep === 4 ? '#5B44E9' : '#e5e7eb',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-                    }}>
-                      {apiStep > 4 ? "✓" : apiStep === 4 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "4"}
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: apiStep >= 4 ? 1 : 0.4 }}>
+                  <div style={{ 
+                    width: '24px', height: '24px', borderRadius: '50%', 
+                    backgroundColor: apiStep > 4 ? '#22c55e' : apiStep === 4 ? '#5B44E9' : 'var(--border-color)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: apiStep >= 4 ? 'white' : 'var(--text-gray)',
+                    fontSize: '0.8rem', fontWeight: 600,
+                    flexShrink: 0
+                  }}>
+                    {apiStep > 4 ? "✓" : apiStep === 4 ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : "4"}
                   </div>
-                  <div>
-                    <h5 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>⚡ Initiating AI analysis engine</h5>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>Triggers 7-step scoping & analysis flow (embedding chunks, matching evidence, drafting document).</p>
-                  </div>
+                  <h5 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-dark)' }}>⚡ Initiating AI analysis engine</h5>
                 </div>
-
               </div>
+
 
               {/* Action Buttons for Processing View */}
               {apiStep === 5 && (
                 <div style={{ textAlign: 'center', marginTop: '20px' }}>
                   <CheckCircle2 size={48} color="#22c55e" style={{ margin: '0 auto 16px auto' }} />
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>AI Analysis Started!</h4>
-                  <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '24px' }}>Your document analysis and scoping report is now being compiled by the AI.</p>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-gray)', marginBottom: '24px' }}>Your document analysis and scoping report is now being compiled by the AI.</p>
                   <button 
                     className="btn-next" 
                     style={{ width: '100%', padding: '14px' }}
@@ -804,27 +786,27 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '8px' }}>Start AI Analysis & Scoping</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.9rem' }}>Please review the parameters below before sending the document for AI analysis.</p>
+                    <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem' }}>Please review the parameters below before sending the document for AI analysis.</p>
                   </div>
 
                   {/* Overview Cards */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     
                     {/* Details Summary */}
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', backgroundColor: 'white' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', marginBottom: '10px' }}>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--card-bg)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '10px' }}>
                         <Sparkles size={16} color="#5B44E9" />
                         <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>Report Metadata</h4>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Task Name:</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>Task Name:</span>
                           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-dark)' }}>{taskName}</span>
                         </div>
                         {description && (
                           <div style={{ display: 'flex', flexDirection: 'column', marginTop: '4px' }}>
-                            <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Description:</span>
-                            <span style={{ fontSize: '0.8rem', color: '#4B5563', backgroundColor: '#f9fafb', padding: '8px', borderRadius: '6px', marginTop: '4px', lineHeight: 1.4 }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>Description:</span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-dark)', backgroundColor: 'var(--bg-light)', padding: '8px', borderRadius: '6px', marginTop: '4px', lineHeight: 1.4 }}>
                               {description}
                             </span>
                           </div>
@@ -833,8 +815,8 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                     </div>
 
                     {/* Speech Audio Details */}
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', backgroundColor: 'white' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', marginBottom: '10px' }}>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--card-bg)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '10px' }}>
                         <Mic size={16} color="#5B44E9" />
                         <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>Speech Audio Stream</h4>
                       </div>
@@ -842,24 +824,24 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                         <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-dark)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '280px' }}>
                           {audioFile?.name}
                         </span>
-                        <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>{formatFileSize(audioFile?.size)}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>{formatFileSize(audioFile?.size)}</span>
                       </div>
                     </div>
 
                     {/* Support Documents Count */}
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', backgroundColor: 'white' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', marginBottom: '10px' }}>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--card-bg)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '10px' }}>
                         <FileText size={16} color="#5B44E9" />
                         <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>Reference Documents</h4>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.8rem', color: '#4B5563' }}>Attached Sheets:</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>Attached Sheets:</span>
                         <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-dark)' }}>{docFiles.length} doc(s)</span>
                       </div>
                       {docFiles.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
                           {docFiles.map(d => (
-                            <div key={d.name} style={{ fontSize: '0.75rem', color: '#6B7280', backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '4px' }}>
+                            <div key={d.name} style={{ fontSize: '0.75rem', color: 'var(--text-gray)', backgroundColor: 'var(--bg-light)', padding: '4px 8px', borderRadius: '4px' }}>
                               {d.name}
                             </div>
                           ))}
@@ -868,20 +850,20 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                     </div>
 
                     {/* Examination Split Parameters */}
-                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', backgroundColor: 'white' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f3f4f6', paddingBottom: '10px', marginBottom: '10px' }}>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', backgroundColor: 'var(--card-bg)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '10px' }}>
                         <FileText size={16} color="#5B44E9" />
                         <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>Examination Split Parameters</h4>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Examination Start Page:</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>Examination Start Page:</span>
                           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-dark)' }}>
                             {examStartPage ? `Page ${examStartPage}` : 'Auto-detected / Full Document'}
                           </span>
                         </div>
                         {examStartPage && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#4B5563', marginTop: '4px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-gray)', marginTop: '4px' }}>
                             <span>Cover Pages: 1 - {examStartPage - 1}</span>
                             <span>Examination Pages: {examStartPage} - {pdfDocument ? pdfDocument.numPages : 'End'}</span>
                           </div>
@@ -910,9 +892,9 @@ export default function NewTask({ onCancel, onTaskCreated }) {
           )}
           {showFullViewModal && (
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
-              <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', height: '100%', backgroundColor: 'white', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+              <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', height: '100%', backgroundColor: 'var(--card-bg)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
                 {/* Modal Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-light)' }}>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-dark)' }}>PDF Full View</h3>
                   <button 
                     onClick={() => {
@@ -920,13 +902,13 @@ export default function NewTask({ onCancel, onTaskCreated }) {
                       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
                       setPdfUrl(null);
                     }} 
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px' }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-gray)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px' }}
                   >
                     <X size={20} />
                   </button>
                 </div>
                 {/* Modal Body (Iframe) */}
-                <div style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
+                <div style={{ flex: 1, backgroundColor: 'var(--bg-light)' }}>
                   <iframe 
                     src={pdfUrl} 
                     style={{ width: '100%', height: '100%', border: 'none' }} 

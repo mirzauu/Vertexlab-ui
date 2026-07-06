@@ -15,7 +15,7 @@ class Transcript(Base, UUIDMixin):
     __tablename__ = "transcripts"
 
     task_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True
     )
     content: Mapped[dict | None] = mapped_column(JSONB, nullable=True)  # [{timestamp, speaker, text}]
     cleaned_content: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -24,7 +24,7 @@ class UsageRecord(Base, UUIDMixin):
         UUID(as_uuid=True), ForeignKey("task_files.id", ondelete="CASCADE"), nullable=False
     )
     pages_processed: Mapped[int] = mapped_column(Integer, nullable=False)
-    cost_per_page: Mapped[float] = mapped_column(Numeric(10, 2), default=1.00)
+    cost_per_page: Mapped[float] = mapped_column(Numeric(10, 2), default=0.50)
     total_cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

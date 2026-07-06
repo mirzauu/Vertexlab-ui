@@ -56,7 +56,9 @@ class TaskRepository(BaseRepository[Task]):
     async def get_task_in_org(self, task_id: UUID, org_id: UUID) -> Optional[Task]:
         """Get a specific task ensuring it belongs to the given org."""
         result = await self.db.execute(
-            select(Task).where(Task.id == task_id, Task.organization_id == org_id)
+            select(Task).where(Task.id == task_id, Task.organization_id == org_id).options(
+                selectinload(Task.ai_documents)
+            )
         )
         return result.scalar_one_or_none()
 

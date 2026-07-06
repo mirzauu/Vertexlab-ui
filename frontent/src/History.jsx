@@ -44,9 +44,21 @@ const deregisterListSession = (orgId) => {
   }
 };
 
+// Simple module-level cache to avoid re-fetching on re-mount (Flaw #4 fix)
+let _cachedTasks = null;
+let _cachedOrgId = null;
+
 export default function History({ onViewDetails, onNewTask }) {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState(() => {
+    const orgId = localStorage.getItem('organization_id');
+    // Serve cached data instantly if available for this org
+    if (_cachedTasks && _cachedOrgId === orgId) return _cachedTasks;
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const orgId = localStorage.getItem('organization_id');
+    return !(_cachedTasks && _cachedOrgId === orgId);
+  });
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -63,7 +75,7 @@ export default function History({ onViewDetails, onNewTask }) {
 
     const fetchTasks = async () => {
       if (!session.fetchPromise) {
-        session.fetchPromise = api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=50`, {
+        session.fetchPromise = api(`/api/v1/organizations/${orgId}/tasks/?page=1&page_size=20`, {
           signal: controller.signal
         }).then(res => {
           if (!res.ok) throw new Error('Failed to fetch tasks.');
@@ -73,7 +85,11 @@ export default function History({ onViewDetails, onNewTask }) {
 
       try {
         const data = await session.fetchPromise;
-        setTasks(data.items || []);
+        const items = data.items || [];
+        setTasks(items);
+        // Update module-level cache
+        _cachedTasks = items;
+        _cachedOrgId = orgId;
       } catch (err) {
         if (err.name !== 'AbortError') {
           session.fetchPromise = null;

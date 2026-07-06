@@ -1074,6 +1074,26 @@
   color: var(--text-gray);
 }
 
+.back-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+.back-btn:hover {
+  background-color: var(--sidebar-hover);
+  transform: translateX(-2px);
+}
+
 .dark-mode .back-btn {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);

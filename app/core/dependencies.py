@@ -4,9 +4,8 @@ Provides get_current_user, get_current_org, and all service/repo factories.
 """
 
 from uuid import UUID
-from typing import Annotated
-
-from fastapi import Depends, Header
+from typing import Annotated, Optional
+from fastapi import Depends, Header, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -17,19 +16,29 @@ from app.core.exceptions import UnauthorizedError, ForbiddenError, NotFoundError
 from app.models.user import User
 from app.models.organization import Organization, OrganizationMember
 
-# Security scheme
-security = HTTPBearer()
+# Security scheme (auto_error=False lets us fall back to query param)
+security = HTTPBearer(auto_error=False)
 
 
 # ---------- Auth Dependencies ----------
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    auth_token: Optional[str] = Query(None, alias="token"),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Extract and validate JWT, return the authenticated User."""
-    payload = decode_token(credentials.credentials)
+    """Extract and validate JWT, return the authenticated User from header or query param."""
+    token_str = None
+    if credentials:
+        token_str = credentials.credentials
+    elif auth_token:
+        token_str = auth_token
+
+    if not token_str:
+        raise UnauthorizedError("Not authenticated")
+
+    payload = decode_token(token_str)
 
     if payload.get("type") != "access":
         raise UnauthorizedError("Invalid token type")

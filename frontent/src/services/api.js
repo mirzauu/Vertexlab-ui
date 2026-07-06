@@ -53,8 +53,8 @@ const executeRequest = async (endpoint, options = {}) => {
 export const api = async (endpoint, options = {}) => {
   const method = (options.method || 'GET').toUpperCase();
   
-  // Only deduplicate GET requests
-  if (method === 'GET') {
+  // Only deduplicate GET requests that do not specify an AbortSignal
+  if (method === 'GET' && !options.signal) {
     const cacheKey = endpoint;
     if (inflightRequests.has(cacheKey)) {
       const existingPromise = inflightRequests.get(cacheKey);
