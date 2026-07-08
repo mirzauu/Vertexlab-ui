@@ -1,0 +1,307 @@
+I looked through your sample transcript.
+
+Your current extraction is actually quite good for semantic search, but it's not designed for synchronization. Those are two different problems.
+
+Right now your pipeline is essentially:
+
+PDF
+    ↓
+Clean
+    ↓
+Group by Speaker
+    ↓
+Extract QA
+    ↓
+Store QA chunk
+    ↓
+Embed
+
+That is perfect for asking questions like:
+
+"What did the witness say about the accident?"
+
+But synchronization has a different goal:
+
+"When the audio reaches this exact question, highlight it."
+
+Those require different data.
+
+The biggest thing you're throwing away
+
+Suppose page 25 contains
+
+Page 25
+
+Q. What caused you to fall?
+
+A. I slipped on black ice.
+
+Your extractor probably stores
+
+{
+    "question": "What caused you to fall?",
+    "answer": "I slipped on black ice."
+}
+
+Looks good.
+
+But you've lost
+
+page number
+line numbers
+where it appeared
+reading order
+its relationship to the original page
+
+Once that's gone, you can't accurately reconnect the audio to the document.
+
+What I would store instead
+
+Don't replace your current data.
+
+Add another layer.
+
+For every extracted block store metadata.
+
+Example
+
+{
+  "id": 842,
+
+  "page": 25,
+
+  "speaker": "Q",
+
+  "text": "What caused you to fall?",
+
+  "bbox": [72,215,510,242],
+
+  "paragraph_index": 94,
+
+  "reading_order": 842
+}
+
+Answer
+
+{
+  "id":843,
+
+  "page":25,
+
+  "speaker":"A",
+
+  "text":"I slipped on black ice.",
+
+  "bbox":[72,245,510,272],
+
+  "paragraph_index":95,
+
+  "reading_order":843
+}
+
+Notice something important.
+
+The Q&A extraction still exists.
+
+But underneath it there is a document model.
+
+Then your QA becomes
+
+Instead of
+
+{
+   question:"...",
+   answer:"..."
+}
+
+Store
+
+{
+    question_block:842,
+
+    answer_block:843,
+
+    objection_blocks:[844]
+}
+
+Now everything references actual document blocks.
+
+During synchronization
+
+Suppose Whisper says
+
+10:34
+
+What caused you to fall?
+
+10:37
+
+I slipped on black ice.
+
+Instead of writing
+
+{
+    question:"What caused you to fall?",
+    start:634
+}
+
+Write
+
+{
+    block_id:842,
+
+    start:634.2,
+
+    end:637.0
+}
+
+Now Block 842 already knows
+
+Page 25
+
+Bounding Box
+
+Speaker
+
+Reading Order
+
+The frontend can highlight it instantly.
+
+Your current extraction is already close
+
+Looking at the sample, you're already detecting
+
+MR. TAIWO
+
+Q.
+
+A.
+
+EXAMINATION
+
+Witness
+
+Objection
+
+Those are exactly the logical blocks you should preserve.
+
+I would stop converting them immediately into only Q&A dictionaries.
+
+Instead create
+
+Document
+
+↓
+
+Speaker Block
+
+↓
+
+Question Block
+
+↓
+
+Answer Block
+
+↓
+
+Objection Block
+
+Every block gets an ID.
+
+Keep two outputs, not one
+
+This is what I would build for Verbalex.
+
+Output 1 (for RAG)
+
+Exactly what you already have.
+
+QA Pair
+
+Question
+
+Answer
+
+Objection
+
+Perfect for semantic search.
+
+Output 2 (for synchronization)
+Block 1
+
+Page:5
+
+Speaker:MR. TAIWO
+
+BBox:...
+
+Text:...
+Block 2
+
+Page:5
+
+Speaker:Q
+
+BBox:...
+
+Text:Good afternoon Mr. Sakhai...
+Block 3
+
+Page:5
+
+Speaker:A
+
+BBox:...
+
+Text:Yes.
+
+These blocks are what get synchronized with the transcript.
+
+One more suggestion
+
+I actually would not synchronize the final Q&A objects.
+
+I would synchronize the speaker blocks.
+
+Why?
+
+Imagine this exchange:
+
+Q. ...
+
+MR. SMITH:
+Objection.
+
+MR. JONES:
+Response.
+
+THE REPORTER:
+One at a time.
+
+A. ...
+
+Your current Q&A model treats that as one question and one answer with an objection attached.
+
+But in the audio, those are five separate speaking events. The timestamps belong to each speaking turn, not to the merged Q&A object.
+
+So I'd define a SpeechBlock as the atomic synchronization unit:
+
+SpeechBlock
+------------
+id
+page
+speaker
+text
+type (Q, A, Attorney, Judge, Reporter, Witness)
+reading_order
+bbox (for PDF)
+
+Then:
+
+Synchronization → SpeechBlock
+RAG/Search → QAPair
+Analytics → SpeechBlock
+UI Highlighting → SpeechBlock
+
+That separation gives you a much cleaner architecture and will make future features—like speaker navigation, timeline views, and precise audio jumping—much easier to implement.
