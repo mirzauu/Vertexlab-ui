@@ -5,6 +5,7 @@ import History from './History';
 import HistoryDetails from './HistoryDetails';
 import ReviewEdit from './ReviewEdit';
 import './ReviewPage.css';
+import './Workflow.css';
 import Admin from './Admin';
 import SuperAdmin from './SuperAdmin';
 import SettingsView from './Settings';
@@ -17,7 +18,7 @@ import {
   CreditCard, RefreshCw, XCircle, AlertCircle, Minus, Plus, Mic, Send, Loader2,
   ChevronDown, ChevronUp, Activity, PieChart, TrendingUp,
   Sidebar, PlusCircle, CheckSquare, Edit,
-  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield
+  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield, GitBranch, Mail, Sparkles, UserCheck, Bot
 } from 'lucide-react';
 
 
@@ -518,6 +519,16 @@ function App() {
   const [selectedReviewTask, setSelectedReviewTask] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  useEffect(() => {
+    if (!showUserMenu) return;
+    const handleOutsideClick = () => {
+      setShowUserMenu(false);
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [showUserMenu]);
 
   const [dashboardData, setDashboardData] = useState({
     revenue: null,
@@ -681,6 +692,15 @@ function App() {
             {!isCollapsed && <span>Review and Edit</span>}
           </div>
 
+          <div 
+            className="nav-item" 
+            style={{ opacity: 0.5, cursor: 'not-allowed' }}
+            title="Workflow builder is coming soon"
+          >
+            <GitBranch className="nav-icon" />
+            {!isCollapsed && <span>Workflow</span>}
+          </div>
+
           <div className={`nav-item ${activeView === 'usage' ? 'active' : ''}`} onClick={() => { setActiveView('usage'); setSelectedTask(null); }}>
             <Activity className="nav-icon" />
             {!isCollapsed && <span>Usage</span>}
@@ -722,17 +742,24 @@ function App() {
             <Settings className="nav-icon" />
             {!isCollapsed && <span>Settings</span>}
           </div>
-          <div className="nav-item" onClick={() => {
-            localStorage.removeItem('bearer_token');
-            localStorage.removeItem('refresh_token');
-            setCurrentUser(null);
-            setIsAuthenticated(false);
-          }}>
-            <LogOut className="nav-icon" />
-            {!isCollapsed && <span>Log out</span>}
-          </div>
-
-          <div className="sidebar-user" style={{ marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '16px', paddingLeft: isCollapsed ? '0' : '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div 
+            className="sidebar-user" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowUserMenu(!showUserMenu);
+            }}
+            style={{ 
+              marginTop: '12px', 
+              borderTop: '1px solid var(--border-color)', 
+              paddingTop: '16px', 
+              paddingLeft: isCollapsed ? '0' : '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px',
+              cursor: 'pointer',
+              position: 'relative'
+            }}
+          >
             {currentUser ? (
               <>
                 <img src={currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'User')}+${encodeURIComponent(currentUser.last_name || '')}&background=random`} alt="User" style={{ width: '32px', height: '32px', borderRadius: '50%', margin: isCollapsed ? '0 auto' : '0' }} />
@@ -748,7 +775,7 @@ function App() {
                 )}
               </>
             ) : (
-              <div className="skeleton" style={{ display: 'flex', gap: '12px', alignItems: 'center', width: '100%' }}>
+              <div className="skeleton" style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
                 <div className="skeleton-avatar" style={{ width: '32px', height: '32px', minWidth: '32px', margin: isCollapsed ? '0 auto' : '0' }}></div>
                 {!isCollapsed && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
@@ -758,14 +785,61 @@ function App() {
                 )}
               </div>
             )}
+
+            {showUserMenu && (
+              <div 
+                style={{
+                  position: 'absolute',
+                  bottom: '60px',
+                  left: isCollapsed ? '50%' : '0',
+                  transform: isCollapsed ? 'translateX(-50%)' : 'none',
+                  width: isCollapsed ? '120px' : '100%',
+                  backgroundColor: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                  zIndex: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <div 
+                  className="nav-item" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    localStorage.removeItem('bearer_token');
+                    localStorage.removeItem('refresh_token');
+                    setCurrentUser(null);
+                    setIsAuthenticated(false);
+                    setShowUserMenu(false);
+                  }}
+                  style={{ 
+                    margin: 0, 
+                    padding: '8px 12px', 
+                    borderRadius: '8px', 
+                    color: 'var(--red)',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    gap: '8px',
+                    width: '100%'
+                  }}
+                >
+                  <LogOut className="nav-icon" style={{ color: 'var(--red)', minWidth: '20px' }} />
+                  <span>Log out</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="main-content" style={(activeView === 'history' || activeView === 'history-details') ? { paddingTop: '32px' } : (activeView === 'review' && selectedReviewTask) ? { paddingTop: '16px', overflow: 'hidden' } : activeView === 'review' ? { paddingTop: '16px' } : activeView === 'scopist' ? { padding: 0 } : {}}>
+      <main className="main-content" style={(activeView === 'history' || activeView === 'history-details') ? { paddingTop: '32px' } : (activeView === 'review' && selectedReviewTask) ? { paddingTop: '16px', overflow: 'hidden' } : activeView === 'review' ? { paddingTop: '16px' } : (activeView === 'scopist' || activeView === 'workflow') ? { padding: 0, overflow: 'hidden' } : {}}>
         {/* Header */}
-        {activeView !== 'scopist' && activeView !== 'history' && activeView !== 'history-details' && activeView !== 'review' && <header className="header"></header>}
+        {activeView !== 'scopist' && activeView !== 'history' && activeView !== 'history-details' && activeView !== 'review' && activeView !== 'workflow' && <header className="header"></header>}
 
         {/* Main Content Area */}
         {activeView === 'dashboard' && (
@@ -1195,6 +1269,189 @@ function App() {
         {activeView === 'settings' && <SettingsView />}
         {activeView === 'usage' && <Usage />}
         {activeView === 'help' && <Help />}
+        {activeView === 'workflow' && (
+          <div className="workflow-container">
+            {/* Canvas */}
+            <div className="workflow-canvas">
+              <div className="workflow-nodes-container" style={{ width: '1100px', height: '550px' }}>
+                {/* SVG Connections Layer */}
+                <svg className="workflow-svg-layer" width="1100" height="550">
+                  {/* Raw Document to Analysis */}
+                  <path d="M 150 205 C 170 205, 170 282, 190 282" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Audio File to Analysis */}
+                  <path d="M 150 365 C 170 365, 170 282, 190 282" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Analysis to Cleanup Agent */}
+                  <path d="M 290 282 L 320 278" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Cleanup Agent to Sync */}
+                  <path d="M 500 278 L 530 282" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Sync to Research Agent */}
+                  <path d="M 630 282 C 645 282, 645 180, 660 180" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Sync to Document Preparation Agent */}
+                  <path d="M 630 282 C 645 282, 645 370, 660 370" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Research Agent to Human Verification */}
+                  <path d="M 840 180 C 855 180, 855 278, 870 278" stroke="#334155" strokeWidth="2" fill="none" />
+                  
+                  {/* Document Preparation Agent to Human Verification */}
+                  <path d="M 840 370 C 855 370, 855 278, 870 278" stroke="#334155" strokeWidth="2" fill="none" />
+                </svg>
+
+                {/* Node 1: Raw Document */}
+                <div className="workflow-node" style={{ left: '20px', top: '160px', width: '130px', minHeight: '90px', padding: '10px 12px' }}>
+                  <div className="workflow-node-header" style={{ gap: '6px' }}>
+                    <FileText size={14} style={{ color: '#94A3B8' }} />
+                    <span style={{ fontSize: '0.75rem' }}>Raw Document</span>
+                  </div>
+                  <div className="workflow-node-content" style={{ gap: '4px' }}>
+                    <div style={{ color: '#C084FC', fontWeight: '500', fontSize: '0.68rem' }}>Document File</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem' }}>
+                      <span style={{ color: '#94A3B8' }}>out</span>
+                      <span style={{ color: '#2563EB', fontWeight: '500' }}>Doc Text</span>
+                    </div>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 2: Audio File */}
+                <div className="workflow-node" style={{ left: '20px', top: '320px', width: '130px', minHeight: '90px', padding: '10px 12px' }}>
+                  <div className="workflow-node-header" style={{ gap: '6px' }}>
+                    <Mic size={14} style={{ color: '#94A3B8' }} />
+                    <span style={{ fontSize: '0.75rem' }}>Audio File</span>
+                  </div>
+                  <div className="workflow-node-content" style={{ gap: '4px' }}>
+                    <div style={{ color: '#C084FC', fontWeight: '500', fontSize: '0.68rem' }}>Audio Upload</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem' }}>
+                      <span style={{ color: '#94A3B8' }}>out</span>
+                      <span style={{ color: '#2563EB', fontWeight: '500' }}>Audio Data</span>
+                    </div>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 3: Analysis */}
+                <div className="workflow-node" style={{ left: '190px', top: '250px', width: '100px', minHeight: '65px', padding: '8px 10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <div className="workflow-port left"></div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <Search size={16} style={{ color: '#F97316' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-dark)' }}>Analysis</span>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 4: Cleanup Agent */}
+                <div className="workflow-node" style={{ left: '320px', top: '228px', width: '180px', minHeight: '100px', padding: '10px 12px' }}>
+                  <div className="workflow-port left"></div>
+                  <div className="workflow-node-header" style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '4px' }}>
+                    <Bot size={14} style={{ color: '#2563EB' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-dark)' }}>Cleanup Agent</span>
+                    <span style={{ fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: '#2563EB', fontWeight: '700', marginLeft: 'auto' }}>AI</span>
+                  </div>
+                  <div className="workflow-node-content" style={{ marginTop: '2px', gap: '4px' }}>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '0.7rem' }}>➔</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Input</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', fontSize: '0.68rem' }}>Analysis Data</span>
+                    </div>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#F43F5E', fontWeight: 'bold', fontSize: '0.7rem' }}>⬌</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Output</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', color: '#3B82F6', fontSize: '0.68rem' }}>Clean Trans</span>
+                    </div>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 5: Sync */}
+                <div className="workflow-node" style={{ left: '530px', top: '250px', width: '100px', minHeight: '65px', padding: '8px 10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <div className="workflow-port left"></div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <RefreshCw size={16} style={{ color: '#10B981' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-dark)' }}>Sync</span>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 6: Research Agent */}
+                <div className="workflow-node" style={{ left: '660px', top: '130px', width: '180px', minHeight: '100px', padding: '10px 12px' }}>
+                  <div className="workflow-port left"></div>
+                  <div className="workflow-node-header" style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '4px' }}>
+                    <Bot size={14} style={{ color: '#64748B' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-dark)' }}>Research Agent</span>
+                    <span style={{ fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: '#2563EB', fontWeight: '700', marginLeft: 'auto' }}>AI</span>
+                  </div>
+                  <div className="workflow-node-content" style={{ marginTop: '2px', gap: '4px' }}>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '0.7rem' }}>➔</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Input</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', fontSize: '0.68rem' }}>Synced Media</span>
+                    </div>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#F43F5E', fontWeight: 'bold', fontSize: '0.7rem' }}>⬌</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Output</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', color: '#3B82F6', fontSize: '0.68rem' }}>Research Data</span>
+                    </div>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 7: Document Preparation Agent */}
+                <div className="workflow-node" style={{ left: '660px', top: '320px', width: '180px', minHeight: '100px', padding: '10px 12px' }}>
+                  <div className="workflow-port left"></div>
+                  <div className="workflow-node-header" style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '4px' }}>
+                    <Bot size={14} style={{ color: '#64748B' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-dark)' }}>Doc Prep Agent</span>
+                    <span style={{ fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: '#2563EB', fontWeight: '700', marginLeft: 'auto' }}>AI</span>
+                  </div>
+                  <div className="workflow-node-content" style={{ marginTop: '2px', gap: '4px' }}>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '0.7rem' }}>➔</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Input</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', fontSize: '0.68rem' }}>Synced Media</span>
+                    </div>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#F43F5E', fontWeight: 'bold', fontSize: '0.7rem' }}>⬌</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Output</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', color: '#3B82F6', fontSize: '0.68rem' }}>Draft Doc</span>
+                    </div>
+                  </div>
+                  <div className="workflow-port right"></div>
+                </div>
+
+                {/* Node 8: Human Verification */}
+                <div className="workflow-node active" style={{ left: '870px', top: '228px', width: '180px', minHeight: '100px', padding: '10px 12px' }}>
+                  <div className="workflow-port left"></div>
+                  <div className="workflow-node-header" style={{ gap: '6px' }}>
+                    <UserCheck size={16} style={{ color: '#D946EF' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600' }}>Human Verification</span>
+                  </div>
+                  <div className="workflow-node-content" style={{ marginTop: '2px', gap: '4px' }}>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#10B981', fontWeight: 'bold', fontSize: '0.7rem' }}>➔</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Input</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', fontSize: '0.68rem' }}>Draft & Research</span>
+                    </div>
+                    <div className="workflow-io-row">
+                      <span style={{ color: '#F43F5E', fontWeight: 'bold', fontSize: '0.7rem' }}>⬌</span>
+                      <span style={{ color: '#64748B', fontSize: '0.68rem' }}>Output</span>
+                      <span className="workflow-io-value" style={{ marginLeft: 'auto', color: '#3B82F6', fontSize: '0.68rem' }}>Final Output</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Zoom Controls */}
+              <div className="workflow-zoom-controls">
+                <button className="zoom-btn"><Plus size={14} /></button>
+                <button className="zoom-btn"><Minus size={14} /></button>
+              </div>
+            </div>
+          </div>
+        )}
         {activeView === 'scopist' && (
           <div className="scopist-page">
             

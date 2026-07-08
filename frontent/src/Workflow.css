@@ -1,0 +1,238 @@
+.workflow-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #F8FAFC;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+.dark-mode .workflow-container {
+  background-color: #090A0C;
+}
+
+/* Top Navigation / Breadcrumbs */
+.workflow-top-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  z-index: 10;
+}
+
+.dark-mode .workflow-top-bar {
+  background-color: #15161A;
+}
+
+.breadcrumb-item {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  color: #3B82F6;
+  background-color: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.breadcrumb-separator {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.breadcrumb-item.active {
+  color: #475569;
+  background-color: #F1F5F9;
+  border-color: #E2E8F0;
+}
+
+.dark-mode .breadcrumb-item.active {
+  color: #94A3B8;
+  background-color: #1D1F24;
+  border-color: #22252A;
+}
+
+/* Node Canvas */
+.workflow-canvas {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  background-color: #F8FAFC;
+  background-image: radial-gradient(#CBD5E1 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.dark-mode .workflow-canvas {
+  background-color: #0D0E11;
+  background-image: radial-gradient(#22252A 1px, transparent 1px);
+}
+
+.workflow-svg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Nodes */
+.workflow-nodes-container {
+  position: relative;
+  width: 1200px;
+  height: 800px;
+  z-index: 2;
+}
+
+.workflow-node {
+  position: absolute;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  padding: 16px;
+  width: 180px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  user-select: none;
+}
+
+.dark-mode .workflow-node {
+  background-color: #15161A;
+  border-color: #22252A;
+}
+
+.workflow-node.active {
+  border: 2px solid #2563EB;
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.1), 0 4px 6px -2px rgba(37, 99, 235, 0.05);
+}
+
+.workflow-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1E293B;
+}
+
+.dark-mode .workflow-node-header {
+  color: #F8FAFC;
+}
+
+.workflow-node-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+}
+
+.workflow-node-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #64748B;
+}
+
+.dark-mode .workflow-node-content {
+  color: #94A3B8;
+}
+
+.workflow-io-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workflow-io-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.workflow-io-label {
+  font-weight: 500;
+}
+
+.workflow-io-value {
+  color: #2563EB;
+}
+
+.dark-mode .workflow-io-value {
+  color: #60A5FA;
+}
+
+/* Ports */
+.workflow-port {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #FFFFFF;
+  border: 2px solid #64748B;
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
+.dark-mode .workflow-port {
+  background-color: #15161A;
+  border-color: #94A3B8;
+}
+
+.workflow-port.left {
+  left: -5px;
+}
+
+.workflow-port.right {
+  right: -5px;
+}
+
+/* Zoom Controls */
+.workflow-zoom-controls {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  z-index: 10;
+}
+
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  outline: none;
+}
+
+.dark-mode .zoom-btn {
+  background-color: #15161A;
+  border-color: #22252A;
+  color: #94A3B8;
+}
+
+.zoom-btn:hover {
+  background-color: #F1F5F9;
+  color: #1E293B;
+}
+
+.dark-mode .zoom-btn:hover {
+  background-color: #1D1F24;
+  color: #F8FAFC;
+}
