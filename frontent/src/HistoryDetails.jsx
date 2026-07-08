@@ -400,8 +400,18 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
             if (isProcessing) { statusLabelColor = '#2563eb'; statusLabelBg = 'rgba(59, 130, 246, 0.1)'; }
             if (isFailed) { statusLabelColor = '#dc2626'; statusLabelBg = 'rgba(239, 68, 68, 0.1)'; }
 
+            const isDocGen = stepName === 'document_generation';
+            const canNavigateToWorkstation = isDocGen && isCompleted;
+
             return (
-              <div key={stepName} className={`history-step-item ${status}`}>
+              <div 
+                key={stepName} 
+                className={`history-step-item ${status}`}
+                style={{ 
+                  cursor: canNavigateToWorkstation ? 'pointer' : 'default' 
+                }}
+                onClick={canNavigateToWorkstation ? onWorkstation : undefined}
+              >
                 <div className="step-marker">
                   <div className="step-circle" style={{ 
                     backgroundColor: circleColor,
@@ -417,7 +427,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                 </div>
                 <div className="step-info" style={{ opacity: (isPending || isLoading) ? 0.6 : 1, width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h4 style={{ textTransform: 'capitalize', margin: 0 }}>{stepInfo.title}</h4>
+                    <h4 style={{ textTransform: 'capitalize', margin: 0, color: canNavigateToWorkstation ? '#5B44E9' : 'inherit' }}>{stepInfo.title}</h4>
                     {isLoading ? (
                       <div className="skeleton-bar short shimmer" style={{ height: '14px', width: '60px' }}></div>
                     ) : (
