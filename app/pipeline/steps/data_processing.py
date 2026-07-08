@@ -19,17 +19,31 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
-def extract_qa(text: str) -> list[dict]:
+def extract_qa(text: str, structure_rules: dict = None) -> list[dict]:
     if not text:
         return []
+        
+    if structure_rules is None:
+        structure_rules = {}
 
     # Split final_output into blocks
     blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
 
     # Regex to identify block type and strip prefixes
-    q_pattern = re.compile(r'^Q\.\s*', re.IGNORECASE)
-    a_pattern = re.compile(r'^A\.\s*', re.IGNORECASE)
-    speaker_pattern = re.compile(r'^([A-Z][A-Z\s\(\)\.]+:)\s*')
+    q_pat = structure_rules.get("q_pattern_regex", r"^Q\.\s*")
+    a_pat = structure_rules.get("a_pattern_regex", r"^A\.\s*")
+    spk_pat = structure_rules.get("speaker_pattern_regex", r"^([A-Z][A-Z\s\(\)\.]+:)\s*")
+    
+    try:
+        q_pattern = re.compile(q_pat, re.IGNORECASE)
+        a_pattern = re.compile(a_pat, re.IGNORECASE)
+        speaker_pattern = re.compile(spk_pat, re.IGNORECASE)
+    except re.error as e:
+        logger.warning(f"Invalid regex in structure_rules: {e}. Using fallbacks.")
+        q_pattern = re.compile(r'^Q\.\s*', re.IGNORECASE)
+        a_pattern = re.compile(r'^A\.\s*', re.IGNORECASE)
+        speaker_pattern = re.compile(r'^([A-Z][A-Z\s\(\)\.]+:)\s*')
+
     inline_pattern = re.compile(r'^Q\.\s+(.*?)\s+A[.:]\s+(.*)$', re.IGNORECASE | re.DOTALL)
 
     qa_pairs = []
@@ -136,7 +150,10 @@ async def detect_pdf_structure(sample_text: str) -> dict:
             "Veritext Legal Solutions"
         ],
         "line_number_range": [1, 25],
-        "page_number_regexes": [r'(?i)^page \d+$']
+        "page_number_regexes": [r'(?i)^page \d+$'],
+        "q_pattern_regex": r"^Q\.\s*",
+        "a_pattern_regex": r"^A\.\s*",
+        "speaker_pattern_regex": r"^([A-Z][A-Z\s\(\)\.]+:)\s*"
     }
 
     if not settings.OPENAI_API_KEY:
@@ -147,24 +164,33 @@ async def detect_pdf_structure(sample_text: str) -> dict:
 
     system_prompt = r"""You are an expert at analyzing legal transcript formats and OCR/PDF structure.
 You will be provided with a raw text sample from the first few pages of a transcript.
-Identify recurring layout elements that do not belong to the spoken testimony.
+Identify recurring layout elements that do not belong to the spoken testimony, as well as the structures for Questions, Answers, and Speakers.
 Specifically, identify:
 1. Recurring header or footer terms (such as court reporting agency names, websites, phone numbers, email addresses, or common office labels like "Veritext").
 2. The range of line numbers listed down the side of pages (usually 1-25, but can be 1-28, etc., or null if none).
 3. The format of the page number indicator (e.g. "Page 1", "Page 1 of 100", "- 1 -", etc.).
+4. The regex pattern that identifies the start of a Question. For example, if questions appear as "Q." or "MS. LLOYD: Q.", output a regex like "^(?:[A-Z\s\.]+:\s*)?Q\.\s*". You MUST ensure the pattern requires the trailing period (e.g. Q\.) so it does not match regular words starting with Q.
+5. The regex pattern that identifies the start of an Answer. For example, "^(?:[A-Z\s\.]+:\s*)?A\.\s*". You MUST ensure the pattern requires the trailing period (e.g. A\.) so it does not match regular words starting with A.
+6. The regex pattern that identifies the start of a Speaker's statement. For example, "^([A-Z][A-Z\s\(\)\.]+:)\s*"
 
 Return ONLY a valid JSON object matching the following schema:
 {
   "junk_terms": ["list", "of", "detected", "junk", "terms", "to", "filter"],
   "line_number_range": [start_int, end_int],  // e.g. [1, 25], or null if none
-  "page_number_regexes": ["list of python-compatible regex patterns matching page indicators (case insensitive)"]
+  "page_number_regexes": ["list of python-compatible regex patterns matching page indicators (case insensitive)"],
+  "q_pattern_regex": "python regex string",
+  "a_pattern_regex": "python regex string",
+  "speaker_pattern_regex": "python regex string"
 }
 
 Example output:
 {
   "junk_terms": ["Veritext", "WWW.VERITEXT.COM", "800-567-8568", "Veritext Legal Solutions"],
   "line_number_range": [1, 25],
-  "page_number_regexes": ["^page \\d+$"]
+  "page_number_regexes": ["^page \\d+$"],
+  "q_pattern_regex": "^(?:[A-Z\\s\\.]+:\\s*)?Q\\.\\s*",
+  "a_pattern_regex": "^(?:[A-Z\\s\\.]+:\\s*)?A\\.\\s*",
+  "speaker_pattern_regex": "^([A-Z][A-Z\\s\\(\\)\\.]+:\\s*)"
 }
 
 No extra commentary, no markdown fences, ONLY the JSON object. Do not include markdown code block syntax (like ```json ... ```)."""
@@ -195,11 +221,22 @@ No extra commentary, no markdown fences, ONLY the JSON object. Do not include ma
 
         cleaned_rules["page_number_regexes"] = [str(pat) for pat in parsed.get("page_number_regexes", []) if pat]
 
+        # Get regexes or use fallback
+        cleaned_rules["q_pattern_regex"] = str(parsed.get("q_pattern_regex", fallback_rules["q_pattern_regex"]))
+        cleaned_rules["a_pattern_regex"] = str(parsed.get("a_pattern_regex", fallback_rules["a_pattern_regex"]))
+        cleaned_rules["speaker_pattern_regex"] = str(parsed.get("speaker_pattern_regex", fallback_rules["speaker_pattern_regex"]))
+
         # If any of those are empty/missing, supply defaults
         if not cleaned_rules["junk_terms"]:
             cleaned_rules["junk_terms"] = fallback_rules["junk_terms"]
         if not cleaned_rules["page_number_regexes"]:
             cleaned_rules["page_number_regexes"] = fallback_rules["page_number_regexes"]
+        if not cleaned_rules["q_pattern_regex"]:
+            cleaned_rules["q_pattern_regex"] = fallback_rules["q_pattern_regex"]
+        if not cleaned_rules["a_pattern_regex"]:
+            cleaned_rules["a_pattern_regex"] = fallback_rules["a_pattern_regex"]
+        if not cleaned_rules["speaker_pattern_regex"]:
+            cleaned_rules["speaker_pattern_regex"] = fallback_rules["speaker_pattern_regex"]
 
         logger.info(f"OpenAI successfully detected PDF structure: {cleaned_rules}")
         return cleaned_rules
@@ -284,7 +321,16 @@ def clean_transcript_pdf(input_path: str, structure_rules: dict = None) -> str:
             if stripped:
                 all_lines.append(stripped)
 
-    speaker_pattern = re.compile(r'^([QA]\.|[A-Z][A-Z\s\(\)\.]+:)\s*')
+    q_pat = structure_rules.get("q_pattern_regex", r"^Q\.\s*")
+    a_pat = structure_rules.get("a_pattern_regex", r"^A\.\s*")
+    spk_pat = structure_rules.get("speaker_pattern_regex", r"^([A-Z][A-Z\s\(\)\.]+:)\s*")
+    
+    try:
+        combined_pattern = f"(?:{q_pat})|(?:{a_pat})|(?:{spk_pat})"
+        speaker_pattern = re.compile(combined_pattern, re.IGNORECASE)
+    except re.error as e:
+        logger.warning(f"Invalid dynamic regex for block splitting: {e}. Falling back to default.")
+        speaker_pattern = re.compile(r'^([QA]\.|[A-Z][A-Z\s\(\)\.]+:)\s*', re.IGNORECASE)
 
     blocks = []
     current_block = ""
@@ -329,14 +375,23 @@ class DataProcessingStep(BasePipelineStep):
         logger.info(f"Processing PDF: {full_pdf_path}")
 
         try:
-            # 1. Extract raw text from the first 5 pages for structure analysis
+            # 1. Extract raw text for structure analysis
             import fitz
             doc = fitz.open(full_pdf_path)
             sample_text_parts = []
-            for i in range(min(5, len(doc))):
+            
+            # First 3 pages for preamble/headers
+            for i in range(min(3, len(doc))):
                 page = doc.load_page(i)
-                sample_text_parts.append(page.get_text("text"))
-            sample_text = "\n--- PAGE BREAK ---\n".join(sample_text_parts)
+                sample_text_parts.append(f"--- PAGE {i+1} ---\n" + page.get_text("text"))
+                
+            # Middle 3 pages for QA structure
+            mid_start = max(3, len(doc) // 2)
+            for i in range(mid_start, min(mid_start + 3, len(doc))):
+                page = doc.load_page(i)
+                sample_text_parts.append(f"--- PAGE {i+1} ---\n" + page.get_text("text"))
+                
+            sample_text = "\n".join(sample_text_parts)
             doc.close()
 
             # 2. Detect layout structure dynamically using LLM
@@ -344,7 +399,7 @@ class DataProcessingStep(BasePipelineStep):
 
             # 3. Clean transcript using dynamic rules
             cleaned_text = clean_transcript_pdf(full_pdf_path, structure_rules)
-            qa_chunks = extract_qa(cleaned_text)
+            qa_chunks = extract_qa(cleaned_text, structure_rules)
 
             # Save cleaned data to storage/output directory
             output_dir = os.path.join(settings.STORAGE_PATH, "output")
