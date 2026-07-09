@@ -92,8 +92,14 @@ async def get_all_users(
     """List all users in the system with their details and organization memberships."""
     offset = (page - 1) * page_size
 
-    # Fetch users ordered by creation date
-    users_stmt = select(User).order_by(desc(User.created_at)).offset(offset).limit(page_size)
+    # Fetch users ordered by last login (most recent first, nulls last)
+    from sqlalchemy import nullslast
+    users_stmt = (
+        select(User)
+        .order_by(nullslast(desc(User.last_login)), desc(User.created_at))
+        .offset(offset)
+        .limit(page_size)
+    )
     users_res = await db.execute(users_stmt)
     users = users_res.scalars().all()
 
@@ -123,6 +129,7 @@ async def get_all_users(
             "is_active": u.is_active,
             "auth_provider": u.auth_provider,
             "created_at": u.created_at.isoformat() if u.created_at else None,
+            "last_login": u.last_login.isoformat() if u.last_login else None,
             "organizations": orgs,
         })
 
@@ -429,3 +436,86 @@ async def reply_to_help_thread(
         "sender_type": msg.sender_type,
         "created_at": msg.created_at.isoformat() if msg.created_at else None,
     }
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Delete a user from the system, including any related cascading resources."""
+    # Prevent self-deletion
+    if user_id == _admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot delete your own superadmin account.",
+        )
+
+    res = await db.execute(select(User).where(User.id == user_id))
+    user = res.scalar_one_or_none()
+
+    if not user:
+        raise NotFoundError("User", str(user_id))
+
+    # Delete invitations created by this user
+    from sqlalchemy import delete as sa_delete
+    from app.models.organization import Invitation
+    await db.execute(
+        sa_delete(Invitation).where(Invitation.invited_by == user_id)
+    )
+
+    # Delete tasks created by this user (which cascade deletes task files, runs, transcripts, docs)
+    tasks_res = await db.execute(select(Task).where(Task.created_by == user_id))
+    tasks = tasks_res.scalars().all()
+    for task in tasks:
+        await db.delete(task)
+
+    # Delete the user
+    await db.delete(user)
+
+    return {"message": "User deleted successfully."}
+
+
+@router.delete("/organizations/{org_id}")
+async def delete_organization(
+    org_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Delete an organization from the system, including its members and tasks."""
+    res = await db.execute(select(Organization).where(Organization.id == org_id))
+    org = res.scalar_one_or_none()
+
+    if not org:
+        raise NotFoundError("Organization", str(org_id))
+
+    # Load tasks and delete them via DB session to trigger ORM cascades properly
+    tasks_res = await db.execute(select(Task).where(Task.organization_id == org_id))
+    tasks = tasks_res.scalars().all()
+    for task in tasks:
+        await db.delete(task)
+
+    # Delete the organization
+    await db.delete(org)
+
+    return {"message": "Organization deleted successfully."}
+
+
+@router.delete("/tasks/{task_id}")
+async def delete_task(
+    task_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Delete a pipeline task and its associated files/transcripts."""
+    res = await db.execute(select(Task).where(Task.id == task_id))
+    task = res.scalar_one_or_none()
+
+    if not task:
+        raise NotFoundError("Task", str(task_id))
+
+    await db.delete(task)
+
+    return {"message": "Task deleted successfully."}
+

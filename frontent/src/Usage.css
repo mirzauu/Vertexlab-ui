@@ -31,17 +31,17 @@
   gap: 8px;
   background-color: #EEF2FF;
   border: 1px solid #C7D2FE;
-  color: #5B44E9;
+  color: #F97316;
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(91, 68, 233, 0.05);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.05);
 }
 
 .dark-mode .pricing-tier-badge {
-  background-color: rgba(91, 68, 233, 0.15);
-  border-color: rgba(91, 68, 233, 0.3);
+  background-color: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.3);
   color: #818CF8;
 }
 
@@ -123,10 +123,10 @@
 
 /* Harmonized Glows */
 .indigo-glow {
-  border-left: 4px solid #5B44E9;
+  border-left: 4px solid #F97316;
 }
 .indigo-glow:hover {
-  box-shadow: 0 8px 24px rgba(91, 68, 233, 0.06);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.06);
 }
 
 .green-glow {
@@ -193,7 +193,7 @@
 
 .usage-tab-btn.active {
   background-color: white;
-  color: #5B44E9;
+  color: #F97316;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
@@ -303,7 +303,7 @@
 }
 
 .total-cost-col {
-  color: #5B44E9;
+  color: #F97316;
 }
 
 .dark-mode .total-cost-col {

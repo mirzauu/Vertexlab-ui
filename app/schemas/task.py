@@ -27,13 +27,12 @@ class AIDocumentTaskRead(BaseModel):
 
     @classmethod
     def from_document(cls, doc):
-        """Build from an AIDocument ORM instance, computing counts server-side."""
-        chunks = doc.corrected_chunks or []
+        """Build from an AIDocument ORM instance, using pre-computed counts from the DB."""
         return cls(
             id=doc.id,
             version=doc.version,
-            chunk_count=len(chunks),
-            verified_count=sum(1 for c in chunks if c.get("is_verified")),
+            chunk_count=getattr(doc, "chunk_count", 0),
+            verified_count=getattr(doc, "verified_count", 0),
             created_at=doc.created_at,
         )
 
@@ -74,15 +73,17 @@ class TaskRead(BaseModel):
                 try:
                     converted = []
                     for d in docs:
-                        if hasattr(d, "corrected_chunks"):
+                        if hasattr(d, "chunk_count"):
+                            converted.append(AIDocumentTaskRead.from_document(d))
+                        elif hasattr(d, "corrected_chunks"):
                             converted.append(AIDocumentTaskRead.from_document(d))
                         elif isinstance(d, dict):
                             chunks = d.get("corrected_chunks") or []
                             converted.append(AIDocumentTaskRead(
                                 id=d.get("id"),
                                 version=d.get("version", 1),
-                                chunk_count=len(chunks),
-                                verified_count=sum(1 for c in chunks if c.get("is_verified")),
+                                chunk_count=d.get("chunk_count") if d.get("chunk_count") is not None else len(chunks),
+                                verified_count=d.get("verified_count") if d.get("verified_count") is not None else sum(1 for c in chunks if c.get("is_verified")),
                                 created_at=d.get("created_at")
                             ))
                         else:
@@ -106,15 +107,17 @@ class TaskRead(BaseModel):
                 try:
                     converted = []
                     for d in docs:
-                        if hasattr(d, "corrected_chunks"):
+                        if hasattr(d, "chunk_count"):
+                            converted.append(AIDocumentTaskRead.from_document(d))
+                        elif hasattr(d, "corrected_chunks"):
                             converted.append(AIDocumentTaskRead.from_document(d))
                         elif isinstance(d, dict):
                             chunks = d.get("corrected_chunks") or []
                             converted.append(AIDocumentTaskRead(
                                 id=d.get("id"),
                                 version=d.get("version", 1),
-                                chunk_count=len(chunks),
-                                verified_count=sum(1 for c in chunks if c.get("is_verified")),
+                                chunk_count=d.get("chunk_count") if d.get("chunk_count") is not None else len(chunks),
+                                verified_count=d.get("verified_count") if d.get("verified_count") is not None else sum(1 for c in chunks if c.get("is_verified")),
                                 created_at=d.get("created_at")
                             ))
                         else:

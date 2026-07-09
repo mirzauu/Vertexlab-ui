@@ -256,7 +256,7 @@ class PipelineService:
         """
         from datetime import datetime
         from sqlalchemy import select
-        from sqlalchemy.orm import selectinload
+        from sqlalchemy.orm import selectinload, undefer
         from app.models.pipeline import PipelineRun
         from app.models.transcript import Transcript
         from app.models.task import Task, TaskFile, FileType
@@ -269,7 +269,7 @@ class PipelineService:
                 selectinload(Task.files),
                 selectinload(Task.pipeline_run).selectinload(PipelineRun.steps),
                 selectinload(Task.transcript),
-                selectinload(Task.ai_documents)
+                selectinload(Task.ai_documents).undefer(AIDocument.content).undefer(AIDocument.corrected_chunks)
             )
         )
         task = task_result.scalar_one_or_none()

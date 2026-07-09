@@ -133,11 +133,7 @@ export default function Admin() {
 
   return (
     <div className="admin-container">
-      <div className="admin-header">
-        <div>
-          <h1>Organization Management</h1>
-          <p>Manage your team members, roles and invitations.</p>
-        </div>
+      <div className="admin-header" style={{ justifyContent: 'flex-end', marginBottom: '16px' }}>
         <button className="invite-btn-top">
           <UserPlus size={18} />
           Invite Member

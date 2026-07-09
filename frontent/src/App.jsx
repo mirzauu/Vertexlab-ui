@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Auth from './Auth';
-import NewTask from './NewTask';
 import History from './History';
 import HistoryDetails from './HistoryDetails';
 import ReviewEdit from './ReviewEdit';
@@ -11,6 +10,7 @@ import SuperAdmin from './SuperAdmin';
 import SettingsView from './Settings';
 import Usage from './Usage';
 import Help, { HelpChat } from './Help';
+import AssistantWorkspace from './AssistantWorkspace';
 import { api } from './services/api';
 import { 
   LayoutDashboard, Users, FileText, HelpCircle, Moon, Settings, LogOut, 
@@ -18,8 +18,36 @@ import {
   CreditCard, RefreshCw, XCircle, AlertCircle, Minus, Plus, Mic, Send, Loader2,
   ChevronDown, ChevronUp, Activity, PieChart, TrendingUp,
   Sidebar, PlusCircle, CheckSquare, Edit,
-  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield, GitBranch, Mail, Sparkles, UserCheck, Bot
+  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield, GitBranch, Mail, Sparkles, UserCheck, Bot, Clock,
+  Info, ArrowUp, ArrowDown, Filter, List, LayoutGrid, Upload, Download, Share2
 } from 'lucide-react';
+
+const Sparkline = ({ color, data }) => {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const width = 80;
+  const height = 24;
+  
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((d - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={width} height={height} viewBox={`0 -5 ${width} ${height + 10}`}>
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        points={points}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
 
 
 
@@ -165,129 +193,176 @@ function ReviewPage({ onSelect }) {
     return isStatusMatch;
   });
 
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => {
+    const s = t.status?.toLowerCase();
+    return s === 'completed' || s === 'success';
+  }).length;
+  const inProgressTasks = tasks.filter(t => {
+    const s = t.status?.toLowerCase();
+    return s === 'in progress' || s === 'in_progress' || s === 'processing';
+  }).length;
+  const failedTasks = tasks.filter(t => t.status?.toLowerCase() === 'failed').length;
+
   return (
-    <div className="review-page-container">
-      {/* Breadcrumb Navigation */}
-      <div className="breadcrumb-nav">
-        <a href="#" onClick={(e) => e.preventDefault()}>
-          <Home size={14} /> Home
-        </a>
-        <span className="breadcrumb-separator">/</span>
-        <a href="#" onClick={(e) => e.preventDefault()}>Tasks</a>
-        <span className="breadcrumb-separator">/</span>
-        <span className="active-crumb">Review & Edit Tasks</span>
-      </div>
-
-      {/* Header Section */}
-      <div className="review-page-header" style={{ marginBottom: '16px' }}>
-        <div className="header-title-block">
-          <div className="header-icon-wrapper" style={{ background: 'linear-gradient(135deg, #5B44E9 0%, #3B2DA1 100%)', boxShadow: '0 4px 12px rgba(91, 68, 233, 0.25)' }}>
-            <CheckSquare size={24} />
-          </div>
-          <div className="header-text-info">
-            <h1>Review & Edit Tasks</h1>
-            <p>Select a task to review and edit in the human in the loop interface.</p>
+    <div className="history-page-container">
+      {/* Top Header */}
+      <header className="crm-top-header">
+        <div className="crm-header-left">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h1>Review & Edit Tasks</h1>
+              <span className="crm-count-badge">{tasks.length} Tasks</span>
+            </div>
+            <p className="crm-header-description">Review completed tasks, edit extracted data, and monitor quality.</p>
           </div>
         </div>
-      </div>
+        <div className="crm-header-right">
+          <button className="icon-btn-subtle"><Info size={18} /></button>
+          <button className="icon-btn-subtle"><Settings size={18} /></button>
+          <button className="icon-btn-subtle badge-wrapper">
+            <Bell size={18} />
+            <span className="notification-badge"></span>
+          </button>
+        </div>
+      </header>
 
-      {/* Search and Filters Toolbar */}
-      <div className="filters-actions-bar" style={{ display: 'flex', gap: '16px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="search-input-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1, maxWidth: '400px' }}>
-          <Search size={18} className="search-icon" style={{ position: 'absolute', left: '12px', color: '#9CA3AF' }} />
-          <input 
-            type="text" 
-            placeholder="Search tasks by name or ID..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input-field"
-            style={{
-              width: '100%',
-              padding: '10px 16px 10px 40px',
-              border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              fontSize: '0.88rem',
-              outline: 'none',
-              backgroundColor: 'var(--card-bg)',
-              color: 'var(--text-dark)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#5B44E9'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
-          />
+      {/* Summary Cards */}
+      <div className="crm-summary-cards">
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Tasks to Review</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">{totalTasks}</span>
+              <span className="crm-card-trend trend-up"><ArrowUpRight size={14} /> 12%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[5, 10, 5, 20, 15, 30, 25, 42]} />
+          </div>
         </div>
 
-        <div className="filter-dropdown-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-gray)' }}>Status:</span>
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{
-              padding: '10px 16px',
-              border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              fontSize: '0.88rem',
-              fontWeight: '550',
-              color: 'var(--text-dark)',
-              outline: 'none',
-              backgroundColor: 'var(--card-bg)',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#5B44E9'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
-          >
-            <option value="all">All Tasks</option>
-            <option value="completed">Completed</option>
-            <option value="in_progress">In Progress</option>
-            <option value="queued">In Queue</option>
-            <option value="failed">Failed</option>
-          </select>
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Completed Reviews</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">{completedTasks}</span>
+              <span className="crm-card-trend trend-up"><ArrowUpRight size={14} /> 4.2%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[10, 15, 12, 18, 14, 22, 18]} />
+          </div>
+        </div>
+
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Avg Review Time</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">1.2h</span>
+              <span className="crm-card-trend trend-up"><ArrowUpRight size={14} /> 15%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[1.2, 1.4, 1.3, 1.8, 1.6, 2.0, 1.8]} />
+          </div>
+        </div>
+
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Failed Tasks</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">{failedTasks}</span>
+              <span className="crm-card-trend trend-down"><ArrowDownRight size={14} /> 2%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[3, 2, 4, 1, 5, 2, failedTasks]} />
+          </div>
         </div>
       </div>
 
-      {/* Table Card */}
-      <div className="table-card-wrapper" style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)' }}>
-        <table className="redesigned-table">
+
+
+      {/* Action Bar */}
+      <div className="crm-action-bar">
+        <div className="crm-action-left">
+          <div className="crm-search-box">
+            <Search className="crm-search-icon" size={16} />
+            <input type="text" placeholder="Search tasks by name or ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          </div>
+          <div className="filter-dropdown-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '16px' }}>
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="crm-text-btn"
+              style={{ border: '1px solid #E5E7EB', padding: '6px 12px' }}
+            >
+              <option value="all">All Tasks</option>
+              <option value="completed">Completed</option>
+              <option value="in_progress">In Progress</option>
+              <option value="queued">In Queue</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+          <button className="crm-icon-btn"><Filter size={16} /></button>
+          <button className="crm-icon-btn" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+            <ArrowUp size={10} style={{ marginBottom: '-6px' }} />
+            <ArrowDown size={10} />
+          </button>
+        </div>
+        
+        <div className="crm-action-right">
+          <div className="crm-view-toggles">
+            <button className="crm-icon-btn active"><List size={16} /></button>
+            <button className="crm-icon-btn"><LayoutGrid size={16} /></button>
+          </div>
+          <div className="crm-action-divider" />
+          <button className="crm-btn-primary">
+            <Plus size={16} />
+            <span>Add Task</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="table-card-wrapper">
+        <table className="crm-table">
           <thead>
             <tr>
-              <th style={{ paddingLeft: '24px' }}>Task ID</th>
-              <th>Task Name</th>
-              <th>Created Date</th>
-              <th>Status</th>
-              <th style={{ width: '120px', textAlign: 'right', paddingRight: '24px' }}>Action</th>
+              <th style={{ paddingLeft: '24px' }}>TASK NAME</th>
+              <th>TASK ID</th>
+              <th>CREATED</th>
+              <th>STATUS</th>
+              <th style={{ textAlign: 'right', paddingRight: '24px' }}>ACTION</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
                 <td colSpan="5" className="table-empty-state">
-                  <Loader2 className="animate-spin" size={24} style={{ color: '#5B44E9', margin: '0 auto 12px auto' }} />
+                  <Loader2 className="animate-spin" size={24} style={{ color: '#F97316', margin: '0 auto 12px auto' }} />
                   <span>Loading tasks...</span>
                 </td>
               </tr>
             ) : filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan="5" className="table-empty-state" style={{ padding: '48px 24px' }}>
+                <td colSpan="5" className="table-empty-state">
                   <span>No tasks found matching your search.</span>
                 </td>
               </tr>
             ) : (
               filteredTasks.map((task) => {
-                const avatar = getAvatarProps(task.name);
-                
                 let statusClass = "status-queued";
-                let statusText = "In Queue";
+                let statusText = "QUEUED";
                 const lowerStatus = task.status?.toLowerCase();
                 
                 if (lowerStatus === "failed") {
                   statusClass = "status-failed";
-                  statusText = "Failed";
+                  statusText = "FAILED";
                 } else if (lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing") {
                   statusClass = "status-inprogress";
-                  statusText = "In Progress";
+                  statusText = "IN PROGRESS";
                 } else {
                   // Find the latest active document with chunks
                   const doc = (task.ai_documents || [])
@@ -302,15 +377,15 @@ function ReviewPage({ onSelect }) {
                     const remainingCount = chunkCount - verifiedCount;
                     if (remainingCount === 0) {
                       statusClass = "status-completed";
-                      statusText = "Completed";
+                      statusText = "COMPLETED";
                     } else {
                       statusClass = "status-inprogress";
-                      statusText = `${verifiedCount} verified, ${remainingCount} remaining`;
+                      statusText = `${verifiedCount} VERIFIED, ${remainingCount} REMAINING`;
                     }
                   } else {
                     if (lowerStatus === "completed" || lowerStatus === "success") {
                       statusClass = "status-completed";
-                      statusText = "Completed";
+                      statusText = "COMPLETED";
                     }
                   }
                 }
@@ -321,54 +396,40 @@ function ReviewPage({ onSelect }) {
                 return (
                   <tr 
                     key={task.id} 
-                    style={{ cursor: isReviewable ? 'pointer' : 'default' }} 
+                    style={{ cursor: isReviewable ? 'pointer' : 'default', transition: 'background-color 0.2s' }} 
                     onClick={() => { if (isReviewable) onSelect(task); }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isReviewable ? '#F9FAFB' : 'transparent'} 
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ paddingLeft: '24px' }} className="booking-no-cell">
-                      #{task.id ? task.id.substring(0, 6) : 'N/A'}
+                    <td className="task-name-cell" style={{ paddingLeft: '24px' }}>
+                      <span className="task-name-text">{task.name || "Untitled Task"}</span>
+                    </td>
+                    <td className="task-id-cell">
+                      #{task.id ? task.id.substring(0, 8) : 'N/A'}
+                    </td>
+                    <td className="task-date-cell">
+                      {formatDate(task.created_at)}
                     </td>
                     <td>
-                      <div className="capsule-user-cell" style={{ border: '1px solid var(--border-color)' }}>
-                        <div className="avatar-circle" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
-                          {avatar.initials}
-                        </div>
-                        <span className="capsule-name-text">{task.name || "Untitled Task"}</span>
-                      </div>
+                      <span className={`crm-status-pill ${statusClass}`}>{statusText}</span>
                     </td>
-                    <td>{formatDate(task.created_at)}</td>
-                    <td>
-                      <span className={`status-pill ${statusClass}`}>{statusText}</span>
-                    </td>
-                    <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                    <td style={{ textAlign: 'right', paddingRight: '24px' }} onClick={(e) => e.stopPropagation()}>
                       <button 
-                        className="view-btn" 
+                        className="crm-text-btn" 
                         disabled={!isReviewable}
                         style={{ 
-                          padding: '6px 16px', 
-                          borderRadius: '8px', 
-                          fontSize: '0.85rem', 
+                          display: 'inline-flex',
+                          padding: '6px 12px', 
+                          borderRadius: '6px', 
+                          fontSize: '0.8rem', 
                           fontWeight: '600',
-                          backgroundColor: 'var(--card-bg)',
-                          border: '1px solid var(--border-color)',
-                          color: isReviewable ? 'var(--text-dark)' : 'var(--text-gray)',
-                          cursor: isReviewable ? 'pointer' : 'not-allowed',
-                          opacity: isReviewable ? 1 : 0.6,
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => { 
-                          if (isReviewable) {
-                            e.currentTarget.style.backgroundColor = 'var(--primary)'; 
-                            e.currentTarget.style.color = 'white'; 
-                            e.currentTarget.style.borderColor = 'var(--primary)'; 
-                          }
-                        }}
-                        onMouseLeave={(e) => { 
-                          if (isReviewable) {
-                            e.currentTarget.style.backgroundColor = 'var(--card-bg)'; 
-                            e.currentTarget.style.color = 'var(--text-dark)'; 
-                            e.currentTarget.style.borderColor = 'var(--border-color)'; 
-                          }
-                        }}
+                          color: isReviewable ? '#F97316' : '#9CA3AF',
+                          backgroundColor: isReviewable ? '#FFF7ED' : '#F3F4F6',
+                          border: `1px solid ${isReviewable ? '#FFEDD5' : '#E5E7EB'}`,
+                          marginLeft: 'auto',
+                          cursor: isReviewable ? 'pointer' : 'not-allowed'
+                        }} 
+                        onClick={() => { if (isReviewable) onSelect(task); }}
                       >
                         {task.status === 'failed' ? 'Failed' : (task.status === 'queued' ? 'Queued' : (isReviewable ? 'Review' : 'Processing...'))}
                       </button>
@@ -515,7 +576,7 @@ function App() {
     localStorage.setItem('theme_preference', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  const [scopistTab, setScopistTab] = useState('new');
+  const [scopistTab, setScopistTab] = useState('history');
   const [selectedReviewTask, setSelectedReviewTask] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
@@ -659,6 +720,7 @@ function App() {
         </div>
 
         <nav className="nav-section">
+          <div className="sidebar-section-heading">Main</div>
           <div className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
             <LayoutDashboard className="nav-icon" />
             {!isCollapsed && <span>Dashboard</span>}
@@ -682,9 +744,14 @@ function App() {
           )}
           */}
 
-          <div className={`nav-item ${(activeView === 'scopist' || activeView === 'history' || activeView === 'history-details') ? 'active' : ''}`} onClick={() => { setActiveView('history'); setSelectedTask(null); }}>
-            <Edit className="nav-icon" />
+          <div className="sidebar-section-heading">Workspace</div>
+          <div className={`nav-item ${activeView === 'new-task' ? 'active' : ''}`} onClick={() => { setActiveView('new-task'); setSelectedTask(null); }}>
+            <Sparkles className="nav-icon" />
             {!isCollapsed && <span>Scopist</span>}
+          </div>
+          <div className={`nav-item ${(activeView === 'scopist' || activeView === 'history' || activeView === 'history-details') ? 'active' : ''}`} onClick={() => { setActiveView('history'); setSelectedTask(null); }}>
+            <Clock className="nav-icon" />
+            {!isCollapsed && <span>History</span>}
           </div>
 
           <div className={`nav-item ${activeView === 'review' ? 'active' : ''}`} onClick={() => { setActiveView('review'); setSelectedReviewTask(null); setSelectedTask(null); setIsCollapsed(true); }}>
@@ -701,6 +768,7 @@ function App() {
             {!isCollapsed && <span>Workflow</span>}
           </div>
 
+          <div className="sidebar-section-heading">Support & Admin</div>
           <div className={`nav-item ${activeView === 'usage' ? 'active' : ''}`} onClick={() => { setActiveView('usage'); setSelectedTask(null); }}>
             <Activity className="nav-icon" />
             {!isCollapsed && <span>Usage</span>}
@@ -734,7 +802,7 @@ function App() {
               <div 
                 className={`toggle-switch ${isDarkMode ? 'active' : ''}`} 
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                style={{ backgroundColor: isDarkMode ? '#5B44E9' : '#2A2A30' }}
+                style={{ backgroundColor: isDarkMode ? '#F97316' : '#2A2A30' }}
               ></div>
             )}
           </div>
@@ -749,10 +817,10 @@ function App() {
               setShowUserMenu(!showUserMenu);
             }}
             style={{ 
-              marginTop: '12px', 
+              marginTop: '6px', 
               borderTop: '1px solid var(--border-color)', 
-              paddingTop: '16px', 
-              paddingLeft: isCollapsed ? '0' : '12px', 
+              paddingTop: '10px', 
+              paddingLeft: isCollapsed ? '0' : '10px', 
               display: 'flex', 
               alignItems: 'center', 
               gap: '10px',
@@ -764,12 +832,12 @@ function App() {
               <>
                 <img src={currentUser.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.first_name || 'User')}+${encodeURIComponent(currentUser.last_name || '')}&background=random`} alt="User" style={{ width: '32px', height: '32px', borderRadius: '50%', margin: isCollapsed ? '0 auto' : '0' }} />
                 {!isCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-dark)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-dark)', lineHeight: '1.2' }}>
                       {currentUser.first_name || ''} {currentUser.last_name || ''}
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#8C8C9A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
-                      {currentUser.email}
+                    <span style={{ fontSize: '0.65rem', padding: '2px 6px', backgroundColor: 'rgba(249, 115, 22, 0.1)', color: 'var(--primary)', borderRadius: '10px', display: 'inline-block', width: 'max-content', fontWeight: '600' }}>
+                      {currentUser.email === 'mirzamailbox0@gmail.com' ? 'Super Admin' : 'Admin'}
                     </span>
                   </div>
                 )}
@@ -837,9 +905,44 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="main-content" style={(activeView === 'history' || activeView === 'history-details') ? { paddingTop: '32px' } : (activeView === 'review' && selectedReviewTask) ? { paddingTop: '16px', overflow: 'hidden' } : activeView === 'review' ? { paddingTop: '16px' } : (activeView === 'scopist' || activeView === 'workflow') ? { padding: 0, overflow: 'hidden' } : {}}>
+      <main className="main-content" style={(activeView === 'history' || activeView === 'history-details') ? { paddingTop: '16px' } : (activeView === 'review' && selectedReviewTask) ? { paddingTop: '16px', overflow: 'hidden' } : activeView === 'review' ? { paddingTop: '16px' } : (activeView === 'scopist' || activeView === 'new-task' || activeView === 'workflow') ? { padding: 0, overflow: 'hidden' } : {}}>
         {/* Header */}
-        {activeView !== 'scopist' && activeView !== 'history' && activeView !== 'history-details' && activeView !== 'review' && activeView !== 'workflow' && <header className="header"></header>}
+        {activeView !== 'scopist' && activeView !== 'new-task' && activeView !== 'history' && activeView !== 'history-details' && activeView !== 'review' && activeView !== 'workflow' && (
+          <header className="crm-top-header" style={{ margin: '-24px -30px 24px -30px', padding: '24px 32px 16px 32px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'transparent' }}>
+            <div className="crm-header-left">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <h1>
+                    {activeView === 'dashboard' ? 'Dashboard' : 
+                     activeView === 'settings' ? 'Settings' : 
+                     activeView === 'admin' ? 'Organization Admin' : 
+                     activeView === 'superadmin' ? 'Super Admin' : 
+                     activeView === 'help' ? 'Help & Support' : 
+                     activeView === 'usage' ? 'Usage & Billing' : 
+                     activeView === 'new-task' ? 'New Task' : 'VerbaLex AI'}
+                  </h1>
+                </div>
+                <p className="crm-header-description">
+                    {activeView === 'dashboard' ? 'Overview of your organization\'s metrics and recent activity.' : 
+                     activeView === 'settings' ? 'Manage your personal profile and workspace preferences.' : 
+                     activeView === 'admin' ? 'Manage workspace users, roles, and organization settings.' : 
+                     activeView === 'superadmin' ? 'System-wide configuration, tenants, and global monitoring.' : 
+                     activeView === 'help' ? 'Get assistance, read documentation, and contact support.' : 
+                     activeView === 'usage' ? 'Monitor your API usage limits and manage billing details.' : 
+                     activeView === 'new-task' ? 'Create and configure a new document processing task.' : ''}
+                </p>
+              </div>
+            </div>
+            <div className="crm-header-right">
+              <button className="icon-btn-subtle"><Info size={18} /></button>
+              <button className="icon-btn-subtle"><Settings size={18} /></button>
+              <button className="icon-btn-subtle badge-wrapper">
+                <Bell size={18} />
+                <span className="notification-badge"></span>
+              </button>
+            </div>
+          </header>
+        )}
 
         {/* Main Content Area */}
         {activeView === 'dashboard' && (
@@ -869,7 +972,7 @@ function App() {
             const churnGrowth = dashboardData.revenue?.churn_growth || 0;
 
             // Donut chart logic
-            const distColors = ['#5B44E9', '#60A5FA', '#A3E635', '#F59E0B', '#EF4444'];
+            const distColors = ['#F97316', '#60A5FA', '#A3E635', '#F59E0B', '#EF4444'];
             const totalDistRevenue = dashboardData.distribution.reduce((acc, item) => acc + item.revenue, 0);
             
             const formatTotalRevenue = (val) => {
@@ -931,8 +1034,8 @@ function App() {
                     </div>
                     
                     <div className="stat-item">
-                      <div className="stat-icon" style={{ boxShadow: 'inset 0 0 0 2px #5B44E9' }}>
-                        {subGrowth >= 0 ? <ArrowUpRight size={24} color="#5B44E9" /> : <ArrowDownRight size={24} color="#EF4444" />}
+                      <div className="stat-icon" style={{ boxShadow: 'inset 0 0 0 2px #F97316' }}>
+                        {subGrowth >= 0 ? <ArrowUpRight size={24} color="#F97316" /> : <ArrowDownRight size={24} color="#EF4444" />}
                       </div>
                       <div className="stat-info">
                         <div className="stat-value">
@@ -1117,7 +1220,7 @@ function App() {
                         const barColors = {
                           'queued': '#A0AEC0',
                           'not_started': '#A0AEC0',
-                          'in_progress': '#5B44E9',
+                          'in_progress': '#F97316',
                           'completed': '#A3E635',
                           'failed': '#EF4444'
                         };
@@ -1142,7 +1245,7 @@ function App() {
                         const barColors = {
                           'queued': '#A0AEC0',
                           'not_started': '#A0AEC0',
-                          'in_progress': '#5B44E9',
+                          'in_progress': '#F97316',
                           'completed': '#A3E635',
                           'failed': '#EF4444'
                         };
@@ -1177,7 +1280,7 @@ function App() {
                     }}>
                       <div className="ai-header" style={{ borderBottom: '1px solid var(--border-color)', padding: '16px 20px', backgroundColor: 'var(--card-bg)', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Shield size={20} color="#5B44E9" />
+                          <Shield size={20} color="#F97316" />
                           <span className="ai-title" style={{ fontWeight: '600', color: 'var(--text-dark)' }}>Support Chat</span>
                         </div>
                         <div className="ai-icon-btn" onClick={() => setIsAiOpen(false)} style={{ cursor: 'pointer', color: 'var(--text-gray)' }}>
@@ -1200,7 +1303,7 @@ function App() {
                       borderRadius: '50%',
                       backgroundColor: '#161619',
                       border: '1px solid var(--border-color)',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px rgba(91, 68, 233, 0.2)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 16px rgba(249, 115, 22, 0.2)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1221,22 +1324,13 @@ function App() {
           })()
         )}
 
-        {activeView === 'new' && (
-          <NewTask 
-            onCancel={() => setActiveView('history')} 
-            onTaskCreated={(newTask) => {
-              setSelectedTask(newTask);
-              setActiveView('history-details');
-            }} 
-          />
-        )}
         {activeView === 'history' && !selectedTask && (
           <History 
             onViewDetails={(task) => {
               setSelectedTask(task);
               setActiveView('history-details');
             }} 
-            onNewTask={() => setActiveView('scopist')}
+            onNewTask={() => setActiveView('new-task')}
           />
         )}
         {activeView === 'history-details' && selectedTask && (
@@ -1452,19 +1546,22 @@ function App() {
             </div>
           </div>
         )}
+        {activeView === 'new-task' && (
+          <AssistantWorkspace 
+            onTaskCreated={(newTask) => {
+              setSelectedTask(newTask);
+              setActiveView('history-details');
+            }} 
+            onCancel={() => {
+              setActiveView('history');
+            }}
+            isDarkMode={isDarkMode}
+          />
+        )}
         {activeView === 'scopist' && (
           <div className="scopist-page">
             
             <div className="scopist-tab-content" style={{ padding: '32px 40px 32px 40px' }}>
-              {scopistTab === 'new' && (
-                <NewTask 
-                  onCancel={() => setActiveView('history')} 
-                  onTaskCreated={(newTask) => {
-                    setSelectedTask(newTask);
-                    setActiveView('history-details');
-                  }} 
-                />
-              )}
               {scopistTab === 'review' && !selectedReviewTask && <ReviewPage onSelect={setSelectedReviewTask} />}
               {scopistTab === 'review' && selectedReviewTask && <ReviewEdit task={selectedReviewTask} onBack={() => setScopistTab('history')} />}
               {scopistTab === 'history' && (
@@ -1473,7 +1570,7 @@ function App() {
                     setSelectedTask(task);
                     setActiveView('history-details');
                   }} 
-                  onNewTask={() => setScopistTab('new')}
+                  onNewTask={() => setActiveView('new-task')}
                 />
               )}
             </div>

@@ -113,7 +113,7 @@
 }
 
 .form-group input:focus {
-  border-color: #5B44E9;
+  border-color: #F97316;
 }
 
 .form-group input::placeholder {
@@ -122,7 +122,7 @@
 
 .auth-submit {
   margin-top: 8px;
-  background-color: #5B44E9;
+  background-color: #F97316;
   color: white;
   border: none;
   border-radius: 8px;
@@ -242,8 +242,8 @@
 }
 
 .toolbar-icon.active {
-  color: #5B44E9;
-  background-color: rgba(91, 68, 233, 0.1);
+  color: #F97316;
+  background-color: rgba(249, 115, 22, 0.1);
 }
 
 .toolbar-bottom-icon {

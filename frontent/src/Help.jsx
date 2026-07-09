@@ -94,7 +94,7 @@ export function HelpChat({ isWidget }) {
   if (loading) {
     return (
       <div className={`chat-card skeleton-card ${isWidget ? 'widget-mode' : ''}`} style={{ height: isWidget ? '100%' : '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 className="animate-spin" size={32} style={{ color: '#5B44E9' }} />
+        <Loader2 className="animate-spin" size={32} style={{ color: '#F97316' }} />
       </div>
     );
   }
@@ -197,17 +197,6 @@ export function HelpChat({ isWidget }) {
 export default function Help() {
   return (
     <div className="help-page-container">
-      <div className="help-header">
-        <div className="header-title-block">
-          <div className="header-icon-wrapper" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }}>
-            <MessageSquare size={24} color="white" />
-          </div>
-          <div className="header-text-info">
-            <h1>Help & Technical Support</h1>
-            <p>Report issues, ask technical questions, or leave feedback. Our engineering team will review and reply directly here.</p>
-          </div>
-        </div>
-      </div>
       <HelpChat isWidget={false} />
     </div>
   );

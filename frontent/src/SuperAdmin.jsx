@@ -4,7 +4,8 @@ import './SuperAdmin.css';
 import { 
   Users, Building2, ListTodo, ShieldAlert, ShieldCheck, 
   Search, RefreshCw, CheckCircle, XCircle, Loader2, UserMinus, UserCheck, 
-  ArrowLeft, Calendar, HelpCircle, Activity, Globe, Mail, LogIn, MessageSquare, Bot, Shield, Send
+  ArrowLeft, Calendar, HelpCircle, Activity, Globe, Mail, LogIn, MessageSquare, Bot, Shield, Send,
+  Trash2
 } from 'lucide-react';
 
 export default function SuperAdmin() {
@@ -101,6 +102,75 @@ export default function SuperAdmin() {
       }
     } catch (err) {
       console.error('Error toggling user status:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userEmail) => {
+    if (!window.confirm(`WARNING: Are you sure you want to permanently delete user ${userEmail}? This will delete all of their tasks, metadata, and support messages, and cannot be undone.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await api(`/api/v1/superadmin/users/${userId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert('User deleted successfully.');
+        await fetchUsers(currentPage);
+        await fetchStats();
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to delete user');
+      }
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      alert('An error occurred while deleting the user.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteOrganization = async (orgId, orgName) => {
+    if (!window.confirm(`WARNING: Are you sure you want to permanently delete organization "${orgName}"? This will delete all tasks and workspaces associated with it, and cannot be undone.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await api(`/api/v1/superadmin/organizations/${orgId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert('Organization deleted successfully.');
+        await fetchOrganizations(currentPage);
+        await fetchStats();
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to delete organization');
+      }
+    } catch (err) {
+      console.error('Error deleting organization:', err);
+      alert('An error occurred while deleting the organization.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId, taskName) => {
+    if (!window.confirm(`WARNING: Are you sure you want to permanently delete task "${taskName || 'Untitled Task'}"? This will delete all associated transcripts and files, and cannot be undone.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await api(`/api/v1/superadmin/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert('Task deleted successfully.');
+        await fetchTasks(currentPage);
+        await fetchStats();
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to delete task');
+      }
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      alert('An error occurred while deleting the task.');
     } finally {
       setActionLoading(false);
     }
@@ -536,13 +606,14 @@ export default function SuperAdmin() {
                   <th>Organizations Joined</th>
                   <th>Auth Type</th>
                   <th>Joined Date</th>
+                  <th>Last Login</th>
                   <th>Access Control</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="sa-table-empty">No users found.</td>
+                    <td colSpan="7" className="sa-table-empty">No users found.</td>
                   </tr>
                 ) : (
                   filteredItems.map(u => (
@@ -580,6 +651,7 @@ export default function SuperAdmin() {
                         </span>
                       </td>
                       <td>{formatDate(u.created_at)}</td>
+                      <td>{formatDate(u.last_login)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button
@@ -597,13 +669,24 @@ export default function SuperAdmin() {
                               onClick={() => handleImpersonate(u)}
                               className="sa-action-btn impersonate-btn"
                               style={{
-                                backgroundColor: 'rgba(91, 68, 233, 0.1)',
+                                backgroundColor: 'rgba(249, 115, 22, 0.1)',
                                 color: 'var(--primary)',
                               }}
                               title="Login as this user"
                             >
                               <LogIn size={16} />
                               Login As
+                            </button>
+                          )}
+                          {u.email !== 'mirzamailbox0@gmail.com' && (
+                            <button
+                              disabled={actionLoading}
+                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              className="sa-action-btn delete-btn"
+                              title="Permanently delete user"
+                            >
+                              <Trash2 size={16} />
+                              Delete
                             </button>
                           )}
                         </div>
@@ -651,12 +734,13 @@ export default function SuperAdmin() {
                   <th>Team Members</th>
                   <th>Processed Tasks</th>
                   <th>Created Date</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="sa-table-empty">No organizations found.</td>
+                    <td colSpan="7" className="sa-table-empty">No organizations found.</td>
                   </tr>
                 ) : (
                   filteredItems.map(o => (
@@ -679,6 +763,17 @@ export default function SuperAdmin() {
                       <td className="font-semibold text-center">{o.member_count}</td>
                       <td className="font-semibold text-center">{o.task_count}</td>
                       <td>{formatDate(o.created_at)}</td>
+                      <td>
+                        <button
+                          disabled={actionLoading}
+                          onClick={() => handleDeleteOrganization(o.id, o.name)}
+                          className="sa-action-btn delete-btn"
+                          title="Permanently delete organization"
+                        >
+                          <Trash2 size={16} />
+                          Delete
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -722,12 +817,13 @@ export default function SuperAdmin() {
                   <th>Created By</th>
                   <th>Created Date</th>
                   <th>Execution State</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="sa-table-empty">No tasks found.</td>
+                    <td colSpan="7" className="sa-table-empty">No tasks found.</td>
                   </tr>
                 ) : (
                   filteredItems.map(t => (
@@ -746,6 +842,17 @@ export default function SuperAdmin() {
                         <span className={`sa-status-pill sa-status-${t.status?.toLowerCase() || 'queued'}`}>
                           {t.status}
                         </span>
+                      </td>
+                      <td>
+                        <button
+                          disabled={actionLoading}
+                          onClick={() => handleDeleteTask(t.id, t.name)}
+                          className="sa-action-btn delete-btn"
+                          title="Permanently delete task"
+                        >
+                          <Trash2 size={16} />
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))

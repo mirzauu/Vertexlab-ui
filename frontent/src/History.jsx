@@ -3,8 +3,37 @@ import './History.css';
 import { 
   FileText, Calendar, MoreHorizontal, Users, Plus, Star, 
   ChevronDown, SlidersHorizontal, Search, FileSpreadsheet, 
-  Loader2, Home, Edit 
+  Loader2, Home, Edit, RefreshCw, Info, Settings, Bell,
+  Share2, ArrowUp, ArrowDown, Filter, List, LayoutGrid,
+  Upload, Download, MoreVertical, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
+
+const Sparkline = ({ color, data }) => {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const width = 80;
+  const height = 24;
+  
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((d - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={width} height={height} viewBox={`0 -5 ${width} ${height + 10}`}>
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        points={points}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
 import { api } from './services/api';
 
 const activeListSessions = new Map();
@@ -152,126 +181,198 @@ export default function History({ onViewDetails, onNewTask }) {
     onViewDetails(item);
   };
 
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => {
+    const s = t.status?.toLowerCase();
+    return s === 'completed' || s === 'success';
+  }).length;
+  const inProgressTasks = tasks.filter(t => {
+    const s = t.status?.toLowerCase();
+    return s === 'in progress' || s === 'in_progress' || s === 'processing';
+  }).length;
+  const failedTasks = tasks.filter(t => t.status?.toLowerCase() === 'failed').length;
+
   return (
     <div className="history-page-container">
-      {/* Breadcrumbs */}
-      <nav className="breadcrumb-nav">
-        <a href="#home" onClick={(e) => { e.preventDefault(); }}>
-          <Home size={14} />
-          <span>Home</span>
-        </a>
-        <span className="breadcrumb-separator">/</span>
-        <span>Tasks</span>
-        <span className="breadcrumb-separator">/</span>
-        <span className="active-crumb">Task History</span>
-      </nav>
-
-      {/* Header */}
-      <header className="history-page-header">
-        <div className="header-title-block">
-          <div className="header-icon-wrapper">
-            <Edit size={24} />
-          </div>
-          <div className="header-text-info">
-            <h1>
-              Task History
-            </h1>
-            <p>View all pipeline tasks and their statuses.</p>
+      {/* Top Header */}
+      <header className="crm-top-header">
+        <div className="crm-header-left">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h1>Task History</h1>
+              <span className="crm-count-badge">{tasks.length} Tasks</span>
+            </div>
+            <p className="crm-header-description">Manage document processing tasks and review their status.</p>
           </div>
         </div>
-        <div className="header-actions">
-          <button className="btn-add-new" onClick={onNewTask}>
-            <Plus size={16} />
-            <span>Add New Task</span>
+        <div className="crm-header-right">
+          <button className="icon-btn-subtle"><Info size={18} /></button>
+          <button className="icon-btn-subtle"><Settings size={18} /></button>
+          <button className="icon-btn-subtle badge-wrapper">
+            <Bell size={18} />
+            <span className="notification-badge"></span>
           </button>
         </div>
       </header>
 
+      {/* Summary Cards */}
+      <div className="crm-summary-cards">
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Total Tasks</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">{totalTasks}</span>
+              <span className="crm-card-trend trend-up"><ArrowUpRight size={14} /> 12%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[5, 10, 5, 20, 15, 30, 25, 42]} />
+          </div>
+        </div>
+
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Completed Tasks</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">{completedTasks}</span>
+              <span className="crm-card-trend trend-up"><ArrowUpRight size={14} /> 4.2%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[10, 15, 12, 18, 14, 22, 18]} />
+          </div>
+        </div>
+
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Avg Processing Time</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">1.8h</span>
+              <span className="crm-card-trend trend-up"><ArrowUpRight size={14} /> 15%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[1.2, 1.4, 1.3, 1.8, 1.6, 2.0, 1.8]} />
+          </div>
+        </div>
+
+        <div className="crm-summary-card">
+          <div className="crm-card-content">
+            <div className="crm-card-title">Failed Tasks</div>
+            <div className="crm-card-stats">
+              <span className="crm-card-value">{failedTasks}</span>
+              <span className="crm-card-trend trend-down"><ArrowDownRight size={14} /> 2%</span>
+            </div>
+          </div>
+          <div className="crm-card-chart">
+            <Sparkline color="#F97316" data={[3, 2, 4, 1, 5, 2, failedTasks]} />
+          </div>
+        </div>
+      </div>
+
+
+
+      {/* Action Bar */}
+      <div className="crm-action-bar">
+        <div className="crm-action-left">
+          <div className="crm-search-box">
+            <Search className="crm-search-icon" size={16} />
+            <input type="text" placeholder="Search" />
+          </div>
+          <button className="crm-icon-btn"><Filter size={16} /></button>
+          <button className="crm-icon-btn" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+            <ArrowUp size={10} style={{ marginBottom: '-6px' }} />
+            <ArrowDown size={10} />
+          </button>
+          <button className="crm-icon-btn"><SlidersHorizontal size={16} /></button>
+        </div>
+        
+        <div className="crm-action-right">
+          <div className="crm-view-toggles">
+            <button className="crm-icon-btn active"><List size={16} /></button>
+            <button className="crm-icon-btn"><LayoutGrid size={16} /></button>
+          </div>
+          <div className="crm-action-divider" />
+          <button className="crm-btn-primary" onClick={onNewTask}>
+            <Plus size={16} />
+            <span>Add Task</span>
+          </button>
+        </div>
+      </div>
+
       {error && (
-        <div style={{
-          padding: '1rem', 
-          color: '#c62828', 
-          backgroundColor: '#ffebee', 
-          borderRadius: '0.5rem', 
-          marginBottom: '1.5rem',
-          fontSize: '0.875rem'
-        }}>
+        <div className="error-message">
           {error}
         </div>
       )}
 
-      {/* Table Card */}
+      {/* Table */}
       <div className="table-card-wrapper">
-        <table className="redesigned-table">
+        <table className="crm-table">
           <thead>
             <tr>
-              <th style={{ paddingLeft: '24px' }}>Task ID</th>
-              <th>Task Name</th>
-              <th>Created Date</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right', paddingRight: '24px' }}>Action</th>
+              <th style={{ paddingLeft: '24px' }}>TASK NAME</th>
+              <th>TASK ID</th>
+              <th>CREATED</th>
+              <th>STATUS</th>
+              <th style={{ textAlign: 'right', paddingRight: '24px' }}>ACTION</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
                 <td colSpan="5" className="table-empty-state">
-                  <Loader2 className="animate-spin" size={24} style={{ color: '#2A6F4D', margin: '0 auto 12px auto' }} />
+                  <Loader2 className="animate-spin" size={24} style={{ color: '#F97316', margin: '0 auto 12px auto' }} />
                   <span>Loading tasks...</span>
                 </td>
               </tr>
             ) : tasks.length === 0 ? (
               <tr>
-                <td colSpan="5" className="table-empty-state" style={{ padding: '48px 24px' }}>
+                <td colSpan="5" className="table-empty-state">
                   <span>No tasks found. Create a new task to get started.</span>
                 </td>
               </tr>
             ) : (
-              tasks.map((item) => {
-                const avatar = getAvatarProps(item.name);
-                
+              tasks.map((item, index) => {
                 let statusClass = "status-queued";
-                let statusText = "In Queue";
+                let statusText = "QUEUED";
                 const lowerStatus = item.status?.toLowerCase();
                 if (lowerStatus === "completed" || lowerStatus === "success") {
                   statusClass = "status-completed";
-                  statusText = "Completed";
+                  statusText = "COMPLETED";
                 } else if (lowerStatus === "in progress" || lowerStatus === "in_progress" || lowerStatus === "processing") {
                   statusClass = "status-inprogress";
-                  statusText = "In Progress";
+                  statusText = "IN PROGRESS";
                 } else if (lowerStatus === "failed") {
                   statusClass = "status-failed";
-                  statusText = "Failed";
+                  statusText = "FAILED";
                 }
 
                 return (
-                  <tr key={item.id} style={{ cursor: 'pointer' }} onClick={() => handleRowClick(item)}>
-                    <td className="booking-no-cell" style={{ paddingLeft: '24px' }}>
-                      #{item.id ? item.id.substring(0, 6) : 'N/A'}
+                  <tr key={item.id} style={{ cursor: 'pointer', transition: 'background-color 0.2s' }} onClick={() => handleRowClick(item)} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td className="task-name-cell" style={{ paddingLeft: '24px' }}>
+                      <span className="task-name-text">{item.name || "Untitled Task"}</span>
+                    </td>
+                    <td className="task-id-cell">
+                      #{item.id ? item.id.substring(0, 8) : 'N/A'}
+                    </td>
+                    <td className="task-date-cell">
+                      {formatDate(item.created_at)}
                     </td>
                     <td>
-                      <div className="capsule-user-cell">
-                        <div className="avatar-circle" style={{ backgroundColor: avatar.bg, color: avatar.text }}>
-                          {avatar.initials}
-                        </div>
-                        <span className="capsule-name-text">{item.name || "Untitled Task"}</span>
-                      </div>
-                    </td>
-                    <td>{formatDate(item.created_at)}</td>
-                    <td>
-                      <span className={`status-pill ${statusClass}`}>{statusText}</span>
+                      <span className={`crm-status-pill ${statusClass}`}>{statusText}</span>
                     </td>
                     <td style={{ textAlign: 'right', paddingRight: '24px' }} onClick={(e) => e.stopPropagation()}>
-                      <button className="view-btn" style={{ 
-                        padding: '6px 16px', 
-                        borderRadius: '8px', 
-                        fontSize: '0.85rem', 
+                      <button className="crm-text-btn" style={{ 
+                        display: 'inline-flex',
+                        padding: '6px 12px', 
+                        borderRadius: '6px', 
+                        fontSize: '0.8rem', 
                         fontWeight: '600',
-                        backgroundColor: 'white',
-                        border: '1px solid #D1D5DB',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        color: '#2A6F4D'
+                        color: '#F97316',
+                        backgroundColor: '#FFF7ED',
+                        border: '1px solid #FFEDD5',
+                        marginLeft: 'auto'
                       }} onClick={() => handleRowClick(item)}>
                         Details
                       </button>

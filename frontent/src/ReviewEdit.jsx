@@ -2,6 +2,63 @@ import React, { useState, useEffect, useRef } from 'react';
 import './ReviewEdit.css';
 import { Play, Pause, SkipBack, SkipForward, Save, Send, ArrowLeft, Loader2, Volume1, Volume2, VolumeX, Zap, Download, FileText, ChevronDown, Sliders, X, Maximize2, Check, Edit3, PlayCircle } from 'lucide-react';
 import { api } from './services/api';
+import { Virtuoso } from 'react-virtuoso';
+
+const WordDiff = React.memo(({ original, corrected }) => {
+  const tokenize = (str) => {
+    if (!str) return [];
+    return str.split(/(\s+)/);
+  };
+  const a = tokenize(original);
+  const b = tokenize(corrected);
+  const n = a.length;
+  const m = b.length;
+  const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+  let i = n, j = m;
+  const diff = [];
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+      diff.unshift({ value: a[i - 1], type: 'unchanged' });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      diff.unshift({ value: b[j - 1], type: 'added' });
+      j--;
+    } else {
+      diff.unshift({ value: a[i - 1], type: 'removed' });
+      i--;
+    }
+  }
+  return (
+    <>
+      {diff.map((part, index) => {
+        if (part.type === 'added') {
+          return (
+            <ins key={index} style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#059669', textDecoration: 'none', borderRadius: '2px', padding: '1px 2px', fontWeight: 550 }}>
+              {part.value}
+            </ins>
+          );
+        }
+        if (part.type === 'removed') {
+          return (
+            <del key={index} style={{ backgroundColor: 'rgba(239, 68, 68, 0.12)', color: '#dc2626', textDecoration: 'line-through', borderRadius: '2px', padding: '1px 2px' }}>
+              {part.value}
+            </del>
+          );
+        }
+        return <span key={index}>{part.value}</span>;
+      })}
+    </>
+  );
+});
 
 // Module-level trackers for deduplication across StrictMode double-mounts
 const activeWorkstationSessions = new Map();
@@ -100,40 +157,7 @@ export default function ReviewEdit({ task, onBack }) {
   const [showAllDiffs, setShowAllDiffs] = useState(false);
   const [individualDiffs, setIndividualDiffs] = useState({});
 
-  // Progressive rendering limits to prevent UI freezing (Flaw #5 fix)
-  const [transcriptionLimit, setTranscriptionLimit] = useState(100);
-  const [matchesLimit, setMatchesLimit] = useState(100);
-  const [documentLimit, setDocumentLimit] = useState(100);
 
-  // Sync render limits with active segment index as the audio plays
-  useEffect(() => {
-    if (results?.transcribed_data) {
-      const activeIdx = results.transcribed_data.findIndex(
-        segment => currentTime >= segment.start && currentTime <= segment.end
-      );
-      if (activeIdx >= 0 && activeIdx >= transcriptionLimit) {
-        setTranscriptionLimit(Math.ceil((activeIdx + 1) / 100) * 100);
-      }
-    }
-    
-    if (results?.matches) {
-      const activeIdx = results.matches.findIndex(
-        match => currentTime >= match.audio_start_time_sec && currentTime <= match.audio_end_time_sec
-      );
-      if (activeIdx >= 0 && activeIdx >= matchesLimit) {
-        setMatchesLimit(Math.ceil((activeIdx + 1) / 100) * 100);
-      }
-    }
-
-    if (localChunks && localChunks.length > 0) {
-      const activeIdx = localChunks.findIndex(
-        chunk => currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec
-      );
-      if (activeIdx >= 0 && activeIdx >= documentLimit) {
-        setDocumentLimit(Math.ceil((activeIdx + 1) / 100) * 100);
-      }
-    }
-  }, [currentTime, results, localChunks]);
 
   // Autoplay setting (persisted) (default: true)
   const [isAutoplay, setIsAutoplay] = useState(() => {
@@ -157,90 +181,7 @@ export default function ReviewEdit({ task, onBack }) {
     return !!individualDiffs[chunkId];
   };
 
-  // Word-level LCS diff implementation
-  const diffWords = (original, corrected) => {
-    const tokenize = (str) => {
-      if (!str) return [];
-      return str.split(/(\s+)/);
-    };
 
-    const a = tokenize(original);
-    const b = tokenize(corrected);
-
-    const n = a.length;
-    const m = b.length;
-
-    const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
-
-    for (let i = 1; i <= n; i++) {
-      for (let j = 1; j <= m; j++) {
-        if (a[i - 1] === b[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
-        } else {
-          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-        }
-      }
-    }
-
-    let i = n, j = m;
-    const diff = [];
-
-    while (i > 0 || j > 0) {
-      if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
-        diff.unshift({ value: a[i - 1], type: 'unchanged' });
-        i--;
-        j--;
-      } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-        diff.unshift({ value: b[j - 1], type: 'added' });
-        j--;
-      } else {
-        diff.unshift({ value: a[i - 1], type: 'removed' });
-        i--;
-      }
-    }
-
-    return diff;
-  };
-
-  const renderWordDiff = (original, corrected) => {
-    const diff = diffWords(original, corrected);
-    return diff.map((part, index) => {
-      if (part.type === 'added') {
-        return (
-          <ins 
-            key={index} 
-            style={{ 
-              backgroundColor: 'rgba(16, 185, 129, 0.15)', 
-              color: '#059669', 
-              textDecoration: 'none', 
-              borderRadius: '2px', 
-              padding: '1px 2px',
-              fontWeight: 550
-            }}
-          >
-            {part.value}
-          </ins>
-        );
-      }
-      if (part.type === 'removed') {
-        return (
-          <del 
-            key={index} 
-            style={{ 
-              backgroundColor: 'rgba(239, 68, 68, 0.12)', 
-              color: '#dc2626', 
-              textDecoration: 'line-through', 
-              borderRadius: '2px', 
-              padding: '1px 2px'
-            }}
-          >
-            {part.value}
-          </del>
-        );
-      }
-      return <span key={index}>{part.value}</span>;
-    });
-  };
   const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
     const saved = localStorage.getItem('reviewPanelWidth');
     return saved ? parseFloat(saved) : 35;
@@ -889,7 +830,7 @@ export default function ReviewEdit({ task, onBack }) {
   return (
     <>
     <div className="review-container">
-      <div className="back-button-container" style={{ marginBottom: '24px' }}>
+      <div className="back-button-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button 
           className="back-btn" 
           onClick={onBack} 
@@ -897,6 +838,153 @@ export default function ReviewEdit({ task, onBack }) {
           <ArrowLeft size={16} />
           <span>Back to Tasks</span>
         </button>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          {/* Status Badge & Counters */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {loading ? (
+              <div className="skeleton-bar shimmer" style={{ height: '20px', width: '70px', margin: 0, borderRadius: '6px' }} />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className={`doc-badge ${results?.document?.is_draft === false ? 'badge-final' : 'badge-draft'}`}>
+                  {results?.document?.is_draft === false ? 'FINAL' : 'AI DRAFT'}
+                </div>
+                {localChunks.length > 0 && (() => {
+                  const verifiedCount = localChunks.filter(c => c.is_verified).length;
+                  const totalCount = localChunks.length;
+                  const progressPercent = totalCount > 0 ? (verifiedCount / totalCount) * 100 : 0;
+                  
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px', marginLeft: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-gray)' }}>
+                        <span>Progress</span>
+                        <span>{verifiedCount} / {totalCount} Verified</span>
+                      </div>
+                      <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: '#10b981', borderRadius: '3px', transition: 'width 0.3s ease' }}></div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="doc-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              className={`secondary-btn action-btn-doc ${showAllDiffs ? 'active' : ''}`}
+              onClick={() => setShowAllDiffs(!showAllDiffs)}
+              style={{
+                backgroundColor: showAllDiffs ? 'rgba(249, 115, 22, 0.1)' : 'transparent',
+                color: showAllDiffs ? 'var(--primary)' : 'var(--text-gray)',
+                border: '1px solid var(--border-color)',
+              }}
+              title="Compare original steno text with AI corrected text"
+            >
+              <Zap size={16} />
+              <span>{showAllDiffs ? 'Hide Changes' : 'Show Changes'}</span>
+            </button>
+            <button 
+              className="secondary-btn action-btn-doc" 
+              onClick={handleSaveDocument}
+              disabled={loading || isSaving || !localChunks.length}
+            >
+              {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
+            </button>
+            <div className="download-dropdown-container" ref={downloadDropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+              <button 
+                className="primary-btn action-btn-doc" 
+                onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+                disabled={loading || isDownloadingPDF || isDownloadingWord || !localChunks.length}
+              >
+                {isDownloadingPDF || isDownloadingWord ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <Download size={16} />
+                )}
+                <span>
+                  {isDownloadingPDF ? 'Downloading PDF...' : 
+                   isDownloadingWord ? 'Downloading Word...' : 
+                   'Download'}
+                </span>
+              </button>
+
+              {showDownloadDropdown && (
+                <div 
+                  className="download-dropdown-menu" 
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '8px',
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                    zIndex: 100,
+                    minWidth: '200px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setShowDownloadDropdown(false);
+                      handleDownloadPDF();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-dark)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <FileText size={16} color="#dc2626" />
+                    <span>Download PDF</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDownloadDropdown(false);
+                      handleDownloadWord();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-dark)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <FileText size={16} color="#2b579a" />
+                    <span>Download Word</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
       <div className="review-content" ref={reviewContentRef}>
         {/* Left Side: Sources */}
@@ -940,14 +1028,14 @@ export default function ReviewEdit({ task, onBack }) {
 
             {loading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '16px 0', color: '#6B7280', fontSize: '0.85rem', fontWeight: '500' }}>
-                <Loader2 className="animate-spin" size={16} color="#5B44E9" />
+                <Loader2 className="animate-spin" size={16} color="#F97316" />
                 <span>Checking audio files...</span>
               </div>
             )}
 
             {!loading && audioLoading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '16px 0', color: '#6B7280', fontSize: '0.85rem', fontWeight: '500' }}>
-                <Loader2 className="animate-spin" size={16} color="#5B44E9" />
+                <Loader2 className="animate-spin" size={16} color="#F97316" />
                 <span>Downloading audio for playback...</span>
               </div>
             )}
@@ -968,7 +1056,7 @@ export default function ReviewEdit({ task, onBack }) {
                   onChange={handleSeek}
                   className="timeline-slider"
                   style={{
-                    background: `linear-gradient(to right, #5B44E9 0%, #5B44E9 ${progressPercent}%, #F3F4F6 ${progressPercent}%, #F3F4F6 100%)`
+                    background: `linear-gradient(to right, #F97316 0%, #F97316 ${progressPercent}%, #F3F4F6 ${progressPercent}%, #F3F4F6 100%)`
                   }}
                 />
                 <div className="time-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9CA3AF', fontWeight: '500' }}>
@@ -1038,7 +1126,7 @@ export default function ReviewEdit({ task, onBack }) {
                         className="volume-slider"
                         style={{
                           width: '70px',
-                          background: `linear-gradient(to right, #5B44E9 0%, #5B44E9 ${(isMuted ? 0 : volume) * 100}%, #F3F4F6 ${(isMuted ? 0 : volume) * 100}%, #F3F4F6 100%)`
+                          background: `linear-gradient(to right, #F97316 0%, #F97316 ${(isMuted ? 0 : volume) * 100}%, #F3F4F6 ${(isMuted ? 0 : volume) * 100}%, #F3F4F6 100%)`
                         }}
                       />
                     </div>
@@ -1129,10 +1217,10 @@ export default function ReviewEdit({ task, onBack }) {
                             fontWeight: '600',
                             border: '1px solid',
                             cursor: 'pointer',
-                            backgroundColor: filterMode === preset.id ? '#5B44E9' : 'transparent',
+                            backgroundColor: filterMode === preset.id ? '#F97316' : 'transparent',
                             color: filterMode === preset.id ? 'white' : 'var(--text-dark)',
-                            borderColor: filterMode === preset.id ? '#5B44E9' : 'var(--border-color)',
-                            boxShadow: filterMode === preset.id ? '0 0 10px rgba(91, 68, 233, 0.3)' : 'none',
+                            borderColor: filterMode === preset.id ? '#F97316' : 'var(--border-color)',
+                            boxShadow: filterMode === preset.id ? '0 0 10px rgba(249, 115, 22, 0.3)' : 'none',
                             transition: 'all 0.2s'
                           }}
                         >
@@ -1232,18 +1320,19 @@ export default function ReviewEdit({ task, onBack }) {
                     <div className="skeleton-bar medium shimmer" style={{ height: '16px' }} />
                   </div>
                 ) : results?.transcribed_data && results.transcribed_data.length > 0 ? (
-                  (() => {
-                    let lastSpeaker = null;
-                    return results.transcribed_data.slice(0, transcriptionLimit).map((segment, index) => {
+                  <Virtuoso
+                    style={{ height: '100%' }}
+                    data={results.transcribed_data}
+                    itemContent={(index, segment) => {
                       const isActive = currentTime >= segment.start && currentTime <= segment.end;
                       const isCrossHighlighted = isTimeHighlighted(segment.start, segment.end);
-                      const showSpeakerHeader = segment.speaker !== lastSpeaker;
-                      lastSpeaker = segment.speaker;
+                      const prevSpeaker = index > 0 ? results.transcribed_data[index - 1].speaker : null;
+                      const showSpeakerHeader = segment.speaker !== prevSpeaker;
                       
                       return (
-                        <React.Fragment key={index}>
+                        <div key={index} style={{ paddingBottom: '4px' }}>
                           {showSpeakerHeader && (
-                            <div className="transcript-speaker-header" style={{ fontWeight: '700', fontSize: '0.72rem', color: '#5B44E9', marginTop: '14px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: '8px' }}>
+                            <div className="transcript-speaker-header" style={{ fontWeight: '700', fontSize: '0.72rem', color: '#F97316', marginTop: '14px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.08em', paddingLeft: '8px' }}>
                               {segment.speaker || "Speaker"}
                             </div>
                           )}
@@ -1257,10 +1346,10 @@ export default function ReviewEdit({ task, onBack }) {
                             <span style={{ fontSize: '0.75rem', opacity: 0.6, marginRight: '8px', fontWeight: '500' }}>[{formatTime(segment.start)}]</span>
                             {segment.text}
                           </p>
-                        </React.Fragment>
+                        </div>
                       );
-                    });
-                  })()
+                    }}
+                  />
                 ) : (
                   <p style={{ color: '#9CA3AF' }}>No transcription data available.</p>
                 )}
@@ -1291,38 +1380,42 @@ export default function ReviewEdit({ task, onBack }) {
                     <div className="skeleton-bar long shimmer" style={{ height: '40px', borderRadius: '10px' }} />
                   </div>
                 ) : results?.matches && results.matches.length > 0 ? (
-                  results.matches.slice(0, matchesLimit).map((match, index) => {
-                    const isActive = currentTime >= match.audio_start_time_sec && currentTime <= match.audio_end_time_sec;
-                    const isCrossHighlighted = isTimeHighlighted(match.audio_start_time_sec, match.audio_end_time_sec);
-                    const score = match.confidence_score || 0;
-                    const confidenceClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`match-row ${isActive ? 'active-match' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
-                        onClick={() => {
-                          if (match.audio_start_time_sec != null) {
-                            handleSegmentClick(match.audio_start_time_sec);
-                          }
-                        }}
-                        onMouseEnter={() => handleCrossPanelHover(match.audio_start_time_sec, match.audio_end_time_sec)}
-                        onMouseLeave={handleCrossPanelLeave}
-                      >
-                        <span 
-                          className={`confidence-dot ${confidenceClass}`} 
-                          title={`${score.toFixed(1)}% confidence`}
-                        />
-                        <div className="match-meta">
-                          <div className="match-meta-top">
-                            <span className="match-confidence-label">{score.toFixed(1)}%</span>
-                            <span className="match-status">{match.match_status}</span>
+                  <Virtuoso
+                    style={{ height: '100%' }}
+                    data={results.matches}
+                    itemContent={(index, match) => {
+                      const isActive = currentTime >= match.audio_start_time_sec && currentTime <= match.audio_end_time_sec;
+                      const isCrossHighlighted = isTimeHighlighted(match.audio_start_time_sec, match.audio_end_time_sec);
+                      const score = match.confidence_score || 0;
+                      const confidenceClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`match-row ${isActive ? 'active-match' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
+                          onClick={() => {
+                            if (match.audio_start_time_sec != null) {
+                              handleSegmentClick(match.audio_start_time_sec);
+                            }
+                          }}
+                          onMouseEnter={() => handleCrossPanelHover(match.audio_start_time_sec, match.audio_end_time_sec)}
+                          onMouseLeave={handleCrossPanelLeave}
+                        >
+                          <span 
+                            className={`confidence-dot ${confidenceClass}`} 
+                            title={`${score.toFixed(1)}% confidence`}
+                          />
+                          <div className="match-meta">
+                            <div className="match-meta-top">
+                              <span className="match-confidence-label">{score.toFixed(1)}%</span>
+                              <span className="match-status">{match.match_status}</span>
+                            </div>
+                            <span className="match-text">{match.raw_chunk_text}</span>
                           </div>
-                          <span className="match-text">{match.raw_chunk_text}</span>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    }}
+                  />
                 ) : (
                   <p style={{ color: '#9CA3AF', textAlign: 'center', padding: '20px 0' }}>No matched data available.</p>
                 )}
@@ -1339,154 +1432,7 @@ export default function ReviewEdit({ task, onBack }) {
         {/* Right Side: AI Document */}
         <div className="review-right" style={{ flex: 1 }}>
           <div className="ai-document">
-            <div className="doc-header">
-              <div className="doc-header-left">
-                {loading ? (
-                  <div className="skeleton-bar shimmer" style={{ height: '20px', width: '70px', margin: 0, borderRadius: '6px' }} />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div className={`doc-badge ${results?.document?.is_draft === false ? 'badge-final' : 'badge-draft'}`}>
-                      {results?.document?.is_draft === false ? 'FINAL' : 'AI DRAFT'}
-                    </div>
-                    {localChunks.length > 0 && (
-                      <span style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '8px', 
-                        backgroundColor: 'var(--sidebar-hover)', 
-                        padding: '4px 10px', 
-                        borderRadius: '6px', 
-                        border: '1px solid var(--border-color)',
-                        fontSize: '0.8rem',
-                        fontWeight: 650
-                      }}>
-                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                          <Check size={12} style={{ strokeWidth: 3 }} />
-                          {localChunks.filter(c => c.is_verified).length} verified
-                        </span>
-                        <span style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></span>
-                        <span style={{ color: '#ef4444' }}>
-                          {localChunks.filter(c => !c.is_verified).length} remaining
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="doc-actions-group">
-                <button
-                  className={`secondary-btn action-btn-doc ${showAllDiffs ? 'active' : ''}`}
-                  onClick={() => setShowAllDiffs(!showAllDiffs)}
-                  style={{
-                    backgroundColor: showAllDiffs ? 'rgba(91, 68, 233, 0.1)' : 'transparent',
-                    color: showAllDiffs ? 'var(--primary)' : 'var(--text-gray)',
-                    border: '1px solid var(--border-color)',
-                  }}
-                  title="Compare original steno text with AI corrected text"
-                >
-                  <Zap size={16} />
-                  <span>{showAllDiffs ? 'Hide Changes' : 'Show Changes'}</span>
-                </button>
-                <button 
-                  className="secondary-btn action-btn-doc" 
-                  onClick={handleSaveDocument}
-                  disabled={loading || isSaving || !localChunks.length}
-                >
-                  {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                  <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
-                </button>
-                <div className="download-dropdown-container" ref={downloadDropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
-                  <button 
-                    className="primary-btn action-btn-doc" 
-                    onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
-                    disabled={loading || isDownloadingPDF || isDownloadingWord || !localChunks.length}
-                  >
-                    {isDownloadingPDF || isDownloadingWord ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : (
-                      <Download size={16} />
-                    )}
-                    <span>
-                      {isDownloadingPDF ? 'Downloading PDF...' : 
-                       isDownloadingWord ? 'Downloading Word...' : 
-                       'Download'}
-                    </span>
-                  </button>
-
-                  {showDownloadDropdown && (
-                    <div 
-                      className="download-dropdown-menu" 
-                      style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: '100%',
-                        marginTop: '8px',
-                        backgroundColor: 'white',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                        zIndex: 100,
-                        minWidth: '160px',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <button
-                        onClick={() => {
-                          setShowDownloadDropdown(false);
-                          handleDownloadPDF();
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-dark)',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <FileText size={16} color="#dc2626" />
-                        <span>Download PDF</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowDownloadDropdown(false);
-                          handleDownloadWord();
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-dark)',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem',
-                          fontWeight: '500',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <FileText size={16} color="#2b579a" />
-                        <span>Download Word</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Action buttons moved to top header */}
 
 
 
@@ -1507,15 +1453,18 @@ export default function ReviewEdit({ task, onBack }) {
                   </div>
                 </div>
               ) : localChunks && localChunks.length > 0 ? (
-                <div className="doc-page">
-                  {localChunks.slice(0, documentLimit).map((chunk, idx) => {
-                    const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
-                    const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
-                    const chunkText = chunk.corrected_text || chunk.raw_chunk_text || chunk.original_raw_text || "";
+                <div className="doc-page" style={{ height: '100%' }}>
+                  <Virtuoso
+                    style={{ height: '100%' }}
+                    data={localChunks}
+                    itemContent={(idx, chunk) => {
+                      const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
+                      const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
+                      const chunkText = chunk.corrected_text || chunk.raw_chunk_text || chunk.original_raw_text || "";
                       return (
-                      <div
-                        key={idx}
-                        className={`doc-paragraph ${chunk.is_verified ? 'verified' : ''} ${isActive ? 'active-paragraph' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
+                        <div
+                          key={idx}
+                          className={`doc-paragraph ${chunk.is_verified ? 'verified' : ''} ${isActive ? 'active-paragraph' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
                         onMouseEnter={() => handleCrossPanelHover(chunk.audio_start_time_sec, chunk.audio_end_time_sec)}
                         onMouseLeave={handleCrossPanelLeave}
                         onClick={() => {
@@ -1571,7 +1520,7 @@ export default function ReviewEdit({ task, onBack }) {
                                 alignItems: 'center',
                                 padding: '4px',
                                 borderRadius: '6px',
-                                backgroundColor: isDiffEnabled(chunk.raw_chunk_id) ? 'rgba(91, 68, 233, 0.08)' : 'transparent',
+                                backgroundColor: isDiffEnabled(chunk.raw_chunk_id) ? 'rgba(249, 115, 22, 0.08)' : 'transparent',
                                 transition: 'all 0.2s'
                               }}
                               title="Compare original steno text with AI corrected text"
@@ -1598,7 +1547,7 @@ export default function ReviewEdit({ task, onBack }) {
                                     color: 'var(--primary)',
                                     padding: '4px',
                                     borderRadius: '6px',
-                                    backgroundColor: 'rgba(91, 68, 233, 0.08)',
+                                    backgroundColor: 'rgba(249, 115, 22, 0.08)',
                                     transition: 'all 0.2s'
                                   }}
                                   title="Unverify chunk to allow edits"
@@ -1644,10 +1593,10 @@ export default function ReviewEdit({ task, onBack }) {
                             color: 'var(--text-dark)',
                             cursor: 'text'
                           }}>
-                            {renderWordDiff(
-                              chunk.original_raw_text || chunk.raw_chunk_text || "",
-                              chunkText
-                            )}
+                            <WordDiff 
+                              original={chunk.original_raw_text || chunk.raw_chunk_text || ""}
+                              corrected={chunkText}
+                            />
                           </div>
                         ) : (
                           <textarea
@@ -1669,7 +1618,8 @@ export default function ReviewEdit({ task, onBack }) {
                         )}
                       </div>
                     );
-                  })}
+                  }}
+                  />
                 </div>
               ) : (
                 <div className="doc-empty-state">
@@ -1727,7 +1677,7 @@ export default function ReviewEdit({ task, onBack }) {
                 onChange={handleSeek}
                 className="timeline-slider"
                 style={{
-                  background: `linear-gradient(to right, #5B44E9 0%, #5B44E9 ${progressPercent}%, rgba(255,255,255,0.2) ${progressPercent}%, rgba(255,255,255,0.2) 100%)`
+                  background: `linear-gradient(to right, #F97316 0%, #F97316 ${progressPercent}%, rgba(255,255,255,0.2) ${progressPercent}%, rgba(255,255,255,0.2) 100%)`
                 }}
               />
             </div>
@@ -1744,7 +1694,7 @@ export default function ReviewEdit({ task, onBack }) {
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
                 className="volume-slider"
-                style={{ width: '60px', background: `linear-gradient(to right, #5B44E9 0%, #5B44E9 ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) 100%)` }}
+                style={{ width: '60px', background: `linear-gradient(to right, #F97316 0%, #F97316 ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) 100%)` }}
               />
             </div>
           </div>

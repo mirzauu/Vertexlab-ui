@@ -347,7 +347,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
               </button>
               <button 
                 className="view-btn" 
-                style={{ backgroundColor: isDocGenCompleted ? '#5B44E9' : '#9ca3af', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: isDocGenCompleted ? 'pointer' : 'not-allowed', opacity: isDocGenCompleted ? 1 : 0.6 }} 
+                style={{ backgroundColor: isDocGenCompleted ? '#F97316' : '#9ca3af', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', cursor: isDocGenCompleted ? 'pointer' : 'not-allowed', opacity: isDocGenCompleted ? 1 : 0.6 }} 
                 onClick={onWorkstation}
                 disabled={!isDocGenCompleted}
               >
@@ -421,13 +421,13 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                     {isProcessing && <Loader2 size={16} className="animate-spin" />}
                     {isFailed && <XCircle size={16} />}
                     {isPending && <div style={{width: 8, height: 8, borderRadius: '50%', backgroundColor: '#9ca3af'}}></div>}
-                    {isLoading && <Loader2 size={12} className="animate-spin" style={{ color: '#5B44E9' }} />}
+                    {isLoading && <Loader2 size={12} className="animate-spin" style={{ color: '#F97316' }} />}
                   </div>
                   {index < PIPELINE_STEPS.length - 1 && <div className={`step-line ${isCompleted ? 'completed-line' : ''}`} style={{ backgroundColor: isCompleted ? '#22c55e' : '#e5e7eb' }}></div>}
                 </div>
                 <div className="step-info" style={{ opacity: (isPending || isLoading) ? 0.6 : 1, width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h4 style={{ textTransform: 'capitalize', margin: 0, color: canNavigateToWorkstation ? '#5B44E9' : 'inherit' }}>{stepInfo.title}</h4>
+                    <h4 style={{ textTransform: 'capitalize', margin: 0, color: canNavigateToWorkstation ? '#F97316' : 'inherit' }}>{stepInfo.title}</h4>
                     {isLoading ? (
                       <div className="skeleton-bar short shimmer" style={{ height: '14px', width: '60px' }}></div>
                     ) : (

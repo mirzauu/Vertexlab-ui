@@ -37,6 +37,7 @@ class User(Base, UUIDMixin, TimestampMixin):
     )
     google_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     settings: Mapped["UserSettings | None"] = relationship(

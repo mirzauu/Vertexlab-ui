@@ -176,10 +176,6 @@ export default function Usage() {
   if (error) {
     return (
       <div className="usage-page-container">
-        <div className="usage-header">
-          <h1>Usage & Billing</h1>
-          <p>Detailed tracking of page processing and organizational statements.</p>
-        </div>
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -201,11 +197,7 @@ export default function Usage() {
 
   return (
     <div className="usage-page-container">
-      <div className="usage-header">
-        <div>
-          <h1>Usage & Billing Overview</h1>
-          <p>Track your speech processing page volume, aggregated monthly summaries, and payments history.</p>
-        </div>
+      <div className="usage-header" style={{ justifyContent: 'flex-end', marginBottom: '16px' }}>
         <div className="pricing-tier-badge">
           <Shield size={16} />
           <span>Enterprise Pay-As-You-Go ($0.50/page)</span>
@@ -229,7 +221,7 @@ export default function Usage() {
       <div className="overview-cards-grid">
         <div className="overview-stat-card indigo-glow">
           <div className="stat-card-header">
-            <div className="stat-icon-wrap" style={{ backgroundColor: 'rgba(91, 68, 233, 0.1)', color: '#5B44E9' }}>
+            <div className="stat-icon-wrap" style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)', color: '#F97316' }}>
               <BarChart3 size={20} />
             </div>
             <span className="stat-card-label">Active Plan</span>

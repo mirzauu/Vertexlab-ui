@@ -73,6 +73,10 @@ class AuthService:
         # Cleanup OTP
         await self.otp_repo.delete_otps_for_email(email)
 
+        # Update last login
+        from datetime import datetime, timezone
+        await self.user_repo.update(user, {"last_login": datetime.now(timezone.utc)})
+
         return self._create_token_response(user.id)
 
     async def request_login_otp(self, email: str) -> None:
@@ -112,6 +116,10 @@ class AuthService:
         # Cleanup OTP
         await self.otp_repo.delete_otps_for_email(email)
 
+        # Update last login
+        from datetime import datetime, timezone
+        await self.user_repo.update(user, {"last_login": datetime.now(timezone.utc)})
+
         return self._create_token_response(user.id)
 
     async def google_auth(self, google_token: str) -> TokenResponse:
@@ -147,6 +155,10 @@ class AuthService:
                 # Create default settings
                 settings = UserSettings(user_id=user.id)
                 await self.user_repo.create_settings(settings)
+
+        # Update last login
+        from datetime import datetime, timezone
+        await self.user_repo.update(user, {"last_login": datetime.now(timezone.utc)})
 
         return self._create_token_response(user.id)
 

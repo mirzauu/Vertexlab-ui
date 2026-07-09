@@ -235,6 +235,29 @@ class DocumentGenerationStep(BasePipelineStep):
             "model": settings.OPENAI_MODEL,
         }
 
+        if context.db:
+            from sqlalchemy import select
+            from app.models.ai_document import AIDocument
+            
+            result = await context.db.execute(
+                select(AIDocument).where(AIDocument.task_id == context.task_id)
+            )
+            doc = result.scalar_one_or_none()
+
+            if not doc:
+                doc = AIDocument(
+                    task_id=context.task_id,
+                    title="AI-Corrected Proof Document",
+                    content=full_content,
+                    version=1,
+                    is_draft=True,
+                    corrected_chunks=corrected_chunks
+                )
+                context.db.add(doc)
+            else:
+                doc.content = full_content
+                doc.corrected_chunks = corrected_chunks
+
         logger.info(
             f"✅ Document generation complete: {len(correction_map)} chunks corrected, "
             f"{len(all_matches) - len(correction_map)} skipped"

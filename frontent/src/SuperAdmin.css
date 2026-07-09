@@ -124,7 +124,7 @@
   height: 2px;
   background-color: var(--primary);
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(91, 68, 233, 0.6);
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.6);
 }
 
 /* Search bar styling */
@@ -156,7 +156,7 @@
 
 .sa-search-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(91, 68, 233, 0.1);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 /* Overview grid and cards */
@@ -432,9 +432,9 @@
 }
 
 .sa-org-tag.role-admin {
-  background-color: rgba(91, 68, 233, 0.08);
+  background-color: rgba(249, 115, 22, 0.08);
   color: var(--primary);
-  border-color: rgba(91, 68, 233, 0.2);
+  border-color: rgba(249, 115, 22, 0.2);
 }
 
 .sa-org-tag.role-editor {
@@ -551,6 +551,16 @@
 }
 
 .deactivate-btn:hover:not(:disabled) {
+  background-color: var(--red);
+  color: white;
+}
+
+.delete-btn {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: var(--red);
+}
+
+.delete-btn:hover:not(:disabled) {
   background-color: var(--red);
   color: white;
 }
@@ -726,7 +736,7 @@
 .sa-thread-item.selected {
   background-color: var(--sidebar-active);
   border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(91, 68, 233, 0.05);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.05);
 }
 
 .sa-thread-meta-row {
@@ -936,7 +946,7 @@
 
 .support-row .sa-chat-avatar {
   background-color: var(--primary);
-  box-shadow: 0 2px 6px rgba(91, 68, 233, 0.2);
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.2);
 }
 
 .sa-chat-bubble-container {
@@ -982,7 +992,7 @@
   background-color: var(--primary);
   color: white;
   border: none;
-  box-shadow: 0 2px 8px rgba(91, 68, 233, 0.15);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
 }
 
 /* Chat Input Footer styling */
@@ -1010,7 +1020,7 @@
 .sa-chat-input-form input:focus {
   background-color: var(--card-bg);
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(91, 68, 233, 0.1);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .sa-chat-input-form button {
@@ -1026,7 +1036,7 @@
   font-size: 0.88rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  box-shadow: 0 4px 12px rgba(91, 68, 233, 0.15);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
 }
 
 .sa-chat-input-form button:hover:not(:disabled) {

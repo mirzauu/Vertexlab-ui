@@ -269,4 +269,84 @@ class TestSuperAdminEndpoints:
         resp = await client.post(f"/api/v1/superadmin/help/threads/{uuid4()}/reply", json={"content": "test", "user_id": str(uuid4())}, headers=headers)
         assert resp.status_code == 403
 
+    async def test_delete_user_success(self, client: AsyncClient):
+        """Test that the superadmin can delete a user."""
+        superadmin_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        headers = {"Authorization": f"Bearer {superadmin_token}"}
+
+        # Create target user to delete
+        target_email = f"delete_u_{uuid4().hex[:6]}@example.com"
+        await self._get_auth_token(client, target_email, "DeleteTarget")
+
+        # Get target user's ID
+        users_response = await client.get("/api/v1/superadmin/users", headers=headers)
+        users = users_response.json()["items"]
+        target_user_id = next(u["id"] for u in users if u["email"] == target_email)
+
+        # Delete user
+        response = await client.delete(f"/api/v1/superadmin/users/{target_user_id}", headers=headers)
+        assert response.status_code == 200
+        assert "deleted successfully" in response.json()["message"]
+
+        # Verify user is deleted
+        users_response = await client.get("/api/v1/superadmin/users", headers=headers)
+        users_after = users_response.json()["items"]
+        assert not any(u["id"] == target_user_id for u in users_after)
+
+    async def test_delete_organization_success(self, client: AsyncClient):
+        """Test that the superadmin can delete an organization."""
+        superadmin_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        headers = {"Authorization": f"Bearer {superadmin_token}"}
+
+        # Create user & organization first
+        user_email = f"org_owner_{uuid4().hex[:6]}@example.com"
+        user_token = await self._get_auth_token(client, user_email, "OrgOwner")
+        user_headers = {"Authorization": f"Bearer {user_token}"}
+
+        org_resp = await client.post(
+            "/api/v1/organizations/",
+            json={"name": "Org to Delete"},
+            headers=user_headers,
+        )
+        assert org_resp.status_code == 201
+        org_id = org_resp.json()["id"]
+
+        # Delete organization as super admin
+        response = await client.delete(f"/api/v1/superadmin/organizations/{org_id}", headers=headers)
+        assert response.status_code == 200
+        assert "deleted successfully" in response.json()["message"]
+
+    async def test_delete_task_success(self, client: AsyncClient):
+        """Test that the superadmin can delete a task."""
+        superadmin_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        headers = {"Authorization": f"Bearer {superadmin_token}"}
+
+        # Create a user & organization
+        user_email = f"task_creator_{uuid4().hex[:6]}@example.com"
+        user_token = await self._get_auth_token(client, user_email, "TaskCreator")
+        user_headers = {"Authorization": f"Bearer {user_token}"}
+
+        org_resp = await client.post(
+            "/api/v1/organizations/",
+            json={"name": "Task Org"},
+            headers=user_headers,
+        )
+        assert org_resp.status_code == 201
+        org_id = org_resp.json()["id"]
+
+        # Create a task in the organization
+        task_resp = await client.post(
+            f"/api/v1/organizations/{org_id}/tasks/",
+            json={"name": "Test Task", "description": "Desc"},
+            headers=user_headers,
+        )
+        assert task_resp.status_code == 201
+        task_id = task_resp.json()["id"]
+
+        # Delete task as superadmin
+        response = await client.delete(f"/api/v1/superadmin/tasks/{task_id}", headers=headers)
+        assert response.status_code == 200
+        assert "deleted successfully" in response.json()["message"]
+
+
 

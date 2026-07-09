@@ -5,7 +5,7 @@ Pipeline repository for pipeline runs and steps.
 from uuid import UUID
 from typing import Optional, Sequence
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, undefer
 
 from app.repositories.base import BaseRepository
 from app.models.pipeline import PipelineRun, PipelineStep
@@ -84,6 +84,7 @@ class PipelineRepository(BaseRepository[PipelineRun]):
             select(AIDocument)
             .where(AIDocument.task_id == task_id)
             .order_by(AIDocument.version.desc())
+            .options(undefer(AIDocument.content), undefer(AIDocument.corrected_chunks))
         )
         return result.scalars().first()
 
@@ -109,5 +110,6 @@ class PipelineRepository(BaseRepository[PipelineRun]):
             select(AIDocument)
             .where(AIDocument.task_id == task_id)
             .order_by(AIDocument.version.asc())
+            .options(undefer(AIDocument.content), undefer(AIDocument.corrected_chunks))
         )
         return list(result.scalars().all())

@@ -1,12 +1,8 @@
-"""
-AIDocument ORM model.
-"""
-
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Integer, Boolean, Text, DateTime, ForeignKey, func
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Integer, Boolean, Text, DateTime, ForeignKey, func, cast
+from sqlalchemy.dialects.postgresql import UUID, JSONB, JSONPATH
+from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
 
 from app.db.base import Base, UUIDMixin, TimestampMixin
 
@@ -18,7 +14,7 @@ class AIDocument(Base, UUIDMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)  # HTML/rich text
+    content: Mapped[str] = mapped_column(Text, nullable=False, deferred=True)  # HTML/rich text, deferred
     version: Mapped[int] = mapped_column(Integer, default=1)
     is_draft: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -27,8 +23,24 @@ class AIDocument(Base, UUIDMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("ai_documents.id", ondelete="SET NULL"), nullable=True
     )
 
-    # Store individual AI-corrected chunks as JSONB
-    corrected_chunks: Mapped[list[dict] | None] = mapped_column(JSONB, nullable=True)
+    # Store individual AI-corrected chunks as JSONB, deferred
+    corrected_chunks: Mapped[list[dict] | None] = mapped_column(JSONB, nullable=True, deferred=True)
+
+    # Column properties to calculate counts server-side without loading corrected_chunks JSON
+    chunk_count: Mapped[int] = column_property(
+        func.coalesce(func.jsonb_array_length(corrected_chunks), 0)
+    )
+    verified_count: Mapped[int] = column_property(
+        func.coalesce(
+            func.jsonb_array_length(
+                func.jsonb_path_query_array(
+                    corrected_chunks,
+                    cast('$[*] ? (@.is_verified == true)', JSONPATH)
+                )
+            ),
+            0
+        )
+    )
 
     # Relationships
     task: Mapped["Task"] = relationship("Task", back_populates="ai_documents")
@@ -39,3 +51,4 @@ class AIDocument(Base, UUIDMixin, TimestampMixin):
 
 # Forward reference
 from app.models.task import Task  # noqa: E402, F401
+
