@@ -242,8 +242,8 @@
 }
 
 .toolbar-icon.active {
-  color: #F97316;
-  background-color: rgba(249, 115, 22, 0.1);
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-bottom-icon {

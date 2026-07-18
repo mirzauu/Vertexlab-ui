@@ -348,5 +348,111 @@ class TestSuperAdminEndpoints:
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
 
+    async def test_bulk_delete_users_success(self, client: AsyncClient):
+        """Test bulk deleting users."""
+        superadmin_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        headers = {"Authorization": f"Bearer {superadmin_token}"}
+
+        # Create two target users
+        target_email_1 = f"bulk_u1_{uuid4().hex[:6]}@example.com"
+        target_email_2 = f"bulk_u2_{uuid4().hex[:6]}@example.com"
+        await self._get_auth_token(client, target_email_1, "Bulk1")
+        await self._get_auth_token(client, target_email_2, "Bulk2")
+
+        # Get their IDs
+        users_response = await client.get("/api/v1/superadmin/users", headers=headers)
+        users = users_response.json()["items"]
+        id1 = next(u["id"] for u in users if u["email"] == target_email_1)
+        id2 = next(u["id"] for u in users if u["email"] == target_email_2)
+
+        # Bulk delete
+        response = await client.request(
+            "POST",
+            "/api/v1/superadmin/users/bulk",
+            json={"ids": [id1, id2]},
+            headers=headers
+        )
+        assert response.status_code == 200
+        assert "deleted" in response.json()["message"]
+
+        # Verify they are deleted
+        users_response = await client.get("/api/v1/superadmin/users", headers=headers)
+        users_after = users_response.json()["items"]
+        assert not any(u["id"] in [id1, id2] for u in users_after)
+
+    async def test_bulk_delete_organizations_success(self, client: AsyncClient):
+        """Test bulk deleting organizations."""
+        superadmin_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        headers = {"Authorization": f"Bearer {superadmin_token}"}
+
+        # Create user & organization first
+        user_email = f"org_owner_bulk_{uuid4().hex[:6]}@example.com"
+        user_token = await self._get_auth_token(client, user_email, "OrgOwnerBulk")
+        user_headers = {"Authorization": f"Bearer {user_token}"}
+
+        org1_resp = await client.post(
+            "/api/v1/organizations/",
+            json={"name": "Org Bulk 1"},
+            headers=user_headers,
+        )
+        org2_resp = await client.post(
+            "/api/v1/organizations/",
+            json={"name": "Org Bulk 2"},
+            headers=user_headers,
+        )
+        id1 = org1_resp.json()["id"]
+        id2 = org2_resp.json()["id"]
+
+        # Bulk delete
+        response = await client.request(
+            "POST",
+            "/api/v1/superadmin/organizations/bulk",
+            json={"ids": [id1, id2]},
+            headers=headers
+        )
+        assert response.status_code == 200
+        assert "deleted" in response.json()["message"]
+
+    async def test_bulk_delete_tasks_success(self, client: AsyncClient):
+        """Test bulk deleting tasks."""
+        superadmin_token = await self._get_auth_token(client, "mirzamailbox0@gmail.com", "SuperAdmin")
+        headers = {"Authorization": f"Bearer {superadmin_token}"}
+
+        # Create a user & organization
+        user_email = f"task_creator_bulk_{uuid4().hex[:6]}@example.com"
+        user_token = await self._get_auth_token(client, user_email, "TaskCreatorBulk")
+        user_headers = {"Authorization": f"Bearer {user_token}"}
+
+        org_resp = await client.post(
+            "/api/v1/organizations/",
+            json={"name": "Task Org Bulk"},
+            headers=user_headers,
+        )
+        org_id = org_resp.json()["id"]
+
+        # Create two tasks
+        task1_resp = await client.post(
+            f"/api/v1/organizations/{org_id}/tasks/",
+            json={"name": "Test Task 1", "description": "Desc"},
+            headers=user_headers,
+        )
+        task2_resp = await client.post(
+            f"/api/v1/organizations/{org_id}/tasks/",
+            json={"name": "Test Task 2", "description": "Desc"},
+            headers=user_headers,
+        )
+        id1 = task1_resp.json()["id"]
+        id2 = task2_resp.json()["id"]
+
+        # Bulk delete
+        response = await client.request(
+            "POST",
+            "/api/v1/superadmin/tasks/bulk",
+            json={"ids": [id1, id2]},
+            headers=headers
+        )
+        assert response.status_code == 200
+        assert "deleted" in response.json()["message"]
+
 
 

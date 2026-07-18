@@ -3,7 +3,7 @@ Super Admin API Router.
 Provides administrative controls for the super admin (mirzamailbox0@gmail.com).
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from uuid import UUID
@@ -518,4 +518,82 @@ async def delete_task(
     await db.delete(task)
 
     return {"message": "Task deleted successfully."}
+
+
+from pydantic import BaseModel
+
+class BulkDeletePayload(BaseModel):
+    ids: List[UUID]
+
+
+@router.post("/users/bulk")
+async def bulk_delete_users(
+    payload: BulkDeletePayload = Body(...),
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Bulk delete users from the system."""
+    if _admin.id in payload.ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot delete your own superadmin account.",
+        )
+
+    # Delete invitations created by these users
+    from sqlalchemy import delete as sa_delete
+    from app.models.organization import Invitation
+    await db.execute(
+        sa_delete(Invitation).where(Invitation.invited_by.in_(payload.ids))
+    )
+
+    # Delete tasks created by these users
+    tasks_res = await db.execute(select(Task).where(Task.created_by.in_(payload.ids)))
+    tasks = tasks_res.scalars().all()
+    for task in tasks:
+        await db.delete(task)
+
+    # Delete the users
+    users_res = await db.execute(select(User).where(User.id.in_(payload.ids)))
+    users = users_res.scalars().all()
+    for u in users:
+        await db.delete(u)
+
+    return {"message": f"Successfully deleted {len(users)} users."}
+
+
+@router.post("/organizations/bulk")
+async def bulk_delete_organizations(
+    payload: BulkDeletePayload = Body(...),
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Bulk delete organizations from the system."""
+    # Load tasks and delete them via DB session to trigger ORM cascades properly
+    tasks_res = await db.execute(select(Task).where(Task.organization_id.in_(payload.ids)))
+    tasks = tasks_res.scalars().all()
+    for task in tasks:
+        await db.delete(task)
+
+    orgs_res = await db.execute(select(Organization).where(Organization.id.in_(payload.ids)))
+    orgs = orgs_res.scalars().all()
+    for org in orgs:
+        await db.delete(org)
+
+    return {"message": f"Successfully deleted {len(orgs)} organizations."}
+
+
+@router.post("/tasks/bulk")
+async def bulk_delete_tasks(
+    payload: BulkDeletePayload = Body(...),
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_superadmin),
+):
+    """Bulk delete pipeline tasks."""
+    tasks_res = await db.execute(select(Task).where(Task.id.in_(payload.ids)))
+    tasks = tasks_res.scalars().all()
+    for task in tasks:
+        await db.delete(task)
+
+    return {"message": f"Successfully deleted {len(tasks)} tasks."}
+
 

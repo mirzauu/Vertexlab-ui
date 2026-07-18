@@ -291,7 +291,11 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
     ? new Date(pipelineData.completed_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
     : (task.completed_at || task.created_at ? new Date(task.completed_at || task.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown Date');
   
-  const displayFiles = pipelineData?.task?.files || task.files || [];
+  const allFiles = pipelineData?.task?.files || task.files || [];
+  const displayFiles = allFiles.filter(file => {
+    const name = (file.file_name || file).toLowerCase();
+    return !name.endsWith('_cover.pdf') && !name.endsWith('_examination.pdf');
+  });
   const steps = pipelineData?.steps || [];
   const isDocGenCompleted = steps.find(s => s.step_name === 'document_generation')?.status === 'completed' || task.status?.toLowerCase() === 'completed';
   

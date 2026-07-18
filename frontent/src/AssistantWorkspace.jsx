@@ -189,7 +189,13 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
         setApiStep(3);
         const docFormData = new FormData();
         docFormData.append('file', docFile);
-        const docUploadRes = await api(`/api/v1/organizations/${orgId}/tasks/${taskId}/documents`, {
+        
+        let docUrl = `/api/v1/organizations/${orgId}/tasks/${taskId}/documents`;
+        if (examStartPage.trim()) {
+            docUrl += `?examination_start_page=${encodeURIComponent(examStartPage.trim())}`;
+        }
+        
+        const docUploadRes = await api(docUrl, {
           method: 'POST',
           body: docFormData
         });
