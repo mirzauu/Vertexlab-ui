@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './HistoryDetails.css';
-import { CheckCircle, Clock, Database, RefreshCw, UserCheck, CheckCircle2, ArrowLeft, FileText, Download, Mic, Cpu, Search, FileCheck, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Database, RefreshCw, UserCheck, CheckCircle2, ArrowLeft, FileText, Download, Mic, Cpu, Search, FileCheck, Loader2, XCircle, Sparkles, Bell, X } from 'lucide-react';
 import { api } from './services/api';
 
 // Steps must exactly match backend PIPELINE_STEPS in app/pipeline/orchestrator.py
@@ -62,6 +62,58 @@ const deregisterSession = (taskId) => {
   }
 };
 
+const playBigNotificationSound = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+
+    // 4-note ascending triumphant fanfare: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+    const notes = [
+      { freq: 523.25, time: 0.0, duration: 0.7 },
+      { freq: 659.25, time: 0.12, duration: 0.8 },
+      { freq: 783.99, time: 0.24, duration: 0.9 },
+      { freq: 1046.50, time: 0.38, duration: 1.5 }
+    ];
+
+    notes.forEach(note => {
+      // Primary chime tone
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+
+      gain.gain.setValueAtTime(0, ctx.currentTime + note.time);
+      gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + note.time + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + note.time + note.duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime + note.time);
+      osc.stop(ctx.currentTime + note.time + note.duration);
+
+      // Shimmering octave harmonic
+      const shimmer = ctx.createOscillator();
+      const shimmerGain = ctx.createGain();
+      shimmer.type = 'sine';
+      shimmer.frequency.setValueAtTime(note.freq * 2, ctx.currentTime + note.time);
+
+      shimmerGain.gain.setValueAtTime(0, ctx.currentTime + note.time);
+      shimmerGain.gain.linearRampToValueAtTime(0.09, ctx.currentTime + note.time + 0.03);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + note.time + note.duration * 0.7);
+
+      shimmer.connect(shimmerGain);
+      shimmerGain.connect(ctx.destination);
+
+      shimmer.start(ctx.currentTime + note.time);
+      shimmer.stop(ctx.currentTime + note.time + note.duration);
+    });
+  } catch (e) {
+    console.error('Failed to play big notification sound', e);
+  }
+};
+
 export default function HistoryDetails({ task, onBack, onWorkstation }) {
   const [pipelineData, setPipelineData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -70,6 +122,28 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
   const [isReloading, setIsReloading] = useState(false);
   const [reloadError, setReloadError] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showCompletionToast, setShowCompletionToast] = useState(false);
+
+  const hasNotifiedCompletionRef = useRef(task.status?.toLowerCase() === 'completed');
+
+  const checkAndNotifyCompletion = (statusData) => {
+    if (!statusData) return;
+    const isDocGenDone = statusData.steps?.find(s => s.step_name === 'document_generation')?.status === 'completed' || statusData.status?.toLowerCase() === 'completed';
+    if (isDocGenDone && !hasNotifiedCompletionRef.current) {
+      hasNotifiedCompletionRef.current = true;
+      playBigNotificationSound();
+      setShowCompletionToast(true);
+
+      if (("Notification" in window) && Notification.permission === 'granted') {
+        try {
+          new Notification("🎉 VerbaLex AI — Document Generation Complete!", {
+            body: `Case "${task.name || 'Your task'}" document generation is finished and ready for review in Workstation.`,
+            icon: "/favicon.ico"
+          });
+        } catch (e) {}
+      }
+    }
+  };
 
   useEffect(() => {
     const orgId = localStorage.getItem('organization_id') || task.organization_id;
@@ -136,6 +210,7 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                   sessionStorage.setItem(cacheKey, JSON.stringify(merged));
                   return merged;
                 });
+                checkAndNotifyCompletion(data);
                 // Normalize to lowercase — backend always sends lowercase status
                 const normalizedStatus = data.status?.toLowerCase();
                 if (normalizedStatus === 'completed' || normalizedStatus === 'failed') {
@@ -226,6 +301,8 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
     setShowConfirm(false);
     setIsReloading(true);
     setReloadError(null);
+    hasNotifiedCompletionRef.current = false;
+    setShowCompletionToast(false);
     const orgId = localStorage.getItem('organization_id') || task.organization_id;
 
     try {
@@ -376,6 +453,36 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
         </div>
       </div>
 
+      {showCompletionToast && isDocGenCompleted && (
+        <div className="doc-gen-completion-banner">
+          <div className="completion-banner-content">
+            <div className="completion-banner-icon">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <strong style={{ fontSize: '0.95rem', display: 'block', color: 'var(--text-dark)' }}>
+                Document Generation Complete!
+              </strong>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-gray)' }}>
+                Your task has finished all 5 pipeline stages and is ready for review.
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="completion-banner-btn" onClick={onWorkstation}>
+              Open Workstation
+            </button>
+            <button 
+              onClick={() => setShowCompletionToast(false)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+              title="Dismiss"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="history-details-body">
         {/* Left Stepper */}
         <div className="history-stepper">
@@ -391,18 +498,42 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
             const isFailed = status === 'failed';
             const isPending = status === 'pending';
             const isLoading = status === 'loading';
+
+            const isSttPending = stepName === 'stt' && isPending;
+            const isCurrentQueued = isPending && (index === 0 || steps.find(s => s.step_name === PIPELINE_STEPS[index - 1])?.status === 'completed');
             
             let circleColor = '#e5e7eb'; // pending
             if (isCompleted) circleColor = '#22c55e';
             if (isProcessing) circleColor = '#3b82f6';
             if (isFailed) circleColor = '#ef4444';
             if (isLoading) circleColor = '#f3f4f6';
+            if (isSttPending) circleColor = 'rgba(249, 115, 22, 0.12)';
             
             let statusLabelColor = '#6b7280';
             let statusLabelBg = 'rgba(156, 163, 175, 0.1)';
-            if (isCompleted) { statusLabelColor = '#16a34a'; statusLabelBg = 'rgba(34, 197, 94, 0.1)'; }
-            if (isProcessing) { statusLabelColor = '#2563eb'; statusLabelBg = 'rgba(59, 130, 246, 0.1)'; }
-            if (isFailed) { statusLabelColor = '#dc2626'; statusLabelBg = 'rgba(239, 68, 68, 0.1)'; }
+            let displayStatusText = status;
+
+            if (isCompleted) { 
+              statusLabelColor = '#16a34a'; 
+              statusLabelBg = 'rgba(34, 197, 94, 0.1)'; 
+            }
+            if (isProcessing) { 
+              statusLabelColor = '#2563eb'; 
+              statusLabelBg = 'rgba(59, 130, 246, 0.1)'; 
+            }
+            if (isFailed) { 
+              statusLabelColor = '#dc2626'; 
+              statusLabelBg = 'rgba(239, 68, 68, 0.1)'; 
+            }
+            if (isSttPending) {
+              statusLabelColor = '#ea580c';
+              statusLabelBg = 'rgba(249, 115, 22, 0.12)';
+              displayStatusText = 'INITIALIZING...';
+            } else if (isCurrentQueued) {
+              statusLabelColor = '#d97706';
+              statusLabelBg = 'rgba(245, 158, 11, 0.1)';
+              displayStatusText = 'QUEUED';
+            }
 
             const isDocGen = stepName === 'document_generation';
             const canNavigateToWorkstation = isDocGen && isCompleted;
@@ -410,33 +541,56 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
             return (
               <div 
                 key={stepName} 
-                className={`history-step-item ${status}`}
+                className={`history-step-item ${status} ${isSttPending ? 'active-queued' : ''} ${isCurrentQueued ? 'active-queued' : ''}`}
                 style={{ 
                   cursor: canNavigateToWorkstation ? 'pointer' : 'default' 
                 }}
                 onClick={canNavigateToWorkstation ? onWorkstation : undefined}
               >
                 <div className="step-marker">
-                  <div className="step-circle" style={{ 
-                    backgroundColor: circleColor,
-                    color: (isCompleted || isProcessing || isFailed) ? 'white' : '#9ca3af'
-                  }}>
+                  <div 
+                    className={`step-circle ${isSttPending ? 'stt-pending' : ''}`} 
+                    style={{ 
+                      backgroundColor: circleColor,
+                      color: (isCompleted || isProcessing || isFailed) ? 'white' : (isSttPending ? '#F97316' : '#9ca3af')
+                    }}
+                  >
                     {isCompleted && <CheckCircle size={16} />}
                     {isProcessing && <Loader2 size={16} className="animate-spin" />}
                     {isFailed && <XCircle size={16} />}
-                    {isPending && <div style={{width: 8, height: 8, borderRadius: '50%', backgroundColor: '#9ca3af'}}></div>}
+                    {isSttPending && <Mic size={15} style={{ color: '#F97316' }} className="animate-pulse" />}
+                    {isPending && !isSttPending && (
+                      isCurrentQueued ? (
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#F59E0B' }} className="animate-pulse"></div>
+                      ) : (
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#9ca3af' }}></div>
+                      )
+                    )}
                     {isLoading && <Loader2 size={12} className="animate-spin" style={{ color: '#F97316' }} />}
                   </div>
-                  {index < PIPELINE_STEPS.length - 1 && <div className={`step-line ${isCompleted ? 'completed-line' : ''}`} style={{ backgroundColor: isCompleted ? '#22c55e' : '#e5e7eb' }}></div>}
+                  {index < PIPELINE_STEPS.length - 1 && (
+                    <div 
+                      className={`step-line ${isCompleted ? 'completed-line' : ''}`} 
+                      style={{ backgroundColor: isCompleted ? '#22c55e' : (isSttPending ? '#FDBA74' : '#e5e7eb') }}
+                    ></div>
+                  )}
                 </div>
-                <div className="step-info" style={{ opacity: (isPending || isLoading) ? 0.6 : 1, width: '100%' }}>
+                <div 
+                  className="step-info" 
+                  style={{ 
+                    opacity: (isPending && !isSttPending && !isCurrentQueued) || isLoading ? 0.6 : 1, 
+                    width: '100%' 
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h4 style={{ textTransform: 'capitalize', margin: 0, color: canNavigateToWorkstation ? '#F97316' : 'inherit' }}>{stepInfo.title}</h4>
+                    <h4 style={{ textTransform: 'capitalize', margin: 0, color: canNavigateToWorkstation ? '#F97316' : (isSttPending ? '#EA580C' : 'inherit') }}>
+                      {stepInfo.title}
+                    </h4>
                     {isLoading ? (
                       <div className="skeleton-bar short shimmer" style={{ height: '14px', width: '60px' }}></div>
                     ) : (
                       <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', backgroundColor: statusLabelBg, color: statusLabelColor, textTransform: 'uppercase', fontWeight: 600 }}>
-                        {status}
+                        {displayStatusText}
                       </span>
                     )}
                   </div>
@@ -446,23 +600,36 @@ export default function HistoryDetails({ task, onBack, onWorkstation }) {
                       <div className="skeleton-bar short shimmer"></div>
                     </div>
                   ) : (
-                    <p>{stepInfo.description}</p>
+                    <p style={{ color: isSttPending ? 'var(--text-dark)' : '#6B7280' }}>
+                      {stepInfo.description}
+                      {isSttPending && (
+                        <span style={{ display: 'block', fontSize: '0.78rem', color: '#EA580C', marginTop: '2px', fontWeight: 500 }}>
+                          • Initializing speech recognition & audio pipeline...
+                        </span>
+                      )}
+                    </p>
                   )}
                   
                   {/* Additional Metadata Details per Step */}
-                  {actualStep?.metadata_json && Object.keys(actualStep.metadata_json).length > 0 && (
-                    <div style={{ marginTop: '8px', padding: '8px', backgroundColor: 'var(--sidebar-hover)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-gray)' }}>
-                      {Object.entries(actualStep.metadata_json).map(([key, value]) => {
-                        if (typeof value === 'object') return null; // Skip complex objects like status_breakdown
-                        return (
+                  {actualStep?.metadata_json && (() => {
+                    const hiddenKeys = new Set(['proofcleaned_path', 'task_cleaned_path', 'pinecone_index']);
+                    const visibleEntries = Object.entries(actualStep.metadata_json).filter(
+                      ([key, value]) => !hiddenKeys.has(key) && typeof value !== 'object' && value !== null && value !== undefined
+                    );
+
+                    if (visibleEntries.length === 0) return null;
+
+                    return (
+                      <div style={{ marginTop: '8px', padding: '8px', backgroundColor: 'var(--sidebar-hover)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-gray)' }}>
+                        {visibleEntries.map(([key, value]) => (
                           <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                             <span style={{ color: '#9ca3af', textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}:</span>
                             <span style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{String(value)}</span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    );
+                  })()}
                   {/* Show error message if failed */}
                   {isFailed && actualStep?.error_message && (
                     <div style={{ marginTop: '8px', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--red)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FileText, MoreHorizontal, Check, Search, Mic, UploadCloud, Plus, HardDrive, Folder, Box, X, Sparkles, ArrowRight, Play, Loader2, AlertCircle } from 'lucide-react';
+import { FileText, MoreHorizontal, Check, Search, Mic, UploadCloud, Plus, HardDrive, Folder, Box, X, Sparkles, ArrowRight, Play, Loader2, AlertCircle, Bell, BellRing, BellOff, CheckCircle2 } from 'lucide-react';
 import { api } from './services/api';
+import { uploadDirectAndRegister } from './services/cloudinary';
 import Orb from './components/Orb';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -28,10 +29,55 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
   // API State
   const [isProcessing, setIsProcessing] = useState(false);
   const [apiStep, setApiStep] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // Notification Modal State
+  const [notifyStatus, setNotifyStatus] = useState('prompt'); // 'prompt' | 'granted' | 'denied' | 'unsupported' | 'dismissed'
+  const [notifyFeedback, setNotifyFeedback] = useState('');
 
   const docInputRef = useRef(null);
   const audioInputRef = useRef(null);
+
+  const handleEnableNotification = async () => {
+    if (!("Notification" in window)) {
+      setNotifyStatus('unsupported');
+      setNotifyFeedback("Browser notifications are not supported on this device.");
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      setNotifyStatus('granted');
+      setNotifyFeedback("Notifications are active! We'll alert you the moment your case analysis is ready.");
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      setNotifyStatus('denied');
+      setNotifyFeedback("Notifications are currently blocked. Please allow notifications in your browser's site settings.");
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotifyStatus('granted');
+        setNotifyFeedback("You're all set! We'll notify you as soon as processing completes.");
+        try {
+          new Notification("VerbaLex AI", {
+            body: "Notifications enabled! We'll alert you when your case is ready.",
+            icon: "/favicon.ico"
+          });
+        } catch (e) {}
+      } else {
+        setNotifyStatus('denied');
+        setNotifyFeedback("Permission was not granted. You can still track progress on this screen.");
+      }
+    } catch (err) {
+      setNotifyStatus('denied');
+      setNotifyFeedback("Unable to request notification permission.");
+    }
+  };
 
   useEffect(() => {
     if (step !== 0 || isProcessing) return;
@@ -141,17 +187,24 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
     }
   };
   
-  const handleProceed = async () => {
+  const handleStartProcessing = async () => {
     const orgId = localStorage.getItem('organization_id');
-    const token = localStorage.getItem('bearer_token');
+    if (!orgId) {
+      setErrorMessage("No organization ID found in session. Please log in again.");
+      return;
+    }
 
-    if (!orgId || !token) {
-      setErrorMessage('Authentication credentials not found. Please log in.');
+    if (!inputText.trim()) {
+      setErrorMessage("Please enter a case name.");
       return;
     }
 
     setIsProcessing(true);
     setErrorMessage(null);
+    setUploadProgress(0);
+    if (notifyStatus === 'dismissed') {
+      setNotifyStatus('prompt');
+    }
 
     let taskId = null;
     let taskObj = null;
@@ -172,34 +225,31 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
       taskObj = await containerRes.json();
       taskId = taskObj.id;
 
-      // Step 2: Upload Audio
+      // Step 2: Direct Upload Audio to Cloudinary
       if (audioFile) {
         setApiStep(2);
-        const audioFormData = new FormData();
-        audioFormData.append('file', audioFile);
-        const audioUploadRes = await api(`/api/v1/organizations/${orgId}/tasks/${taskId}/files`, {
-          method: 'POST',
-          body: audioFormData
+        setUploadProgress(0);
+        await uploadDirectAndRegister({
+          file: audioFile,
+          fileType: 'audio',
+          orgId,
+          taskId,
+          onProgress: (percent) => setUploadProgress(percent),
         });
-        if (!audioUploadRes.ok) throw new Error(`Failed to upload audio: ${audioUploadRes.statusText}`);
       }
 
-      // Step 3: Upload Document
+      // Step 3: Direct Upload Document to Cloudinary
       if (docFile) {
         setApiStep(3);
-        const docFormData = new FormData();
-        docFormData.append('file', docFile);
-        
-        let docUrl = `/api/v1/organizations/${orgId}/tasks/${taskId}/documents`;
-        if (examStartPage.trim()) {
-            docUrl += `?examination_start_page=${encodeURIComponent(examStartPage.trim())}`;
-        }
-        
-        const docUploadRes = await api(docUrl, {
-          method: 'POST',
-          body: docFormData
+        setUploadProgress(0);
+        await uploadDirectAndRegister({
+          file: docFile,
+          fileType: 'raw_data',
+          orgId,
+          taskId,
+          examStartPage: examStartPage.trim(),
+          onProgress: (percent) => setUploadProgress(percent),
         });
-        if (!docUploadRes.ok) throw new Error(`Failed to upload document: ${docUploadRes.statusText}`);
       }
 
       // Step 4: Run Pipeline
@@ -212,6 +262,14 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
       // Complete
       setApiStep(5);
       playSound('success');
+      if (("Notification" in window) && Notification.permission === 'granted') {
+        try {
+          new Notification("VerbaLex AI — Case Ready!", {
+            body: `Case "${inputText.trim() || 'Document'}" analysis is ready for review.`,
+            icon: "/favicon.ico"
+          });
+        } catch (e) {}
+      }
       if (onTaskCreated) {
         onTaskCreated(taskObj);
       }
@@ -229,13 +287,15 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
       const msgs = [
         "Preparing...",
         "Initializing Task Container...",
-        "Uploading Audio Recording...",
-        "Uploading Source Document...",
+        `AI is analyzing your audio ${uploadProgress > 0 ? `(${uploadProgress}%)` : ''}...`,
+        `AI is processing your document ${uploadProgress > 0 ? `(${uploadProgress}%)` : ''}...`,
         "Running AI Pipeline..."
       ];
       return {
         title: msgs[apiStep] || "Processing...",
-        subtitle: "Please wait while we set up your case.",
+        subtitle: (apiStep === 2 || apiStep === 3)
+          ? "Applying AI models to your file..."
+          : "Please wait while we set up your case.",
         inputType: 'loading'
       };
     }
@@ -479,7 +539,7 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
 
                     <button 
                       className="proceed-action-btn" 
-                      onClick={handleProceed} 
+                      onClick={handleStartProcessing} 
                       style={{ 
                         flex: 2, 
                         padding: '14px 24px', 
@@ -506,9 +566,16 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
                 )}
 
                 {content.inputType === 'loading' && (
-                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--primary)', fontWeight: 600 }}>
-                    <Loader2 size={20} className="spin-icon" style={{ animation: 'spin 2s linear infinite' }} />
-                    Working on it...
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--primary)', fontWeight: 600 }}>
+                      <Loader2 size={20} className="spin-icon" style={{ animation: 'spin 2s linear infinite' }} />
+                      {content.title}
+                    </div>
+                    {(apiStep === 2 || apiStep === 3) && uploadProgress > 0 && (
+                      <div style={{ width: '100%', maxWidth: '280px', height: '6px', backgroundColor: 'rgba(249, 115, 22, 0.15)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${uploadProgress}%`, height: '100%', backgroundColor: '#f97316', transition: 'width 0.2s ease', borderRadius: '4px' }} />
+                      </div>
+                    )}
                   </div>
                 )}
              </div>
@@ -591,6 +658,81 @@ const AssistantWorkspace = ({ onTaskCreated, onCancel, isDarkMode }) => {
                 </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Side Notification Prompt Modal during Processing */}
+      {isProcessing && notifyStatus !== 'dismissed' && (
+        <div className="processing-notify-modal">
+          <button 
+            className="notify-close-btn"
+            onClick={() => setNotifyStatus('dismissed')}
+            title="Dismiss"
+          >
+            <X size={14} />
+          </button>
+
+          {notifyStatus === 'prompt' && (
+            <>
+              <div className="notify-modal-header">
+                <div className="notify-icon-glow">
+                  <BellRing size={20} className="bell-ring-anim" />
+                </div>
+                <div>
+                  <h4 className="notify-modal-title">Notify you when ready?</h4>
+                  <p className="notify-modal-desc">
+                    AI analysis takes a few moments. We can send a notification as soon as it's completed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="notify-modal-actions">
+                <button 
+                  className="notify-accept-btn"
+                  onClick={handleEnableNotification}
+                >
+                  <Bell size={14} />
+                  Notify me when ready
+                </button>
+                <button 
+                  className="notify-decline-btn"
+                  onClick={() => setNotifyStatus('dismissed')}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </>
+          )}
+
+          {notifyStatus === 'granted' && (
+            <div className="notify-feedback-content">
+              <CheckCircle2 size={22} color="#10B981" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Notifications Active</strong>
+                <p>{notifyFeedback || "We'll notify you the moment your case analysis is ready!"}</p>
+              </div>
+            </div>
+          )}
+
+          {notifyStatus === 'denied' && (
+            <div className="notify-feedback-content">
+              <BellOff size={22} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Permission Needed</strong>
+                <p>{notifyFeedback || "Notifications are blocked. Please allow notifications in your browser address bar to get notified."}</p>
+              </div>
+            </div>
+          )}
+
+          {notifyStatus === 'unsupported' && (
+            <div className="notify-feedback-content">
+              <AlertCircle size={22} color="#6B7280" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>Browser Alerts Unavailable</strong>
+                <p>{notifyFeedback}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

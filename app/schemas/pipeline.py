@@ -74,6 +74,15 @@ class AIDocumentUpdate(BaseModel):
     corrected_chunks: Optional[list[dict]] = None
 
 
+class AIDocumentSaveResponse(BaseModel):
+    """Lean response on document save to avoid massive JSON echo round-trips."""
+    status: str = "saved"
+    id: UUID
+    task_id: UUID
+    version: int
+    updated_at: datetime
+
+
 class PipelineStartResponse(BaseModel):
     """Response when a pipeline is triggered."""
     message: str
@@ -95,6 +104,7 @@ class AudioFileInfo(BaseModel):
     id: str
     file_path: str
     file_type: str
+    cloudinary_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

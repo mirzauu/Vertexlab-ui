@@ -246,7 +246,7 @@ No extra commentary, no markdown fences, ONLY the JSON object. Do not include ma
         return fallback_rules
 
 
-def clean_transcript_pdf(input_path: str, structure_rules: dict = None) -> str:
+def clean_transcript_pdf(input_path: str | bytes, structure_rules: dict = None) -> str:
     if structure_rules is None:
         structure_rules = {
             "junk_terms": [
@@ -260,7 +260,29 @@ def clean_transcript_pdf(input_path: str, structure_rules: dict = None) -> str:
             "page_number_regexes": [r'(?i)^page \d+$']
         }
 
-    doc = fitz.open(input_path)
+    if isinstance(input_path, bytes):
+        doc = fitz.open(stream=input_path, filetype="pdf")
+    elif isinstance(input_path, str) and (input_path.startswith("http://") or input_path.startswith("https://")):
+        import asyncio
+        from app.services.cloudinary_service import CloudinaryService
+        service = CloudinaryService()
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # In running async context
+                import nest_asyncio
+                # If already inside loop, run fetch
+                pdf_bytes = asyncio.run_coroutine_threadsafe(service.fetch_file_bytes(input_path), loop).result()
+            else:
+                pdf_bytes = asyncio.run(service.fetch_file_bytes(input_path))
+        except Exception:
+            import httpx
+            resp = httpx.get(input_path, timeout=60.0)
+            resp.raise_for_status()
+            pdf_bytes = resp.content
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    else:
+        doc = fitz.open(input_path)
     all_lines = []
 
     # Compile page number regexes
@@ -371,13 +393,24 @@ class DataProcessingStep(BasePipelineStep):
         from app.config import settings
 
         pdf_path = context.raw_data_file_paths[0]
-        full_pdf_path = os.path.abspath(os.path.join(settings.STORAGE_PATH, pdf_path))
-        logger.info(f"Processing PDF: {full_pdf_path}")
+        is_remote = pdf_path.startswith("http://") or pdf_path.startswith("https://")
 
         try:
             # 1. Extract raw text for structure analysis
             import fitz
-            doc = fitz.open(full_pdf_path)
+            if is_remote:
+                from app.services.cloudinary_service import CloudinaryService
+                cloudinary_service = CloudinaryService()
+                logger.info(f"Processing remote Cloudinary PDF: {pdf_path}")
+                pdf_bytes = await cloudinary_service.fetch_file_bytes(pdf_path)
+                doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+                source_for_clean = pdf_bytes
+            else:
+                full_pdf_path = os.path.abspath(os.path.join(settings.STORAGE_PATH, pdf_path))
+                logger.info(f"Processing local PDF: {full_pdf_path}")
+                doc = fitz.open(full_pdf_path)
+                source_for_clean = full_pdf_path
+
             sample_text_parts = []
             
             # First 3 pages for preamble/headers
@@ -398,7 +431,7 @@ class DataProcessingStep(BasePipelineStep):
             structure_rules = await detect_pdf_structure(sample_text)
 
             # 3. Clean transcript using dynamic rules
-            cleaned_text = clean_transcript_pdf(full_pdf_path, structure_rules)
+            cleaned_text = clean_transcript_pdf(source_for_clean, structure_rules)
             qa_chunks = extract_qa(cleaned_text, structure_rules)
 
             # Save cleaned data to storage/output directory

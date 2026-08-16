@@ -18,7 +18,7 @@ import {
   CreditCard, RefreshCw, XCircle, AlertCircle, Minus, Plus, Mic, Send, Loader2,
   ChevronDown, ChevronUp, Activity, PieChart, TrendingUp,
   Sidebar, PlusCircle, CheckSquare, Edit,
-  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield, GitBranch, Mail, Sparkles, UserCheck, Bot, Clock,
+  Home, Star, SlidersHorizontal, FileSpreadsheet, MoreHorizontal, Shield, GitBranch, Mail, Sparkles, UserCheck, Bot, Clock, BrainCircuit, Brain, Cpu, Wand2,
   Info, ArrowUp, ArrowDown, Filter, List, LayoutGrid, Upload, Download, Share2
 } from 'lucide-react';
 
@@ -49,9 +49,53 @@ const Sparkline = ({ color, data }) => {
   );
 };
 
+const WavyOrbIcon = ({ size = 18, className = "nav-icon" }) => {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ overflow: 'visible', flexShrink: 0 }}
+    >
+      <defs>
+        <linearGradient id="scopistWavyOrb" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#818CF8" />
+          <stop offset="25%" stopColor="#34D399" />
+          <stop offset="55%" stopColor="#38BDF8" />
+          <stop offset="80%" stopColor="#818CF8" />
+          <stop offset="100%" stopColor="#C084FC" />
+        </linearGradient>
+        <filter id="wavyGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="1" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+      
+      {/* Outer soft glow layer */}
+      <path
+        d="M 12 2.8 Q 14.8 5.2 18.5 5.5 Q 18.8 9.2 21.2 12 Q 18.8 14.8 18.5 18.5 Q 14.8 18.8 12 21.2 Q 9.2 18.8 5.5 18.5 Q 5.2 14.8 2.8 12 Q 5.2 9.2 5.5 5.5 Q 9.2 5.2 12 2.8 Z"
+        stroke="url(#scopistWavyOrb)"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.35"
+        filter="url(#wavyGlow)"
+      />
 
-
-
+      {/* Main crisp wavy stroke */}
+      <path
+        d="M 12 2.8 Q 14.8 5.2 18.5 5.5 Q 18.8 9.2 21.2 12 Q 18.8 14.8 18.5 18.5 Q 14.8 18.8 12 21.2 Q 9.2 18.8 5.5 18.5 Q 5.2 14.8 2.8 12 Q 5.2 9.2 5.5 5.5 Q 9.2 5.2 12 2.8 Z"
+        stroke="url(#scopistWavyOrb)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
 
 // Memory cache for ReviewPage to allow instantaneous view mounting (similar to History tab)
 let _reviewCachedTasks = null;
@@ -532,12 +576,12 @@ function App() {
       return 'superadmin';
     }
     const hash = window.location.hash.replace('#', '');
-    return hash || 'dashboard';
+    return hash || 'scopist';
   });
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') || 'dashboard';
+      const hash = window.location.hash.replace('#', '') || 'scopist';
       setActiveView(prev => prev === hash ? prev : hash);
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -553,7 +597,7 @@ function App() {
       if (window.location.pathname === '/admin') {
         window.history.pushState(null, '', '/');
       }
-      const currentHash = window.location.hash.replace('#', '') || 'dashboard';
+      const currentHash = window.location.hash.replace('#', '') || 'scopist';
       if (currentHash !== activeView) {
         window.location.hash = activeView;
       }
@@ -720,36 +764,13 @@ function App() {
         </div>
 
         <nav className="nav-section">
-          <div className="sidebar-section-heading">Main</div>
-          <div className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
-            <LayoutDashboard className="nav-icon" />
-            {!isCollapsed && <span>Dashboard</span>}
-          </div>
-          
-          {/* 
-          <div className="nav-item">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-              <CheckSquare className="nav-icon" />
-              {!isCollapsed && <span>Tasks</span>}
-            </div>
-            {!isCollapsed && <ChevronUp size={16} color="#8C8C9A" />}
-          </div>
-          
-          {!isCollapsed && (
-            <div className="nav-sub-items">
-              <div className={`nav-sub-item ${activeView === 'new' ? 'active' : ''}`} onClick={() => { setActiveView('new'); setSelectedTask(null); }}>New</div>
-              <div className={`nav-sub-item ${activeView === 'review' ? 'active' : ''}`} onClick={() => { setActiveView('review'); setSelectedReviewTask(null); setSelectedTask(null); }}>Review & Edit</div>
-              <div className={`nav-sub-item ${activeView === 'history' ? 'active' : ''}`} onClick={() => { setActiveView('history'); setSelectedTask(null); }}>History</div>
-            </div>
-          )}
-          */}
-
-          <div className="sidebar-section-heading">Workspace</div>
-          <div className={`nav-item ${activeView === 'new-task' ? 'active' : ''}`} onClick={() => { setActiveView('new-task'); setSelectedTask(null); }}>
-            <Sparkles className="nav-icon" />
+          <div className={`nav-item ${(activeView === 'scopist' || activeView === 'new-task') ? 'active' : ''}`} onClick={() => { setActiveView('scopist'); setSelectedTask(null); }}>
+            <WavyOrbIcon className="nav-icon" />
             {!isCollapsed && <span>Scopist</span>}
           </div>
-          <div className={`nav-item ${(activeView === 'scopist' || activeView === 'history' || activeView === 'history-details') ? 'active' : ''}`} onClick={() => { setActiveView('history'); setSelectedTask(null); }}>
+
+          <div className="sidebar-section-heading">Workspace</div>
+          <div className={`nav-item ${(activeView === 'history' || activeView === 'history-details') ? 'active' : ''}`} onClick={() => { setActiveView('history'); setSelectedTask(null); }}>
             <Clock className="nav-icon" />
             {!isCollapsed && <span>History</span>}
           </div>
@@ -1330,7 +1351,7 @@ function App() {
               setSelectedTask(task);
               setActiveView('history-details');
             }} 
-            onNewTask={() => setActiveView('new-task')}
+            onNewTask={() => setActiveView('scopist')}
           />
         )}
         {activeView === 'history-details' && selectedTask && (
@@ -1546,7 +1567,7 @@ function App() {
             </div>
           </div>
         )}
-        {activeView === 'new-task' && (
+        {(activeView === 'scopist' || activeView === 'new-task') && (
           <AssistantWorkspace 
             onTaskCreated={(newTask) => {
               setSelectedTask(newTask);
@@ -1557,24 +1578,6 @@ function App() {
             }}
             isDarkMode={isDarkMode}
           />
-        )}
-        {activeView === 'scopist' && (
-          <div className="scopist-page">
-            
-            <div className="scopist-tab-content" style={{ padding: '32px 40px 32px 40px' }}>
-              {scopistTab === 'review' && !selectedReviewTask && <ReviewPage onSelect={setSelectedReviewTask} />}
-              {scopistTab === 'review' && selectedReviewTask && <ReviewEdit task={selectedReviewTask} onBack={() => setScopistTab('history')} />}
-              {scopistTab === 'history' && (
-                <History 
-                  onViewDetails={(task) => {
-                    setSelectedTask(task);
-                    setActiveView('history-details');
-                  }} 
-                  onNewTask={() => setActiveView('new-task')}
-                />
-              )}
-            </div>
-          </div>
         )}
 
       </main>

@@ -18,24 +18,30 @@ class STTStep(BasePipelineStep):
         if not context.audio_file_path:
             raise ValueError("No audio file provided for STT step")
 
-        # Construct absolute path to audio file
-        # The file_path in DB is usually 'audio/filename.mp3', so we prepend STORAGE_PATH
-        full_path = os.path.join(settings.STORAGE_PATH, context.audio_file_path)
-        absolute_audio_path = os.path.abspath(full_path)
-        
-        if not os.path.exists(absolute_audio_path):
-            raise FileNotFoundError(f"Audio file not found at {absolute_audio_path}")
-
         # Initialize Deepgram client
         client = DeepgramClient(api_key=settings.DEEPGRAM_API_KEY)
 
-        # Transcribe
-        with open(absolute_audio_path, "rb") as audio_file:
-            response = client.listen.v1.media.transcribe_file(
-                request=audio_file.read(),
+        if context.audio_file_path.startswith("http://") or context.audio_file_path.startswith("https://"):
+            # Direct remote audio transcription from Cloudinary
+            response = client.listen.v1.media.transcribe_url(
+                url=context.audio_file_path,
                 model="nova-3",
-                smart_format=True
+                smart_format=True,
             )
+        else:
+            # Construct absolute path to audio file
+            full_path = os.path.join(settings.STORAGE_PATH, context.audio_file_path)
+            absolute_audio_path = os.path.abspath(full_path)
+            
+            if not os.path.exists(absolute_audio_path):
+                raise FileNotFoundError(f"Audio file not found at {absolute_audio_path}")
+
+            with open(absolute_audio_path, "rb") as audio_file:
+                response = client.listen.v1.media.transcribe_file(
+                    request=audio_file.read(),
+                    model="nova-3",
+                    smart_format=True,
+                )
 
         # Parse results
         result = response.results.channels[0].alternatives[0]

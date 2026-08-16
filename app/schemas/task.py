@@ -160,8 +160,45 @@ class TaskFileRead(BaseModel):
     mime_type: str
     uploaded_at: datetime
     page_count: Optional[int] = None
+    cloudinary_public_id: Optional[str] = None
+    cloudinary_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class UploadSignatureRequest(BaseModel):
+    """Request a signed upload payload for Cloudinary."""
+    file_name: str
+    file_type: FileType = FileType.RAW_DATA
+
+
+class UploadSignatureResponse(BaseModel):
+    """Response containing signed parameters for direct upload to Cloudinary."""
+    signature: str
+    timestamp: int
+    api_key: str
+    cloud_name: str
+    folder: str
+    resource_type: str
+
+
+class RegisterAudioRequest(BaseModel):
+    """Register an audio file uploaded directly to Cloudinary."""
+    cloudinary_public_id: str
+    cloudinary_url: str
+    file_name: str
+    file_size: int
+    mime_type: Optional[str] = "audio/mpeg"
+
+
+class RegisterDocumentRequest(BaseModel):
+    """Register a document uploaded directly to Cloudinary."""
+    cloudinary_public_id: str
+    cloudinary_url: str
+    file_name: str
+    file_size: int
+    mime_type: Optional[str] = "application/pdf"
+    examination_start_page: Optional[int] = None
 
 
 class TaskListResponse(BaseModel):

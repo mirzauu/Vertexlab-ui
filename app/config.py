@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     # File Storage
     STORAGE_PATH: str = Field(default="./storage")
 
+    # Cloudinary
+    CLOUDINARY_CLOUD_NAME: str = Field(default="")
+    CLOUDINARY_API_KEY: str = Field(default="")
+    CLOUDINARY_API_SECRET: str = Field(default="")
+    CLOUDINARY_SECURE: bool = Field(default=True)
+
     # CORS
     CORS_ORIGINS: str = Field(default='["http://localhost:5173","http://localhost:3000"]')
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import './ReviewEdit.css';
 import { Play, Pause, SkipBack, SkipForward, Save, Send, ArrowLeft, Loader2, Volume1, Volume2, VolumeX, Zap, Download, FileText, ChevronDown, Sliders, X, Maximize2, Check, Edit3, PlayCircle } from 'lucide-react';
 import { api } from './services/api';
@@ -60,6 +60,148 @@ const WordDiff = React.memo(({ original, corrected }) => {
   );
 });
 
+const TranscriptRow = React.memo(({
+  idx,
+  chunk,
+  isActive,
+  isCrossHighlighted,
+  isDiffEnabled,
+  toggleIndividualDiff,
+  handleToggleVerifyChunk,
+  handleSegmentClick,
+  handleCrossPanelHover,
+  handleCrossPanelLeave,
+  handleChunkTextChange,
+  formatTime,
+  startLineNo,
+  onReportLineCount
+}) => {
+  const [lineCount, setLineCount] = useState(1);
+  const textareaRef = useRef(null);
+  const chunkText = (chunk.corrected_text !== undefined ? chunk.corrected_text : (chunk.raw_chunk_text || chunk.original_raw_text || "")).replace(/\r\n/g, '\n');
+  const chunkId = chunk.raw_chunk_id != null ? chunk.raw_chunk_id : idx;
+
+  const measureLines = React.useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const scrollH = el.scrollHeight;
+    el.style.height = `${scrollH}px`;
+    const computed = Math.max(1, Math.floor((scrollH + 4) / 35.2));
+    setLineCount(computed);
+    if (onReportLineCount) {
+      onReportLineCount(chunkId, computed);
+    }
+  }, [chunkId, onReportLineCount]);
+
+  React.useLayoutEffect(() => {
+    measureLines();
+  }, [chunkText, isDiffEnabled, measureLines]);
+
+  const lineNumbers = [];
+  for (let i = 0; i < lineCount; i++) {
+    const num = ((startLineNo - 1 + i) % 25) + 1;
+    lineNumbers.push(num);
+  }
+
+  return (
+    <div
+      className={`transcript-row-chunk ${chunk.is_verified ? 'verified' : ''} ${isActive ? 'active-audio-line' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight-line' : ''}`}
+      onMouseEnter={() => handleCrossPanelHover(chunk.audio_start_time_sec, chunk.audio_end_time_sec)}
+      onMouseLeave={handleCrossPanelLeave}
+      onClick={() => {
+        if (chunk.audio_start_time_sec != null) {
+          handleSegmentClick(chunk.audio_start_time_sec);
+        }
+      }}
+    >
+      {/* Left Gutter: Line Numbers */}
+      <div className="transcript-gutter">
+        {lineNumbers.map((lineNum, lIdx) => (
+          <div key={lIdx} className="transcript-line-no">{lineNum}</div>
+        ))}
+      </div>
+
+      {/* Vertical Separator Line */}
+      <div className="transcript-vertical-rule" />
+
+      {/* Main Transcript Text Column */}
+      <div className="transcript-text-column">
+        {/* Hover Actions Pill */}
+        <div className="transcript-hover-actions">
+          {chunk.audio_start_time_sec != null && (
+            <span className="transcript-chunk-time">
+              {formatTime(chunk.audio_start_time_sec)} - {formatTime(chunk.audio_end_time_sec)}
+            </span>
+          )}
+          {chunk.match_status && (
+            <span className={`doc-match-status-badge status-${chunk.match_status}`}>
+              {chunk.match_status}
+            </span>
+          )}
+          {chunk.is_verified && (
+            <span className="transcript-verified-pill" title="Verified line">
+              <Check size={11} style={{ strokeWidth: 3 }} /> Verified
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleIndividualDiff(chunk.raw_chunk_id);
+            }}
+            className="transcript-action-btn"
+            title="Toggle Word Diff comparison"
+          >
+            <Zap size={13} color={isDiffEnabled ? "#F97316" : "#9CA3AF"} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleVerifyChunk(chunk.raw_chunk_id);
+            }}
+            className="transcript-action-btn"
+            title={chunk.is_verified ? "Unverify line" : "Verify line"}
+          >
+            <Check size={13} color={chunk.is_verified ? "#10B981" : "#9CA3AF"} style={{ strokeWidth: chunk.is_verified ? 3 : 2 }} />
+          </button>
+        </div>
+
+        {isDiffEnabled ? (
+          <div className="transcript-diff-content">
+            <WordDiff 
+              original={chunk.original_raw_text || chunk.raw_chunk_text || ""}
+              corrected={chunkText}
+            />
+          </div>
+        ) : (
+          <textarea
+            ref={(el) => {
+              textareaRef.current = el;
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = `${el.scrollHeight}px`;
+              }
+            }}
+            className="transcript-editable-text"
+            value={chunkText}
+            readOnly={chunk.is_verified}
+            onChange={(e) => {
+              handleChunkTextChange(chunk.raw_chunk_id, e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = `${e.target.scrollHeight}px`;
+              const computed = Math.max(1, Math.round(e.target.scrollHeight / 35.2));
+              setLineCount(computed);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+});
+
 // Module-level trackers for deduplication across StrictMode double-mounts
 const activeWorkstationSessions = new Map();
 
@@ -111,32 +253,17 @@ export default function ReviewEdit({ task, onBack }) {
   const [audioUrl, setAudioUrl] = useState(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const [localChunks, setLocalChunks] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'unsaved' | 'saving' | 'error'
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [isModalSaving, setIsModalSaving] = useState(false);
+  const saveStatusRef = useRef(saveStatus);
+  saveStatusRef.current = saveStatus;
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [isDownloadingWord, setIsDownloadingWord] = useState(false);
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const downloadDropdownRef = useRef(null);
 
-
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
-        setShowDownloadDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (results) {
-      const docChunks = results.document?.corrected_chunks;
-      const initialChunks = (docChunks && docChunks.length > 0) ? docChunks : (results.matches || []);
-      setLocalChunks(JSON.parse(JSON.stringify(initialChunks)));
-    }
-  }, [results]);
-  
+  // Audio Playback & Enhancement states
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -148,22 +275,48 @@ export default function ReviewEdit({ task, onBack }) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [showFxPanel, setShowFxPanel] = useState(false);
   const [transcriptionExpanded, setTranscriptionExpanded] = useState(true);
-  const [matchesExpanded, setMatchesExpanded] = useState(true);
+  const [matchesExpanded, setMatchesExpanded] = useState(false);
   const [highlightTimeRange, setHighlightTimeRange] = useState(null);
   const [isPlayerFloating, setIsPlayerFloating] = useState(false);
   const [isPlayerClosed, setIsPlayerClosed] = useState(false);
-
-  // Diffs & Comparison states
   const [showAllDiffs, setShowAllDiffs] = useState(false);
   const [individualDiffs, setIndividualDiffs] = useState({});
-
-
+  const [chunkLineCounts, setChunkLineCounts] = useState({});
+  const initializedTaskIdRef = useRef(null);
 
   // Autoplay setting (persisted) (default: true)
   const [isAutoplay, setIsAutoplay] = useState(() => {
     const saved = localStorage.getItem('reviewAutoplay');
     return saved !== null ? saved === 'true' : true;
   });
+
+  const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
+    const saved = localStorage.getItem('reviewPanelWidthV2');
+    return saved ? parseFloat(saved) : 70;
+  });
+
+  // Browser reload / tab close protection
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (saveStatusRef.current === 'unsaved' || saveStatusRef.current === 'saving') {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes in your legal transcript.';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target)) {
+        setShowDownloadDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('reviewAutoplay', isAutoplay);
@@ -181,11 +334,35 @@ export default function ReviewEdit({ task, onBack }) {
     return !!individualDiffs[chunkId];
   };
 
+  const handleReportLineCount = useCallback((chunkId, count) => {
+    setChunkLineCounts(prev => {
+      if (prev[chunkId] === count) return prev;
+      return { ...prev, [chunkId]: count };
+    });
+  }, []);
 
-  const [leftPanelWidth, setLeftPanelWidth] = useState(() => {
-    const saved = localStorage.getItem('reviewPanelWidth');
-    return saved ? parseFloat(saved) : 35;
-  });
+  // Calculate sequential start line number for each chunk
+  const chunkStartMap = useMemo(() => {
+    const map = {};
+    let currentLine = 1;
+    localChunks.forEach((c, idx) => {
+      const id = c.raw_chunk_id != null ? c.raw_chunk_id : idx;
+      map[id] = currentLine;
+      const count = chunkLineCounts[id] || 1;
+      currentLine += count;
+    });
+    return map;
+  }, [localChunks, chunkLineCounts]);
+
+  useEffect(() => {
+    if (results && initializedTaskIdRef.current !== task?.id) {
+      initializedTaskIdRef.current = task?.id;
+      const docChunks = results.document?.corrected_chunks;
+      const initialChunks = (docChunks && docChunks.length > 0) ? docChunks : (results.matches || []);
+      setLocalChunks(JSON.parse(JSON.stringify(initialChunks)));
+    }
+  }, [results, task?.id]);
+
   const isDraggingRef = useRef(false);
   const reviewContentRef = useRef(null);
 
@@ -238,9 +415,16 @@ export default function ReviewEdit({ task, onBack }) {
         console.warn("No audio file attached to this task.");
         return;
       }
-      const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-      const token = localStorage.getItem('bearer_token');
-      const url = `${BASE_URL}/api/v1/files/${audioFileInfo.id}/download?token=${token}`;
+      let url = audioFileInfo.cloudinary_url;
+      if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+        if (url.includes('cloudinary.com') && url.endsWith('.wav')) {
+          url = url.slice(0, -4) + '.mp3';
+        }
+      } else {
+        const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+        const token = localStorage.getItem('bearer_token');
+        url = `${BASE_URL}/api/v1/files/${audioFileInfo.id}/download?token=${token}`;
+      }
       session.audioUrl = url;
       setAudioUrl(url);
       setAudioLoading(false);
@@ -277,6 +461,13 @@ export default function ReviewEdit({ task, onBack }) {
       deregisterWorkstationSession(task.id);
     };
   }, [task]);
+
+  // Ensure audio element loads when audioUrl is set
+  useEffect(() => {
+    if (audioRef.current && audioUrl) {
+      audioRef.current.load();
+    }
+  }, [audioUrl]);
 
   // Show floating player when the original card scrolls out of view
   useEffect(() => {
@@ -388,26 +579,37 @@ export default function ReviewEdit({ task, onBack }) {
     return startTime <= highlightTimeRange.end && endTime >= highlightTimeRange.start;
   };
 
-  // Keyboard shortcuts for power users
+  // Keyboard shortcuts for power users & scopists
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Global shortcut Alt+Space works anywhere including inside textareas
+      if (e.altKey && e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+        return;
+      }
+
+      if (e.altKey && e.code === 'ArrowLeft') {
+        e.preventDefault();
+        if (audioRef.current) {
+          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 2);
+        }
+        return;
+      }
+
+      if (e.altKey && e.code === 'ArrowRight') {
+        e.preventDefault();
+        if (audioRef.current) {
+          audioRef.current.currentTime = Math.min(audioRef.current.duration || 0, audioRef.current.currentTime + 2);
+        }
+        return;
+      }
+
       if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
       
       if (e.code === 'Space') {
         e.preventDefault();
-        if (audioRef.current) {
-          if (audioRef.current.paused) {
-            initAudioContext();
-            if (audioContextRef.current?.state === 'suspended') {
-              audioContextRef.current.resume();
-            }
-            audioRef.current.play();
-            setIsPlaying(true);
-          } else {
-            audioRef.current.pause();
-            setIsPlaying(false);
-          }
-        }
+        togglePlay();
       }
       if (e.ctrlKey && e.key === '1') {
         e.preventDefault();
@@ -421,7 +623,7 @@ export default function ReviewEdit({ task, onBack }) {
     
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isPlaying]);
 
   useEffect(() => {
     return () => {
@@ -538,6 +740,7 @@ export default function ReviewEdit({ task, onBack }) {
     if (!audioRef.current || audioContextRef.current) return;
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
       
       const source = ctx.createMediaElementSource(audioRef.current);
@@ -557,9 +760,9 @@ export default function ReviewEdit({ task, onBack }) {
       gainNodeRef.current = gainNode;
       sourceNodeRef.current = source;
       
-      audioRef.current.volume = 1.0;
+      gainNode.gain.setValueAtTime(isMuted ? 0 : volume, ctx.currentTime);
     } catch (err) {
-      console.error("Failed to initialize Web Audio API:", err);
+      console.warn("Web Audio API enhancement unavailable (falling back to direct audio):", err);
     }
   };
 
@@ -586,18 +789,19 @@ export default function ReviewEdit({ task, onBack }) {
     }
   };
 
-  const handleSegmentClick = (start) => {
-    initAudioContext();
-    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-    if (audioRef.current) {
+  const handleSegmentClick = async (start) => {
+    if (!audioRef.current) return;
+    try {
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
       audioRef.current.currentTime = start;
       setCurrentTime(start);
-      if (isAutoplay && !isPlaying) {
-        audioRef.current.play();
-        setIsPlaying(true);
+      if (isAutoplay) {
+        await audioRef.current.play();
       }
+    } catch (err) {
+      console.error("Segment click playback error:", err);
     }
   };
 
@@ -607,64 +811,108 @@ export default function ReviewEdit({ task, onBack }) {
     if (val > 0) {
       setIsMuted(false);
     }
-    initAudioContext();
-    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
+    if (gainNodeRef.current && audioContextRef.current) {
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      gainNodeRef.current.gain.setValueAtTime(val, audioContextRef.current.currentTime);
     }
     if (audioRef.current) {
-      if (!gainNodeRef.current) {
-        audioRef.current.volume = val;
-        audioRef.current.muted = val === 0;
-      }
+      audioRef.current.volume = val;
+      audioRef.current.muted = val === 0;
     }
   };
 
   const toggleMute = () => {
-    initAudioContext();
-    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
+    if (!audioRef.current) return;
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (gainNodeRef.current && audioContextRef.current) {
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      gainNodeRef.current.gain.setValueAtTime(nextMuted ? 0 : volume, audioContextRef.current.currentTime);
     }
-    if (audioRef.current) {
-      const nextMuted = !isMuted;
-      setIsMuted(nextMuted);
-      if (!gainNodeRef.current) {
-        audioRef.current.muted = nextMuted;
-      }
-      if (!nextMuted && volume === 0) {
-        setVolume(0.5);
-        if (!gainNodeRef.current) {
-          audioRef.current.volume = 0.5;
-        }
-      }
+    audioRef.current.muted = nextMuted;
+    if (!nextMuted && volume === 0) {
+      setVolume(0.5);
+      audioRef.current.volume = 0.5;
     }
   };
 
-  const togglePlay = () => {
-    initAudioContext();
-    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+  const togglePlay = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    try {
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
       }
-      setIsPlaying(!isPlaying);
+      if (audio.paused) {
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
+        setIsPlaying(true);
+      } else {
+        audio.pause();
+        setIsPlaying(false);
+      }
+    } catch (err) {
+      console.error("Toggle play error:", err);
+      try {
+        audio.load();
+        await audio.play();
+        setIsPlaying(true);
+      } catch (retryErr) {
+        console.error("Audio retry play error:", retryErr);
+        setIsPlaying(false);
+      }
     }
   };
 
   const skipBack = () => {
     if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
+      const newTime = Math.max(0, (audioRef.current.currentTime || 0) - 10);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
   };
 
   const skipForward = () => {
     if (audioRef.current) {
-      audioRef.current.currentTime = Math.min(audioRef.current.duration, audioRef.current.currentTime + 10);
+      const dur = audioRef.current.duration || duration || 0;
+      const newTime = Math.min(dur, (audioRef.current.currentTime || 0) + 10);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
   };
+
+  // Global audio keyboard shortcuts (Alt+Space: Play/Pause, Alt+Left: -2s, Alt+Right: +2s)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.altKey && (e.code === 'Space' || e.key === ' ')) {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.altKey && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (audioRef.current) {
+          const newTime = Math.max(0, (audioRef.current.currentTime || 0) - 2);
+          audioRef.current.currentTime = newTime;
+          setCurrentTime(newTime);
+        }
+      } else if (e.altKey && e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (audioRef.current) {
+          const dur = audioRef.current.duration || duration || 0;
+          const newTime = Math.min(dur, (audioRef.current.currentTime || 0) + 2);
+          audioRef.current.currentTime = newTime;
+          setCurrentTime(newTime);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [duration, isPlaying]);
 
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return "00:00";
@@ -674,15 +922,25 @@ export default function ReviewEdit({ task, onBack }) {
   };
 
   const handleChunkTextChange = (chunkId, newText) => {
-    setLocalChunks(prev => prev.map(c => {
-      if (c.raw_chunk_id === chunkId) {
-        return { ...c, corrected_text: newText };
+    setSaveStatus('unsaved');
+    setLocalChunks(prev => {
+      const updated = prev.map(c => {
+        if (c.raw_chunk_id === chunkId) {
+          return { ...c, corrected_text: newText };
+        }
+        return c;
+      });
+      if (task?.id) {
+        try {
+          localStorage.setItem(`scopist_draft_${task.id}`, JSON.stringify(updated));
+        } catch (e) {}
       }
-      return c;
-    }));
+      return updated;
+    });
   };
 
   const handleToggleVerifyChunk = (chunkId) => {
+    setSaveStatus('unsaved');
     setLocalChunks(prev => {
       const updated = prev.map(c => {
         if (c.raw_chunk_id === chunkId) {
@@ -690,20 +948,23 @@ export default function ReviewEdit({ task, onBack }) {
         }
         return c;
       });
-      // Automatically trigger a silent background save with the updated array
-      handleSaveDocument(updated, true);
+      if (task?.id) {
+        try {
+          localStorage.setItem(`scopist_draft_${task.id}`, JSON.stringify(updated));
+        } catch (e) {}
+      }
       return updated;
     });
   };
 
-  const handleSaveDocument = async (chunksToSave = localChunks, silent = false) => {
-    if (!task) return;
-    if (!silent) setIsSaving(true);
+  const handleManualSave = async () => {
+    if (!task || !localChunks || !localChunks.length) return;
+    setSaveStatus('saving');
     try {
       const orgId = localStorage.getItem('organization_id') || task?.organization_id;
       const payload = {
         title: results?.document?.title || "AI-Corrected Proof Document",
-        corrected_chunks: chunksToSave.map(c => ({
+        corrected_chunks: localChunks.map(c => ({
           raw_chunk_id: c.raw_chunk_id,
           original_raw_text: c.original_raw_text || c.raw_chunk_text || "",
           corrected_text: c.corrected_text !== undefined ? c.corrected_text : (c.raw_chunk_text || c.original_raw_text || ""),
@@ -726,22 +987,47 @@ export default function ReviewEdit({ task, onBack }) {
       });
 
       if (!response.ok) throw new Error('Save failed');
-      const updatedDoc = await response.json();
+      const saveRes = await response.json();
       
+      const newSavedChunks = (saveRes.corrected_chunks && saveRes.corrected_chunks.length > 0)
+        ? saveRes.corrected_chunks 
+        : payload.corrected_chunks;
+
       setResults(prev => ({
         ...prev,
-        document: updatedDoc
+        document: {
+          ...(prev?.document || {}),
+          id: saveRes.id,
+          version: saveRes.version,
+          updated_at: saveRes.updated_at,
+          corrected_chunks: newSavedChunks
+        }
       }));
-      if (!silent) {
-        alert('Document draft saved successfully!');
+
+      setLocalChunks(JSON.parse(JSON.stringify(newSavedChunks)));
+
+      const session = activeWorkstationSessions.get(task.id);
+      if (session && session.resultsData) {
+        session.resultsData = {
+          ...session.resultsData,
+          document: {
+            ...(session.resultsData.document || {}),
+            id: saveRes.id,
+            version: saveRes.version,
+            updated_at: saveRes.updated_at,
+            corrected_chunks: newSavedChunks
+          }
+        };
       }
+
+      if (task?.id) {
+        localStorage.removeItem(`scopist_draft_${task.id}`);
+      }
+      setSaveStatus('saved');
     } catch (err) {
-      console.error('Save document error:', err);
-      if (!silent) {
-        alert('Failed to save document.');
-      }
-    } finally {
-      if (!silent) setIsSaving(false);
+      console.error('Manual save document error:', err);
+      setSaveStatus('error');
+      alert('Failed to save document. Please try again.');
     }
   };
 
@@ -807,10 +1093,10 @@ export default function ReviewEdit({ task, onBack }) {
       const rect = reviewContentRef.current.getBoundingClientRect();
       const offsetX = moveEvent.clientX - rect.left;
       const pct = (offsetX / rect.width) * 100;
-      // Clamp between 20% and 70%
-      const clamped = Math.min(70, Math.max(20, pct));
+      // Clamp between 30% and 80%
+      const clamped = Math.min(80, Math.max(30, pct));
       setLeftPanelWidth(clamped);
-      localStorage.setItem('reviewPanelWidth', clamped);
+      localStorage.setItem('reviewPanelWidthV2', clamped);
     };
 
     const onMouseUp = () => {
@@ -825,15 +1111,91 @@ export default function ReviewEdit({ task, onBack }) {
     document.addEventListener('mouseup', onMouseUp);
   };
 
+  const handleBackClick = () => {
+    if (saveStatus === 'unsaved' || saveStatus === 'saving') {
+      setShowUnsavedModal(true);
+    } else {
+      onBack();
+    }
+  };
+
+  const handleModalSaveAndExit = async () => {
+    setIsModalSaving(true);
+    try {
+      await handleManualSave();
+      setShowUnsavedModal(false);
+      onBack();
+    } catch (err) {
+      console.error("Error saving before exit:", err);
+    } finally {
+      setIsModalSaving(false);
+    }
+  };
+
+  const handleModalDiscardAndExit = () => {
+    if (task?.id) {
+      localStorage.removeItem(`scopist_draft_${task.id}`);
+    }
+    setShowUnsavedModal(false);
+    onBack();
+  };
+
   const isAudioDisabled = loading || audioLoading || !audioUrl;
 
   return (
     <>
+    {/* Unsaved Changes Confirmation Modal */}
+    {showUnsavedModal && (
+      <div className="unsaved-modal-overlay">
+        <div className="unsaved-modal-card">
+          <div className="unsaved-modal-header">
+            <div className="unsaved-modal-icon-wrapper">
+              <Save size={22} color="var(--primary)" />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 700, color: 'var(--text-dark)' }}>Unsaved Changes</h3>
+              <p style={{ margin: '6px 0 0', fontSize: '0.86rem', color: 'var(--text-gray)', lineHeight: 1.5 }}>
+                You have active edits that haven't finished saving to the cloud. Would you like to save before leaving?
+              </p>
+            </div>
+          </div>
+
+          <div className="unsaved-modal-actions">
+            <button
+              className="secondary-btn"
+              onClick={() => setShowUnsavedModal(false)}
+              disabled={isModalSaving}
+              style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+            >
+              Cancel
+            </button>
+            <button
+              className="secondary-btn"
+              onClick={handleModalDiscardAndExit}
+              disabled={isModalSaving}
+              style={{ padding: '8px 16px', fontSize: '0.85rem', color: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.25)' }}
+            >
+              Discard Changes
+            </button>
+            <button
+              className="primary-btn"
+              onClick={handleModalSaveAndExit}
+              disabled={isModalSaving}
+              style={{ padding: '8px 18px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              {isModalSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+              <span>{isModalSaving ? 'Saving...' : 'Save & Exit'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <div className="review-container">
       <div className="back-button-container" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button 
           className="back-btn" 
-          onClick={onBack} 
+          onClick={handleBackClick} 
         >
           <ArrowLeft size={16} />
           <span>Back to Tasks</span>
@@ -846,9 +1208,6 @@ export default function ReviewEdit({ task, onBack }) {
               <div className="skeleton-bar shimmer" style={{ height: '20px', width: '70px', margin: 0, borderRadius: '6px' }} />
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div className={`doc-badge ${results?.document?.is_draft === false ? 'badge-final' : 'badge-draft'}`}>
-                  {results?.document?.is_draft === false ? 'FINAL' : 'AI DRAFT'}
-                </div>
                 {localChunks.length > 0 && (() => {
                   const verifiedCount = localChunks.filter(c => c.is_verified).length;
                   const totalCount = localChunks.length;
@@ -872,27 +1231,36 @@ export default function ReviewEdit({ task, onBack }) {
 
           {/* Action Buttons */}
           <div className="doc-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Manual Save Draft Button */}
             <button
-              className={`secondary-btn action-btn-doc ${showAllDiffs ? 'active' : ''}`}
-              onClick={() => setShowAllDiffs(!showAllDiffs)}
+              className="secondary-btn action-btn-doc"
+              onClick={handleManualSave}
+              disabled={loading || saveStatus === 'saving' || !localChunks.length}
               style={{
-                backgroundColor: showAllDiffs ? 'rgba(249, 115, 22, 0.1)' : 'transparent',
-                color: showAllDiffs ? 'var(--primary)' : 'var(--text-gray)',
-                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 600,
+                backgroundColor: saveStatus === 'unsaved' ? 'rgba(249, 115, 22, 0.12)' : 'transparent',
+                color: saveStatus === 'unsaved' ? 'var(--primary)' : 'var(--text-dark)',
+                borderColor: saveStatus === 'unsaved' ? 'var(--primary)' : 'var(--border-color)',
+                boxShadow: saveStatus === 'unsaved' ? '0 2px 8px rgba(249, 115, 22, 0.15)' : 'none',
+                transition: 'all 0.2s ease'
               }}
-              title="Compare original steno text with AI corrected text"
+              title={saveStatus === 'unsaved' ? "Save your edits to the cloud" : "All edits are saved"}
             >
-              <Zap size={16} />
-              <span>{showAllDiffs ? 'Hide Changes' : 'Show Changes'}</span>
+              {saveStatus === 'saving' ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : saveStatus === 'saved' ? (
+                <Check size={16} color="#10B981" style={{ strokeWidth: 3 }} />
+              ) : (
+                <Save size={16} color="var(--primary)" />
+              )}
+              <span>
+                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save Draft'}
+              </span>
             </button>
-            <button 
-              className="secondary-btn action-btn-doc" 
-              onClick={handleSaveDocument}
-              disabled={loading || isSaving || !localChunks.length}
-            >
-              {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-              <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
-            </button>
+
             <div className="download-dropdown-container" ref={downloadDropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
               <button 
                 className="primary-btn action-btn-doc" 
@@ -987,16 +1355,110 @@ export default function ReviewEdit({ task, onBack }) {
         </div>
       </div>
       <div className="review-content" ref={reviewContentRef}>
-        {/* Left Side: Sources */}
+        {/* Left Side: Document Editor & Legal Transcript Layout */}
         <div className="review-left" style={{ width: `${leftPanelWidth}%`, flex: 'none' }}>
+          <div className="legal-transcript-sheet">
+            <div className="transcript-page-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileText size={15} color="var(--primary)" />
+                  <span style={{ fontWeight: 700, fontSize: '0.82rem', letterSpacing: '0.04em', color: 'var(--text-dark)' }}>LEGAL TRANSCRIPT WORKSPACE</span>
+                </div>
+
+                {/* Aesthetic Diff View Segmented Toggle Pill */}
+                <button
+                  type="button"
+                  onClick={() => setShowAllDiffs(!showAllDiffs)}
+                  className={`transcript-diff-toggle-pill ${showAllDiffs ? 'active' : ''}`}
+                  title="Compare original steno text with AI corrected text"
+                >
+                  <Zap size={12} color={showAllDiffs ? "#F97316" : "var(--text-gray)"} />
+                  <span>{showAllDiffs ? 'Changes Highlighted' : 'Show Changes'}</span>
+                  <span className={`diff-pill-indicator ${showAllDiffs ? 'on' : 'off'}`} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                <span>Shortcuts: <kbd style={{ padding: '2px 5px', borderRadius: '4px', background: 'var(--sidebar-hover)', border: '1px solid var(--border-color)' }}>Alt+Space</kbd> Play/Pause &bull; <kbd style={{ padding: '2px 5px', borderRadius: '4px', background: 'var(--sidebar-hover)', border: '1px solid var(--border-color)' }}>Alt+&larr;/&rarr;</kbd> Jump 2s</span>
+                <span className="transcript-page-badge">25 LINES / PAGE</span>
+              </div>
+            </div>
+
+            <div className="doc-editor-container" ref={docEditorContainerRef} onScroll={handleDocScroll}>
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px' }}>
+                  <div className="skeleton-bar long shimmer" style={{ height: '24px' }} />
+                  <div className="skeleton-bar long shimmer" style={{ height: '24px' }} />
+                  <div className="skeleton-bar medium shimmer" style={{ height: '24px' }} />
+                  <div className="skeleton-bar long shimmer" style={{ height: '24px' }} />
+                  <div className="skeleton-bar short shimmer" style={{ height: '24px' }} />
+                </div>
+              ) : localChunks && localChunks.length > 0 ? (
+                <div className="transcript-virtuoso-wrapper" style={{ height: '100%' }}>
+                  <Virtuoso
+                    style={{ height: '100%' }}
+                    data={localChunks}
+                    itemContent={(idx, chunk) => {
+                      const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
+                      const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
+                      const chunkId = chunk.raw_chunk_id != null ? chunk.raw_chunk_id : idx;
+                      const startLineNo = chunkStartMap[chunkId] || 1;
+                      
+                      return (
+                        <TranscriptRow
+                          key={chunkId}
+                          idx={idx}
+                          chunk={chunk}
+                          isActive={isActive}
+                          isCrossHighlighted={isCrossHighlighted}
+                          isDiffEnabled={isDiffEnabled(chunk.raw_chunk_id)}
+                          toggleIndividualDiff={toggleIndividualDiff}
+                          handleToggleVerifyChunk={handleToggleVerifyChunk}
+                          handleSegmentClick={handleSegmentClick}
+                          handleCrossPanelHover={handleCrossPanelHover}
+                          handleCrossPanelLeave={handleCrossPanelLeave}
+                          handleChunkTextChange={handleChunkTextChange}
+                          formatTime={formatTime}
+                          startLineNo={startLineNo}
+                          onReportLineCount={handleReportLineCount}
+                        />
+                      );
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="doc-empty-state" style={{ padding: '40px', textAlign: 'center' }}>
+                  <p>No transcript chunks available.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Resize Handle */}
+        <div className="resize-handle" onMouseDown={handleResizeMouseDown}>
+          <div className="resize-handle-line" />
+        </div>
+
+        {/* Right Side: Sources (Audio, Transcription, Matches) */}
+        <div className="review-right" style={{ flex: 1 }}>
           {audioUrl && (
             <audio 
               ref={audioRef} 
               src={audioUrl} 
+              preload="auto"
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
               onTimeUpdate={handleTimeUpdate} 
-              onLoadedMetadata={handleLoadedMetadata} 
+              onLoadedMetadata={handleLoadedMetadata}
+              onDurationChange={handleLoadedMetadata}
+              onCanPlay={handleLoadedMetadata}
               onEnded={() => setIsPlaying(false)}
-              style={{ display: 'none' }}
+              onError={(e) => {
+                console.error("Audio player error:", e, audioRef.current?.error);
+                setIsPlaying(false);
+              }}
+              style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', width: '1px', height: '1px', bottom: 0, right: 0 }}
             />
           )}
 
@@ -1420,212 +1882,6 @@ export default function ReviewEdit({ task, onBack }) {
                   <p style={{ color: '#9CA3AF', textAlign: 'center', padding: '20px 0' }}>No matched data available.</p>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Resize Handle */}
-        <div className="resize-handle" onMouseDown={handleResizeMouseDown}>
-          <div className="resize-handle-line" />
-        </div>
-
-        {/* Right Side: AI Document */}
-        <div className="review-right" style={{ flex: 1 }}>
-          <div className="ai-document">
-            {/* Action buttons moved to top header */}
-
-
-
-            <div className="doc-editor-container" ref={docEditorContainerRef} onScroll={handleDocScroll}>
-              {loading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px' }}>
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-                    <div className="skeleton-bar short shimmer" style={{ height: '12px', marginBottom: '8px' }} />
-                    <div className="skeleton-bar long shimmer" style={{ height: '60px' }} />
-                  </div>
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-                    <div className="skeleton-bar short shimmer" style={{ height: '12px', marginBottom: '8px' }} />
-                    <div className="skeleton-bar medium shimmer" style={{ height: '40px' }} />
-                  </div>
-                  <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-                    <div className="skeleton-bar short shimmer" style={{ height: '12px', marginBottom: '8px' }} />
-                    <div className="skeleton-bar long shimmer" style={{ height: '80px' }} />
-                  </div>
-                </div>
-              ) : localChunks && localChunks.length > 0 ? (
-                <div className="doc-page" style={{ height: '100%' }}>
-                  <Virtuoso
-                    style={{ height: '100%' }}
-                    data={localChunks}
-                    itemContent={(idx, chunk) => {
-                      const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
-                      const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
-                      const chunkText = chunk.corrected_text || chunk.raw_chunk_text || chunk.original_raw_text || "";
-                      return (
-                        <div
-                          key={idx}
-                          className={`doc-paragraph ${chunk.is_verified ? 'verified' : ''} ${isActive ? 'active-paragraph' : ''} ${isCrossHighlighted && !isActive ? 'cross-highlight' : ''}`}
-                        onMouseEnter={() => handleCrossPanelHover(chunk.audio_start_time_sec, chunk.audio_end_time_sec)}
-                        onMouseLeave={handleCrossPanelLeave}
-                        onClick={() => {
-                          if (chunk.audio_start_time_sec != null) {
-                            handleSegmentClick(chunk.audio_start_time_sec);
-                          }
-                        }}
-                        style={{
-                          borderBottom: '1px solid var(--border-color)',
-                          paddingBottom: '16px',
-                          marginBottom: '16px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px'
-                        }}
-                      >
-                        <div className="doc-paragraph-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-gray)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 700, color: 'var(--text-dark)' }}>#{chunk.raw_chunk_id}</span>
-                            {chunk.audio_start_time_sec != null && (
-                              <span style={{ backgroundColor: 'var(--sidebar-hover)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 500 }}>
-                                {formatTime(chunk.audio_start_time_sec)} - {formatTime(chunk.audio_end_time_sec)}
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {chunk.match_status && (
-                              <span className={`doc-match-status-badge status-${chunk.match_status}`} style={{
-                                fontSize: '0.68rem',
-                                fontWeight: 750,
-                                textTransform: 'uppercase',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                backgroundColor: chunk.match_status === 'matched' ? 'rgba(16, 185, 129, 0.1)' : chunk.match_status === 'partial' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                color: chunk.match_status === 'matched' ? '#10b981' : chunk.match_status === 'partial' ? '#f59e0b' : '#ef4444'
-                              }}>
-                                {chunk.match_status}
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleIndividualDiff(chunk.raw_chunk_id);
-                              }}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: isDiffEnabled(chunk.raw_chunk_id) ? 'var(--primary)' : '#9CA3AF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '4px',
-                                borderRadius: '6px',
-                                backgroundColor: isDiffEnabled(chunk.raw_chunk_id) ? 'rgba(249, 115, 22, 0.08)' : 'transparent',
-                                transition: 'all 0.2s'
-                              }}
-                              title="Compare original steno text with AI corrected text"
-                            >
-                              <Zap size={14} />
-                            </button>
-
-                            {chunk.is_verified ? (
-                              <div className="verify-toggle-wrapper">
-                                <span className="verify-tick-default" style={{ color: '#10b981', display: 'flex', alignItems: 'center' }} title="Verified chunk">
-                                  <Check size={14} style={{ strokeWidth: 3 }} />
-                                </span>
-                                <button
-                                  type="button"
-                                  className="verify-pen-hover"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleVerifyChunk(chunk.raw_chunk_id);
-                                  }}
-                                  style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: 'var(--primary)',
-                                    padding: '4px',
-                                    borderRadius: '6px',
-                                    backgroundColor: 'rgba(249, 115, 22, 0.08)',
-                                    transition: 'all 0.2s'
-                                  }}
-                                  title="Unverify chunk to allow edits"
-                                >
-                                  <Edit3 size={14} />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                className="verify-tick-hover"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleVerifyChunk(chunk.raw_chunk_id);
-                                }}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: '#10b981',
-                                  padding: '4px',
-                                  borderRadius: '6px',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                                  transition: 'all 0.2s'
-                                }}
-                                title="Verify chunk (lock text)"
-                              >
-                                <Check size={14} style={{ strokeWidth: 3 }} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {isDiffEnabled(chunk.raw_chunk_id) ? (
-                          <div className="doc-paragraph-diff-view" style={{
-                            padding: '12px 16px',
-                            backgroundColor: 'var(--sidebar-hover)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: '10px',
-                            fontSize: '0.9rem',
-                            lineHeight: '1.5',
-                            whiteSpace: 'pre-wrap',
-                            color: 'var(--text-dark)',
-                            cursor: 'text'
-                          }}>
-                            <WordDiff 
-                              original={chunk.original_raw_text || chunk.raw_chunk_text || ""}
-                              corrected={chunkText}
-                            />
-                          </div>
-                        ) : (
-                          <textarea
-                            ref={(el) => {
-                              if (el) {
-                                el.style.height = 'auto';
-                                el.style.height = `${el.scrollHeight}px`;
-                              }
-                            }}
-                            className="doc-paragraph-text"
-                            value={chunkText}
-                            readOnly={chunk.is_verified}
-                            onChange={(e) => {
-                              handleChunkTextChange(chunk.raw_chunk_id, e.target.value);
-                              e.target.style.height = 'auto';
-                              e.target.style.height = `${e.target.scrollHeight}px`;
-                            }}
-                          />
-                        )}
-                      </div>
-                    );
-                  }}
-                  />
-                </div>
-              ) : (
-                <div className="doc-empty-state">
-                  <p>No document chunks available. Run pipeline to generate.</p>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -91,6 +91,8 @@ class TaskService:
         file_size: int,
         mime_type: str,
         page_count: int | None = None,
+        cloudinary_public_id: str | None = None,
+        cloudinary_url: str | None = None,
     ) -> TaskFile:
         """Register a file with a task."""
         # Verify task exists in org
@@ -104,6 +106,8 @@ class TaskService:
             file_size=file_size,
             mime_type=mime_type,
             page_count=page_count,
+            cloudinary_public_id=cloudinary_public_id,
+            cloudinary_url=cloudinary_url,
         )
         return await self.task_repo.add_file(task_file)
 

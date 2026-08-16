@@ -190,6 +190,11 @@ async def get_file_service():
     return FileService()
 
 
+async def get_cloudinary_service():
+    from app.services.cloudinary_service import CloudinaryService
+    return CloudinaryService()
+
+
 async def get_pipeline_service(
     pipeline_repo=Depends(get_pipeline_repository),
     task_repo=Depends(get_task_repository),

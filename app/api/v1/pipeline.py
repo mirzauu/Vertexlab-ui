@@ -15,6 +15,7 @@ from app.schemas.pipeline import (
     TranscriptRead,
     AIDocumentRead,
     AIDocumentUpdate,
+    AIDocumentSaveResponse,
     PipelineDetailedResultRead,
     WorkstationRead,
 )
@@ -83,7 +84,8 @@ async def stream_pipeline_status(
 
         try:
             while True:
-                async with AsyncSessionLocal() as session:
+                session = AsyncSessionLocal()
+                try:
                     result = await session.execute(
                         select(PipelineRun)
                         .where(PipelineRun.task_id == task_id)
@@ -103,6 +105,11 @@ async def stream_pipeline_status(
 
                     if run.status in (PipelineStatus.COMPLETED, PipelineStatus.FAILED):
                         break
+                finally:
+                    try:
+                        await asyncio.shield(session.close())
+                    except Exception:
+                        pass
 
                 await asyncio.sleep(1.5)
         except asyncio.CancelledError:
@@ -134,7 +141,7 @@ async def get_document(
     return await service.get_document(task_id, org_id)
 
 
-@router.put("/document", response_model=AIDocumentRead)
+@router.put("/document", response_model=AIDocumentSaveResponse)
 async def update_document(
     org_id: UUID,
     task_id: UUID,

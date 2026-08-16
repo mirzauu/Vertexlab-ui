@@ -1305,3 +1305,406 @@
   color: #34d399 !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTHENTIC LEGAL TRANSCRIPT SHEET LAYOUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.legal-transcript-sheet {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg, #FFFFFF);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.transcript-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  z-index: 5;
+}
+
+.transcript-page-badge {
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background-color: rgba(249, 115, 22, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* Aesthetic Diff Toggle Pill */
+.transcript-diff-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  background-color: var(--sidebar-hover, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  color: var(--text-gray);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.transcript-diff-toggle-pill:hover {
+  background-color: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.28);
+  color: var(--primary);
+}
+
+.transcript-diff-toggle-pill.active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.14), rgba(234, 88, 12, 0.08));
+  border-color: rgba(249, 115, 22, 0.4);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+}
+
+.diff-pill-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #94A3B8;
+  transition: all 0.2s ease;
+}
+
+.diff-pill-indicator.on {
+  background-color: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+}
+
+.transcript-virtuoso-wrapper {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Row chunk represents a transcript paragraph or question/answer block */
+.transcript-row-chunk {
+  display: flex;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  cursor: text;
+  transition: background-color 0.12s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.dark-mode .transcript-row-chunk {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.transcript-row-chunk:hover {
+  background-color: rgba(249, 115, 22, 0.03);
+}
+
+/* Verified state styles for Legal Transcript Workspace */
+.transcript-row-chunk.verified {
+  background-color: rgba(16, 185, 129, 0.05) !important;
+  border-left: 3px solid #10B981 !important;
+}
+
+.transcript-row-chunk.verified:hover {
+  background-color: rgba(16, 185, 129, 0.09) !important;
+}
+
+.transcript-row-chunk.verified .transcript-vertical-rule {
+  background-color: #10B981 !important;
+  opacity: 0.95;
+}
+
+.transcript-row-chunk.verified .transcript-line-no {
+  color: #059669 !important;
+  font-weight: 700;
+}
+
+.transcript-row-chunk.verified .transcript-editable-text {
+  color: #064E3B;
+  font-weight: 500;
+}
+
+.transcript-row-chunk.verified .transcript-diff-content {
+  color: #064E3B;
+}
+
+/* Dark Mode Verified Row */
+.dark-mode .transcript-row-chunk.verified {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-left: 3px solid #34D399 !important;
+}
+
+.dark-mode .transcript-row-chunk.verified:hover {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+}
+
+.dark-mode .transcript-row-chunk.verified .transcript-vertical-rule {
+  background-color: #34D399 !important;
+  opacity: 0.9;
+}
+
+.dark-mode .transcript-row-chunk.verified .transcript-line-no {
+  color: #34D399 !important;
+  font-weight: 700;
+}
+
+.dark-mode .transcript-row-chunk.verified .transcript-editable-text {
+  color: #ECFDF5;
+}
+
+.dark-mode .transcript-row-chunk.verified .transcript-diff-content {
+  color: #ECFDF5;
+}
+
+.transcript-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dark-mode .transcript-verified-pill {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34D399;
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+/* Active audio playback highlight (matching yellow highlight from reference) */
+.transcript-row-chunk.active-audio-line {
+  background-color: #FEF9C3 !important; /* Soft yellow highlight */
+}
+
+.dark-mode .transcript-row-chunk.active-audio-line {
+  background-color: rgba(234, 179, 8, 0.22) !important;
+}
+
+.transcript-row-chunk.cross-highlight-line {
+  background-color: rgba(249, 115, 22, 0.08) !important;
+}
+
+/* Left Gutter with Margin Line Numbers */
+.transcript-gutter {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-right: 12px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.transcript-line-no {
+  font-family: 'Courier New', Courier, monospace, var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #94A3B8;
+  line-height: 35.2px;
+  height: 35.2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.dark-mode .transcript-line-no {
+  color: #64748B;
+}
+
+/* Solid vertical separator rule */
+.transcript-vertical-rule {
+  width: 2px;
+  background-color: #334155;
+  flex-shrink: 0;
+  margin-right: 16px;
+  opacity: 0.85;
+}
+
+.dark-mode .transcript-vertical-rule {
+  background-color: #64748B;
+  opacity: 0.6;
+}
+
+/* Transcript Text Column */
+.transcript-text-column {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  padding-right: 20px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Editable text matching legal transcript font and indentation */
+.transcript-editable-text {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1.1rem;
+  line-height: 35.2px;
+  letter-spacing: -0.01em;
+  color: #0F172A;
+  font-weight: 450;
+  text-indent: 2.8rem; /* 5-space legal indentation */
+  padding: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: block;
+}
+
+.dark-mode .transcript-editable-text {
+  color: #F1F5F9;
+}
+
+.transcript-diff-content {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1.1rem;
+  line-height: 35.2px;
+  letter-spacing: -0.01em;
+  color: #0F172A;
+  font-weight: 450;
+  text-indent: 2.8rem;
+  padding: 0;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: block;
+}
+
+.dark-mode .transcript-diff-content {
+  color: #F1F5F9;
+}
+
+/* Wavy squiggly underlines on flagged / low-confidence terms */
+.transcript-wavy-underline {
+  text-decoration: underline wavy #38BDF8;
+  text-underline-offset: 3px;
+}
+
+/* Hover Actions floating pill */
+.transcript-hover-actions {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 3px 8px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 10;
+}
+
+.transcript-row-chunk:hover .transcript-hover-actions {
+  display: flex;
+}
+
+.transcript-chunk-time {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-gray);
+  padding-right: 4px;
+  border-right: 1px solid var(--border-color);
+}
+
+.transcript-action-btn {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.transcript-action-btn:hover {
+  background-color: var(--sidebar-hover);
+}
+
+/* Unsaved Changes Alert Modal */
+.unsaved-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.unsaved-modal-card {
+  background-color: var(--card-bg, #FFFFFF);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  animation: modalScaleIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.unsaved-modal-header {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.unsaved-modal-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: rgba(249, 115, 22, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.unsaved-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+

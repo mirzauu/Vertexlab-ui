@@ -32,6 +32,9 @@ python-dotenv
 pytest
 pytest-asyncio
 
+# File Storage & CDN
+cloudinary
+
 # PDF Parsing
 PyMuPDF
 

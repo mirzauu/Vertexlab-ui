@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Auth.css';
 import { api } from './services/api';
+import loginImage from './assets/login-image.jpg';
 
 export default function Auth({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -212,324 +213,290 @@ export default function Auth({ onLogin }) {
           backgroundColor: toast.type === 'error' ? '#FEE2E2' : '#D1FAE5',
           color: toast.type === 'error' ? '#991B1B' : '#065F46',
           border: `1px solid ${toast.type === 'error' ? '#FCA5A5' : '#A7F3D0'}`,
-          padding: '16px 20px',
+          padding: '14px 20px',
           borderRadius: '12px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 12px 30px rgba(0, 0, 0, 0.5)',
           zIndex: 9999,
           fontSize: '0.875rem',
-          fontWeight: '550',
+          fontWeight: '500',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
           animation: 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         }}>
           {toast.type === 'error' ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
           ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
           )}
           {toast.message}
         </div>
       )}
 
-      <style>{`
-        @keyframes slideIn {
-          from {
-            transform: translateY(-20px) scale(0.95);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
+      {/* Top Left Navigation Logo */}
+      <header className="auth-top-nav">
+        <div className="auth-brand-logo">
+          <span className="auth-brand-name">VerbaLex AI</span>
+        </div>
+      </header>
 
+      {/* Main Two-Column View */}
       <div className="auth-container">
-        {/* Left Side - Form */}
+        
+        {/* Left Side - Login Box */}
         <div className="auth-left">
-          <div className="auth-header">
-            <div className="auth-logo-text">VerbaLex AI</div>
-          </div>
-          
-          <div className="auth-form-container">
+          <div className="auth-left-content">
             
             {step === 'login' && (
               <>
-                <h1 className="auth-title">Get Started</h1>
-                <p className="auth-subtitle">Welcome to VerbaLex AI - Let's login to your account</p>
+                <h1 className="auth-heading">Welcome to VerbaLex AI</h1>
+                <p className="auth-subheading">Your thinking partner for legal AI</p>
                 
-                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
-                
-                <form className="auth-form" onSubmit={handleRequestLoginOTP}>
-                  <div className="form-group">
-                    <label>Email</label>
+                <div className="auth-card-box">
+
+
+                  {error && <div style={{ color: '#F87171', fontSize: '0.82rem', textAlign: 'left' }}>{error}</div>}
+
+                  <form className="auth-form" onSubmit={handleRequestLoginOTP}>
                     <input 
                       type="email" 
-                      placeholder="hi@fillianta.com" 
+                      className="auth-input-field"
+                      placeholder="Enter your email" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      {loading ? 'Sending code...' : 'Send Sign In OTP'}
+                    </button>
+                  </form>
+
+                  <div className="auth-switch-text">
+                    Don't have an account? 
+                    <span className="auth-switch-action" onClick={() => { setError(''); setStep('signup'); }}>
+                      Sign up
+                    </span>
                   </div>
-                  
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? 'Sending code...' : 'Send Sign In OTP'}
-                  </button>
-                </form>
-                
-                <div className="auth-switch">
-                  Don't have an account? <span onClick={() => { setError(''); setStep('signup'); }} style={{color: '#111827', fontWeight: 600, cursor: 'pointer'}}>Sign up</span>
                 </div>
               </>
             )}
 
             {step === 'login_verify' && (
               <>
-                <h1 className="auth-title">Verify Code</h1>
-                <p className="auth-subtitle">We sent a 4-digit code to {email}</p>
-                
-                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
-                
-                <form className="auth-form" onSubmit={handleVerifyLoginOTP}>
-                  <div className="form-group">
-                    <label>OTP Code</label>
+                <h1 className="auth-heading">Verify Code</h1>
+                <p className="auth-subheading">We sent a 4-digit code to {email}</p>
+
+                <div className="auth-card-box">
+                  {error && <div style={{ color: '#F87171', fontSize: '0.82rem', textAlign: 'left' }}>{error}</div>}
+
+                  <form className="auth-form" onSubmit={handleVerifyLoginOTP}>
                     <input 
                       type="text" 
+                      className="auth-input-field"
                       maxLength="4"
-                      placeholder="Enter your otp"
+                      placeholder="Enter 4-digit OTP"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                       required
+                      autoFocus
                     />
-                  </div>
-                  
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? 'Signing in...' : 'Sign in'}
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setError(''); setStep('login'); }} 
-                    className="auth-submit" 
-                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#F97316', border: '1px solid #F97316'}}
-                  >
-                    Back
-                  </button>
-                </form>
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      {loading ? 'Signing in...' : 'Sign in'}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => { setError(''); setStep('login'); }} 
+                      className="auth-secondary-btn"
+                    >
+                      Back
+                    </button>
+                  </form>
+                </div>
               </>
             )}
 
             {step === 'signup' && (
               <>
-                <h1 className="auth-title">Create Account</h1>
-                <p className="auth-subtitle">Join VerbaLex AI - Create your account</p>
-                
-                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
-                
-                <form className="auth-form" onSubmit={handleRequestSignupOTP}>
-                  <div className="form-group">
-                    <label>Full Name</label>
+                <h1 className="auth-heading">Create Account</h1>
+                <p className="auth-subheading">Join VerbaLex AI - Create your account</p>
+
+                <div className="auth-card-box">
+                  {error && <div style={{ color: '#F87171', fontSize: '0.82rem', textAlign: 'left' }}>{error}</div>}
+
+                  <form className="auth-form" onSubmit={handleRequestSignupOTP}>
                     <input 
                       type="text" 
-                      placeholder="John Doe" 
+                      className="auth-input-field"
+                      placeholder="Full Name" 
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required 
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>Email</label>
                     <input 
                       type="email" 
-                      placeholder="hi@example.com" 
+                      className="auth-input-field"
+                      placeholder="Enter your email" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required 
                     />
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      {loading ? 'Sending code...' : 'Send Up OTP'}
+                    </button>
+                  </form>
+
+                  <div className="auth-switch-text">
+                    Already have an account? 
+                    <span className="auth-switch-action" onClick={() => { setError(''); setStep('login'); }}>
+                      Sign in
+                    </span>
                   </div>
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? 'Sending code...' : 'Send Up OTP'}
-                  </button>
-                </form>
-                
-                <div className="auth-switch">
-                  Already have an account? <span onClick={() => { setError(''); setStep('login'); }} style={{color: '#111827', fontWeight: 600, cursor: 'pointer'}}>Sign in</span>
                 </div>
               </>
             )}
 
             {step === 'signup_verify' && (
               <>
-                <h1 className="auth-title">Verify Code</h1>
-                <p className="auth-subtitle">We sent a 4-digit code to {email}</p>
-                
-                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
-                
-                <form className="auth-form" onSubmit={handleVerifySignupOTP}>
-                  <div className="form-group">
-                    <label>OTP Code</label>
+                <h1 className="auth-heading">Verify Code</h1>
+                <p className="auth-subheading">We sent a 4-digit code to {email}</p>
+
+                <div className="auth-card-box">
+                  {error && <div style={{ color: '#F87171', fontSize: '0.82rem', textAlign: 'left' }}>{error}</div>}
+
+                  <form className="auth-form" onSubmit={handleVerifySignupOTP}>
                     <input 
                       type="text" 
+                      className="auth-input-field"
                       maxLength="4"
-                      placeholder="Enter your otp"
+                      placeholder="Enter 4-digit OTP"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                       required
+                      autoFocus
                     />
-                  </div>
-                  
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? 'Creating...' : 'Verify & Create Account'}
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setError(''); setStep('signup'); }} 
-                    className="auth-submit" 
-                    style={{marginTop: '0.5rem', backgroundColor: 'transparent', color: '#F97316', border: '1px solid #F97316'}}
-                  >
-                    Back
-                  </button>
-                </form>
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      {loading ? 'Creating...' : 'Verify & Create Account'}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => { setError(''); setStep('signup'); }} 
+                      className="auth-secondary-btn"
+                    >
+                      Back
+                    </button>
+                  </form>
+                </div>
               </>
             )}
 
             {step === 'select_org' && (
               <>
-                <h1 className="auth-title">Select Organization</h1>
-                <p className="auth-subtitle">Choose an organization to continue</p>
-                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
-                
-                <div className="org-list" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                  {organizations.map(org => (
-                    <div 
-                      key={org.id} 
-                      className="org-card" 
-                      onClick={() => handleSelectOrganization(org.id)} 
-                      style={{
-                        padding: '1rem', 
-                        border: '1px solid #F97316', 
-                        borderRadius: '0.5rem', 
-                        cursor: 'pointer',
-                        backgroundColor: '#F97316',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                      onMouseOut={(e) => { e.currentTarget.style.opacity = '1'; }}
-                    >
-                      <h3 style={{margin: 0, fontSize: '1rem', color: '#FFFFFF'}}>{org.name}</h3>
-                      {org.website && <p style={{margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.8)'}}>{org.website}</p>}
-                    </div>
-                  ))}
+                <h1 className="auth-heading">Select Organization</h1>
+                <p className="auth-subheading">Choose an organization to continue</p>
+
+                <div className="auth-card-box">
+                  {error && <div style={{ color: '#F87171', fontSize: '0.82rem', textAlign: 'left' }}>{error}</div>}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                    {organizations.map(org => (
+                      <div 
+                        key={org.id} 
+                        className="org-card-item"
+                        onClick={() => handleSelectOrganization(org.id)}
+                      >
+                        <div style={{ fontSize: '0.92rem', fontWeight: '600', color: '#FAF8F5' }}>{org.name}</div>
+                        {org.website && <div style={{ fontSize: '0.78rem', color: '#9E9A91', marginTop: '2px' }}>{org.website}</div>}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={() => { setError(''); setStep('create_org'); }} 
+                    className="auth-secondary-btn"
+                    style={{ marginTop: '6px' }}
+                  >
+                    + Create New Organization
+                  </button>
                 </div>
-                <button 
-                  onClick={() => { setError(''); setStep('create_org'); }} 
-                  className="auth-submit" 
-                  style={{marginTop: '1.5rem', backgroundColor: 'transparent', color: '#F97316', border: '1px solid #F97316'}}
-                >
-                  Create New Organization
-                </button>
               </>
             )}
 
             {step === 'create_org' && (
               <>
-                <h1 className="auth-title">Create Organization</h1>
-                <p className="auth-subtitle">Set up your workspace</p>
-                {error && <div className="auth-error" style={{color: 'red', marginBottom: '1rem', fontSize: '0.875rem'}}>{error}</div>}
-                
-                <form className="auth-form" onSubmit={handleCreateOrganization}>
-                  <div className="form-group">
-                    <label>Organization Name</label>
-                    <input type="text" value={orgName} onChange={e => setOrgName(e.target.value)} required placeholder="Acme Corp" />
-                  </div>
-                  <div className="form-group">
-                    <label>Website (Optional)</label>
-                    <input type="text" value={orgWebsite} onChange={e => setOrgWebsite(e.target.value)} placeholder="https://example.com" />
-                  </div>
-                  <div className="form-group">
-                    <label>Timezone</label>
-                    <input type="text" value={orgTimezone} onChange={e => setOrgTimezone(e.target.value)} required />
-                  </div>
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? 'Creating...' : 'Create & Continue'}
-                  </button>
-                  {organizations.length > 0 && (
-                    <button 
-                      type="button" 
-                      onClick={() => { setError(''); setStep('select_org'); }} 
-                      className="auth-submit" 
-                      style={{marginTop: '0.75rem', backgroundColor: 'transparent', color: '#6b7280'}}
-                    >
-                      Back to Selection
+                <h1 className="auth-heading">Create Organization</h1>
+                <p className="auth-subheading">Set up your workspace</p>
+
+                <div className="auth-card-box">
+                  {error && <div style={{ color: '#F87171', fontSize: '0.82rem', textAlign: 'left' }}>{error}</div>}
+
+                  <form className="auth-form" onSubmit={handleCreateOrganization}>
+                    <input 
+                      type="text" 
+                      className="auth-input-field"
+                      placeholder="Organization Name"
+                      value={orgName} 
+                      onChange={e => setOrgName(e.target.value)} 
+                      required 
+                    />
+                    <input 
+                      type="text" 
+                      className="auth-input-field"
+                      placeholder="Website (Optional)"
+                      value={orgWebsite} 
+                      onChange={e => setOrgWebsite(e.target.value)} 
+                    />
+                    <input 
+                      type="text" 
+                      className="auth-input-field"
+                      placeholder="Timezone"
+                      value={orgTimezone} 
+                      onChange={e => setOrgTimezone(e.target.value)} 
+                      required 
+                    />
+                    <button type="submit" className="auth-submit-btn" disabled={loading}>
+                      {loading ? 'Creating...' : 'Create & Continue'}
                     </button>
-                  )}
-                </form>
+                    {organizations.length > 0 && (
+                      <button 
+                        type="button" 
+                        onClick={() => { setError(''); setStep('select_org'); }} 
+                        className="auth-secondary-btn"
+                      >
+                        Back to Selection
+                      </button>
+                    )}
+                  </form>
+                </div>
               </>
             )}
+
           </div>
         </div>
-        
-        {/* Right Side - Visual */}
-        <div className="auth-right">
-          <div className="auth-right-bg-effect"></div>
-          <div className="auth-right-content">
-            <h2 className="auth-right-title">
-              <span className="italic-serif">Enter the Future</span><br/>
-              <span className="sans-serif">of Legal AI,<br/>today</span>
-            </h2>
-            
-            <div className="auth-card-wrapper">
-               {/* Floating toolbar */}
-               <div className="auth-floating-toolbar">
-                  <div className="toolbar-top">
-                    <div className="toolbar-icon active">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                    </div>
-                    <div className="toolbar-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
-                    </div>
-                    <div className="toolbar-icon">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-                    </div>
-                  </div>
-                  
-                  <div className="toolbar-bottom-icon">
-                    <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect width="48" height="48" rx="12" fill="white" />
-                      <path d="M30.5 18C30.5 18 25.5 15 19.5 18C13.5 21 13 28.5 13 28.5C13 28.5 15.5 24.5 19.5 24.5C23.5 24.5 29 27.5 30.5 33.5C30.5 33.5 33.5 28.5 30.5 18Z" fill="#000000" />
-                      <path d="M16 32C16 32 21 35 27 32C33 29 33.5 21.5 33.5 21.5C33.5 21.5 31 25.5 27 25.5C23 25.5 17.5 22.5 16 16.5C16 16.5 13 21.5 16 32Z" fill="#000000" />
-                    </svg>
-                  </div>
-               </div>
 
-               {/* Legal Transcription Widget */}
-               <div className="auth-credit-card">
-                  <div className="card-top-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v1a7 7 0 0 1-14 0v-1"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                    <span style={{ fontSize: '0.85rem', fontWeight: '750', color: '#000000', letterSpacing: '0.5px' }}>AUDIO ENGINE</span>
-                  </div>
-                  
-                  <div className="card-balance-section">
-                    <div className="card-balance">99.8%</div>
-                    <div className="card-balance-label">STT transcription accuracy</div>
-                  </div>
-                  
-                  <div className="card-primary" style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
-                    <div className="card-primary-info">
-                      <div className="card-primary-label">Current Deposition</div>
-                      <div className="card-primary-number">Smith_v_Jones_final.mp3</div>
-                    </div>
-                    <div className="card-primary-amount" style={{ color: '#000000', fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'rgba(0, 0, 0, 0.1)', borderRadius: '6px', fontWeight: 'bold' }}>Active</div>
-                  </div>
-                  
-                  <div className="card-footer" style={{ marginTop: '12px' }}>
-                    <div className="card-brand" style={{ fontSize: '0.8rem', color: '#111827', fontWeight: '700' }}>VerbaLex AI</div>
-                    <button className="card-view-all" style={{ backgroundColor: '#000000', color: 'white' }}>View Task</button>
-                  </div>
-               </div>
+        {/* Right Side - Animated Scrolling Text */}
+        <div className="auth-right">
+          <div className="auth-image-card black-bg">
+            <div className="scrolling-text-container">
+              <div className="scrolling-row">
+                <div className="scrolling-text">VERBALEX AI • LEGAL INTELLIGENCE • SMART CONTRACTS • VERBALEX AI • LEGAL INTELLIGENCE • SMART CONTRACTS •</div>
+                <div className="scrolling-text">VERBALEX AI • LEGAL INTELLIGENCE • SMART CONTRACTS • VERBALEX AI • LEGAL INTELLIGENCE • SMART CONTRACTS •</div>
+              </div>
+              <div className="scrolling-row">
+                <div className="scrolling-text reverse">AUTOMATED RESEARCH • PREDICTIVE OUTCOMES • AUTOMATED RESEARCH • PREDICTIVE OUTCOMES •</div>
+                <div className="scrolling-text reverse">AUTOMATED RESEARCH • PREDICTIVE OUTCOMES • AUTOMATED RESEARCH • PREDICTIVE OUTCOMES •</div>
+              </div>
+              <div className="scrolling-row">
+                <div className="scrolling-text">PRECISION • COMPLIANCE • DOCUMENT ANALYSIS • PRECISION • COMPLIANCE • DOCUMENT ANALYSIS •</div>
+                <div className="scrolling-text">PRECISION • COMPLIANCE • DOCUMENT ANALYSIS • PRECISION • COMPLIANCE • DOCUMENT ANALYSIS •</div>
+              </div>
+            </div>
+            <div className="auth-right-content">
+              <h2>The Future of Legal Work</h2>
+              <p>Experience the most advanced AI tailored specifically for legal professionals.</p>
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

@@ -76,6 +76,8 @@ class TaskFile(Base, UUIDMixin):
         DateTime(timezone=True), server_default=func.now()
     )
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cloudinary_public_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    cloudinary_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     task: Mapped["Task"] = relationship("Task", back_populates="files")

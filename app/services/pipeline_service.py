@@ -20,7 +20,7 @@ from app.models.task import TaskFile, FileType
 from app.pipeline.base import PipelineContext
 from app.pipeline.orchestrator import PipelineOrchestrator, PIPELINE_STEPS
 from app.core.exceptions import NotFoundError, BadRequestError, ConflictError
-from app.schemas.pipeline import AIDocumentUpdate
+from app.schemas.pipeline import AIDocumentUpdate, AIDocumentSaveResponse
 
 
 class PipelineService:
@@ -181,38 +181,44 @@ class PipelineService:
 
     async def update_document(
         self, task_id: UUID, org_id: UUID, data: AIDocumentUpdate
-    ) -> AIDocument:
-        """Create a new version of the document (V2, V3, etc.) or create V1 if not exists."""
-        # Verify task exists in org
-        await self.task_repo.get_task_in_org(task_id, org_id)
+    ) -> AIDocumentSaveResponse:
+        """
+        Update the existing draft in-place without version row explosion,
+        reducing save network round-trips from 5 down to 1-2.
+        """
+        from sqlalchemy import select
+        from sqlalchemy.orm import undefer
+        from app.models.task import Task
 
-        # Retrieve the latest document version if it exists
-        current_doc = await self.pipeline_repo.get_document(task_id)
+        # 1. Fetch current latest document and verify task belongs to org in a single query
+        result = await self.db.execute(
+            select(AIDocument)
+            .join(AIDocument.task)
+            .where(AIDocument.task_id == task_id, Task.organization_id == org_id)
+            .order_by(AIDocument.version.desc())
+            .options(undefer(AIDocument.content), undefer(AIDocument.corrected_chunks))
+        )
+        current_doc = result.scalars().first()
+
+        content_data = data.content or ""
+        if data.corrected_chunks:
+            content_data = json.dumps(data.corrected_chunks, ensure_ascii=False)
 
         if current_doc:
             if not current_doc.is_draft:
                 raise BadRequestError("Cannot edit a finalized document")
 
-            # Create a new version row instead of mutating the existing one
-            content_data = data.content or current_doc.content
-            if data.corrected_chunks:
-                content_data = json.dumps(data.corrected_chunks, ensure_ascii=False)
-
-            new_doc = AIDocument(
-                task_id=task_id,
-                title=data.title or current_doc.title,
-                content=content_data,
-                version=current_doc.version + 1,
-                is_draft=True,
-                parent_id=current_doc.id,
-                corrected_chunks=data.corrected_chunks or current_doc.corrected_chunks,
-            )
+            # In-place update: prevents DB row bloat and version explosion
+            if data.title:
+                current_doc.title = data.title
+            if data.corrected_chunks is not None:
+                current_doc.corrected_chunks = data.corrected_chunks
+            current_doc.content = content_data
+            current_doc.updated_at = datetime.now(timezone.utc)
+            doc_to_return = current_doc
         else:
-            # Document does not exist yet. Create the first draft version (V1)
-            content_data = data.content or ""
-            if data.corrected_chunks:
-                content_data = json.dumps(data.corrected_chunks, ensure_ascii=False)
-
+            # First draft V1 creation — verify task exists in org
+            await self.task_repo.get_task_in_org(task_id, org_id)
             new_doc = AIDocument(
                 task_id=task_id,
                 title=data.title or "AI-Corrected Proof Document",
@@ -222,12 +228,19 @@ class PipelineService:
                 parent_id=None,
                 corrected_chunks=data.corrected_chunks or [],
             )
+            self.db.add(new_doc)
+            doc_to_return = new_doc
 
-        self.db.add(new_doc)
         await self.db.flush()
-        await self.db.refresh(new_doc)
 
-        return new_doc
+        # Return lean save response without re-fetching or echoing full chunks
+        return AIDocumentSaveResponse(
+            status="saved",
+            id=doc_to_return.id,
+            task_id=task_id,
+            version=doc_to_return.version,
+            updated_at=doc_to_return.updated_at or datetime.now(timezone.utc),
+        )
 
     async def finalize_document(self, task_id: UUID, org_id: UUID) -> AIDocument:
         """Mark an AI document as final (no longer a draft)."""
@@ -238,9 +251,9 @@ class PipelineService:
 
         doc.is_draft = False
         await self.db.flush()
-        await self.db.refresh(doc)
 
-        return doc
+        saved_doc = await self.pipeline_repo.get_document(task_id)
+        return saved_doc or doc
 
     async def get_document_versions(
         self, task_id: UUID, org_id: UUID
@@ -261,7 +274,7 @@ class PipelineService:
         from app.models.transcript import Transcript
         from app.models.task import Task, TaskFile, FileType
 
-        # ── 1. Single query: load Task + files + pipeline_run + steps + transcript + ai_documents ─────
+        # ── 1. Single query: load Task + files + pipeline_run + steps + transcript ─────
         task_result = await self.db.execute(
             select(Task)
             .where(Task.id == task_id, Task.organization_id == org_id)
@@ -269,7 +282,6 @@ class PipelineService:
                 selectinload(Task.files),
                 selectinload(Task.pipeline_run).selectinload(PipelineRun.steps),
                 selectinload(Task.transcript),
-                selectinload(Task.ai_documents).undefer(AIDocument.content).undefer(AIDocument.corrected_chunks)
             )
         )
         task = task_result.scalar_one_or_none()
@@ -282,10 +294,15 @@ class PipelineService:
 
         transcript = task.transcript
 
-        # Sort documents by version descending to get the latest one
-        doc = None
-        if task.ai_documents:
-            doc = sorted(task.ai_documents, key=lambda d: d.version, reverse=True)[0]
+        # Load ONLY the single latest document version (prevents fetching 100MB+ of old version rows)
+        doc_result = await self.db.execute(
+            select(AIDocument)
+            .where(AIDocument.task_id == task_id)
+            .order_by(AIDocument.version.desc())
+            .options(undefer(AIDocument.content), undefer(AIDocument.corrected_chunks))
+            .limit(1)
+        )
+        doc = doc_result.scalars().first()
 
         # ── Build response from already-loaded data (no extra queries) ─────────
         audio_file_path = None
@@ -369,27 +386,45 @@ class PipelineService:
         (pipeline/results + tasks/{id}/files) on the frontend.
         """
         from app.models.task import TaskFile, FileType
-        from sqlalchemy import select
+        from sqlalchemy import select, or_
 
         # Re-use the existing detailed results aggregator (already optimised)
         results = await self.get_detailed_results(task_id, org_id)
 
-        # Fetch only the audio file row — a lightweight targeted query
+        # Fetch audio file row: check FileType.AUDIO or audio mime_type/extension fallback
         audio_result = await self.db.execute(
             select(TaskFile)
             .where(
                 TaskFile.task_id == task_id,
-                TaskFile.file_type == FileType.AUDIO,
+                or_(
+                    TaskFile.file_type == FileType.AUDIO,
+                    TaskFile.mime_type.ilike("audio/%"),
+                    TaskFile.file_name.ilike("%.mp3"),
+                    TaskFile.file_name.ilike("%.wav"),
+                    TaskFile.file_name.ilike("%.m4a"),
+                    TaskFile.file_name.ilike("%.aac"),
+                    TaskFile.file_name.ilike("%.ogg"),
+                    TaskFile.file_name.ilike("%.webm"),
+                    TaskFile.file_path.ilike("%.mp3"),
+                    TaskFile.file_path.ilike("%.wav"),
+                    TaskFile.file_path.ilike("%.m4a"),
+                )
             )
+            .order_by(TaskFile.uploaded_at.desc())
         )
-        audio_file = audio_result.scalar_one_or_none()
+        audio_file = audio_result.scalars().first()
 
         audio_file_info = None
         if audio_file:
+            stream_url = audio_file.cloudinary_url
+            if stream_url and "cloudinary.com" in stream_url and stream_url.endswith(".wav"):
+                stream_url = stream_url[:-4] + ".mp3"
+
             audio_file_info = {
                 "id": str(audio_file.id),
                 "file_path": audio_file.file_path,
-                "file_type": audio_file.file_type.value,
+                "file_type": audio_file.file_type.value if hasattr(audio_file.file_type, 'value') else str(audio_file.file_type),
+                "cloudinary_url": stream_url,
             }
 
         return {
