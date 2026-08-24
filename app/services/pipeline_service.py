@@ -457,7 +457,7 @@ class PipelineService:
         if not doc:
             raise NotFoundError("AI Document")
 
-        # 3. Fetch summary stats
+        # 3. Fetch summary stats and layout profile
         run_result = await self.db.execute(
             select(PipelineRun)
             .where(PipelineRun.task_id == task_id)
@@ -465,15 +465,17 @@ class PipelineService:
         )
         pipeline_run = run_result.scalar_one_or_none()
         summary = {}
+        layout_profile = None
         if pipeline_run:
             for step in pipeline_run.steps:
                 if step.step_name == "matching":
                     summary = step.metadata_json or {}
+                elif step.step_name == "data_processing":
+                    dp_meta = step.metadata_json or {}
+                    layout_profile = dp_meta.get("layout_profile") or dp_meta.get("structure_rules", {}).get("layout_profile")
 
         # 4. Format lines for PDF
         lines = []
-
-
 
         # Add chunks
         chunks = doc.corrected_chunks
@@ -507,8 +509,8 @@ class PipelineService:
             for line in doc.content.split("\n"):
                 lines.extend(self._split_qa_lines(line))
 
-        # 5. Generate AI PDF bytes
-        generated_pdf_bytes = self._generate_pdf_from_lines(doc.title, lines)
+        # 5. Generate AI PDF bytes using dynamic layout profile
+        generated_pdf_bytes = self._generate_pdf_from_lines(doc.title, lines, layout_profile=layout_profile)
         
         # 6. Check if there is a cover file and merge it
         import os
@@ -532,30 +534,48 @@ class PipelineService:
                     
         return generated_pdf_bytes
 
-    def _generate_pdf_from_lines(self, title: str, lines: list[str]) -> bytes:
+    def _generate_pdf_from_lines(self, title: str, lines: list[str], layout_profile: dict | None = None) -> bytes:
         import fitz
-        width, height = 612, 792  # Letter size (8.5 x 11 inches)
-        doc = fitz.open()
         
-        # User requested constants
-        left_margin = 79  # 1.1 inches (1.1 * 72 = 79.2 points)
-        right_margin = 79 # 1.1 inches
-        top_margin = 100  # Increased top margin by ~0.4 inches (72 + 28 points) -> approx 1.3-1.4"
-        bottom_margin = 72
-        font_name = "courier"
-        font_size = 10
-        line_number_width = 22
-        max_lines_per_page = 25
-
-        # Dynamically calculate line height so 25 lines exactly fill the page height
-        available_height = height - top_margin - bottom_margin
-        # Leave a tiny bit of extra padding so the last line doesn't scrape the margin
-        line_height = available_height / max_lines_per_page
-
-        # Text starts after the line numbers and vertical lines plus a gap
-        text_start_x = left_margin + line_number_width + 12
+        lp = layout_profile or {}
+        width = float(lp.get("page_width", 612.0))
+        height = float(lp.get("page_height", 792.0))
+        
+        font_name = str(lp.get("font_name", "courier"))
+        font_size = float(lp.get("font_size", 10.0))
+        line_number_font_size = float(lp.get("line_number_font_size", font_size))
+        
+        top_margin = float(lp.get("top_margin", 95.0))
+        bottom_margin = float(lp.get("bottom_margin", 72.0))
+        left_margin = float(lp.get("left_margin", 79.0))
+        right_margin = float(lp.get("right_margin", 79.0))
+        
+        max_lines_per_page = int(lp.get("max_lines_per_page", 25))
+        
+        # Line height from profile or dynamic calculation
+        if "line_height" in lp and float(lp["line_height"]) > 0:
+            line_height = float(lp["line_height"])
+        else:
+            available_height = height - top_margin - bottom_margin
+            line_height = available_height / max_lines_per_page
+            
+        line_number_x = float(lp.get("line_number_x", left_margin))
+        line_number_width = float(lp.get("line_number_width", 22.0))
+        text_start_x = float(lp.get("text_start_x", line_number_x + line_number_width + 12.0))
+        
+        q_start_x = float(lp.get("q_start_x", text_start_x))
+        a_start_x = float(lp.get("a_start_x", text_start_x))
+        speaker_start_x = float(lp.get("speaker_start_x", text_start_x))
+        
         max_width = width - text_start_x - right_margin
-
+        
+        page_num_cfg = lp.get("page_number", {})
+        page_num_x = float(page_num_cfg.get("x", width - right_margin - 10.0))
+        page_num_y = float(page_num_cfg.get("y", max(25.0, top_margin - 20.0)))
+        
+        vertical_lines = lp.get("vertical_lines", [])
+        
+        doc = fitz.open()
         page_num = 1
         
         def start_new_page():
@@ -564,36 +584,34 @@ class PipelineService:
             
             # Page Number
             p_num_str = str(page_num)
-            p.insert_text(fitz.Point(width - right_margin - 20, top_margin), p_num_str, fontsize=font_size, fontname=font_name)
+            p.insert_text(fitz.Point(page_num_x, page_num_y), p_num_str, fontsize=font_size, fontname=font_name)
             
-            # Draw line numbers 1-25 down the left margin
-            y_line = top_margin + line_height # Start transcript just below the top margin
-            
+            # Draw line numbers down the margin
+            y_line = top_margin
             for i in range(1, max_lines_per_page + 1):
                 num_str = str(i)
-                # right align number in its column
-                nw = fitz.get_text_length(num_str, fontname=font_name, fontsize=font_size)
-                x_offset = left_margin + line_number_width - nw
-                p.insert_text(fitz.Point(x_offset, y_line), num_str, fontsize=font_size, fontname=font_name)
+                nw = fitz.get_text_length(num_str, fontname=font_name, fontsize=line_number_font_size)
+                x_offset = line_number_x + line_number_width - nw
+                p.insert_text(fitz.Point(x_offset, y_line), num_str, fontsize=line_number_font_size, fontname=font_name)
                 y_line += line_height
             
-            # Draw typical deposition vertical lines
-            shape = p.new_shape()
-            line_x1 = left_margin + line_number_width + 4
-            line_x2 = left_margin + line_number_width + 6
-            shape.draw_line(fitz.Point(line_x1, top_margin), fitz.Point(line_x1, height - bottom_margin))
-            shape.draw_line(fitz.Point(line_x2, top_margin), fitz.Point(line_x2, height - bottom_margin))
-            
-            right_line_x = width - right_margin + 4
-            shape.draw_line(fitz.Point(right_line_x, top_margin), fitz.Point(right_line_x, height - bottom_margin))
-            shape.commit()
-            
+            # Draw vertical lines
+            if vertical_lines:
+                shape = p.new_shape()
+                for vl in vertical_lines:
+                    vx = float(vl.get("x", 0))
+                    vtop = float(vl.get("top", top_margin - 10.0))
+                    vbot = float(vl.get("bottom", height - bottom_margin))
+                    shape.draw_line(fitz.Point(vx, vtop), fitz.Point(vx, vbot))
+                shape.finish(color=(0, 0, 0), width=0.5)
+                shape.commit()
+                
             page_num += 1
             return p
 
         page = start_new_page()
         current_line_on_page = 1
-        y = top_margin + line_height
+        y = top_margin
 
         def get_wrapped_lines(text: str, max_w: float) -> list[str]:
             words = text.split()
@@ -623,22 +641,25 @@ class PipelineService:
                     current_line_on_page += 1
                 continue
 
-            # Format Q/A prefixes
+            # Format prefixes & detect line type
             upper_line = line.strip()
-            if upper_line.upper().startswith('Q:') or upper_line.upper().startswith('Q '):
-                line = 'Q. ' + upper_line[2:].lstrip()
-            elif upper_line.upper().startswith('A:') or upper_line.upper().startswith('A '):
-                line = 'A. ' + upper_line[2:].lstrip()
-            elif upper_line.upper().startswith('Q.'):
-                line = 'Q. ' + upper_line[2:].lstrip()
-            elif upper_line.upper().startswith('A.'):
-                line = 'A. ' + upper_line[2:].lstrip()
+            is_q = False
+            is_a = False
+            is_speaker = False
+
+            if upper_line.upper().startswith('Q:') or upper_line.upper().startswith('Q.'):
+                is_q = True
+                line = 'Q.  ' + upper_line[2:].lstrip()
+            elif upper_line.upper().startswith('A:') or upper_line.upper().startswith('A.'):
+                is_a = True
+                line = 'A.  ' + upper_line[2:].lstrip()
+            elif ":" in upper_line and upper_line.split(":")[0].isupper() and len(upper_line.split(":")[0]) < 35:
+                is_speaker = True
 
             # Identify headers and format them ALL CAPS
             is_header = any(line.startswith(prefix) for prefix in (
                 'Task Name:', 'Document Title:', 'Version:', 'Status:', 'Generated At:', '--- '
             ))
-            
             if is_header:
                 line = line.upper()
 
@@ -647,11 +668,20 @@ class PipelineService:
                 if current_line_on_page > max_lines_per_page:
                     page = start_new_page()
                     current_line_on_page = 1
-                    y = top_margin + line_height
+                    y = top_margin
                 
-                # Wrapped lines start under text, not under Q/A
-                indent_x = text_start_x
-
+                # First line gets specific indent if Q/A/Speaker, wrapped continuation lines get text_start_x
+                if i == 0:
+                    if is_q:
+                        indent_x = q_start_x
+                    elif is_a:
+                        indent_x = a_start_x
+                    elif is_speaker:
+                        indent_x = speaker_start_x
+                    else:
+                        indent_x = text_start_x
+                else:
+                    indent_x = text_start_x
 
                 page.insert_text(fitz.Point(indent_x, y), w_line, fontsize=font_size, fontname=font_name)
                 y += line_height
@@ -711,6 +741,302 @@ class PipelineService:
                 cover_path = cp
 
         return self._generate_word_from_lines(doc.title, lines, cover_path)
+
+    async def get_document_word_tracked(self, task_id: UUID, org_id: UUID) -> bytes:
+        """
+        Get the AI document as a Word DOCX with tracked changes.
+        Deleted (original) text appears as red strikethrough; inserted (AI) text as blue underline.
+        The reviewer can Accept / Reject each change individually in Word.
+        """
+        task = await self.task_repo.get_task_in_org(task_id, org_id)
+        if not task:
+            raise NotFoundError("Task", str(task_id))
+
+        doc = await self.pipeline_repo.get_document(task_id)
+        if not doc:
+            raise NotFoundError("AI Document")
+
+        # Build list of (original_text, corrected_text) pairs per Q/A block
+        chunk_pairs: list[tuple[str, str]] = []
+
+        chunks = doc.corrected_chunks or []
+        if not chunks:
+            from app.models.transcript import Transcript
+            tr_result = await self.db.execute(
+                select(Transcript).where(Transcript.task_id == task_id)
+            )
+            transcript = tr_result.scalar_one_or_none()
+            if transcript and transcript.matches:
+                for m in transcript.matches:
+                    orig = m.get("raw_chunk_text") or ""
+                    corr = m.get("raw_chunk_text") or ""
+                    chunk_pairs.append((orig, corr))
+
+        if not chunk_pairs:
+            for chunk in chunks:
+                orig = chunk.get("original_raw_text") or chunk.get("corrected_text") or ""
+                corr = chunk.get("corrected_text") or chunk.get("original_raw_text") or ""
+                chunk_pairs.append((orig, corr))
+
+        # Check for cover page
+        import os
+        from app.config import settings
+        cover_path = None
+        task_files = await self.task_repo.get_files(task_id)
+        cover_files = [f for f in task_files if f.file_name.endswith("_cover.pdf")]
+        if cover_files:
+            cp = os.path.join(settings.STORAGE_PATH, cover_files[0].file_path)
+            if os.path.exists(cp):
+                cover_path = cp
+
+        return self._generate_word_tracked_changes(doc.title, chunk_pairs, cover_path)
+
+    def _generate_word_tracked_changes(
+        self,
+        title: str,
+        chunk_pairs: list[tuple[str, str]],
+        cover_path: str = None
+    ) -> bytes:
+        """
+        Generate a DOCX where every AI correction is shown as a tracked change:
+          - Original text  → red strikethrough  (w:del / w:delText)
+          - Corrected text → blue underline      (w:ins / w:t)
+
+        The reviewer opens this in Word and uses Accept/Reject Changes to approve edits.
+        Word-diff is performed at the word level for clean, readable diffs.
+        """
+        import docx
+        from docx.shared import Pt, Inches, RGBColor
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        from io import BytesIO
+        import difflib, datetime, re, fitz
+
+        document = docx.Document()
+
+        # ── Page setup ──────────────────────────────────────────────────────
+        section = document.sections[0]
+        section.page_width  = int(8.5 * 914400)
+        section.page_height = int(11  * 914400)
+        section.left_margin   = int(1.25 * 914400)
+        section.right_margin  = int(1.0  * 914400)
+        section.top_margin    = int(1.0  * 914400)
+        section.bottom_margin = int(1.0  * 914400)
+
+        # ── Base paragraph style ─────────────────────────────────────────────
+        style = document.styles["Normal"]
+        font  = style.font
+        font.name = "Courier New"
+        font.size = Pt(12)
+
+        # ── Author / date used in revision XML ───────────────────────────────
+        AUTHOR = "Vertexlab AI"
+        DATE   = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        _rev_id = [1]
+
+        def _next_id():
+            _rev_id[0] += 1
+            return str(_rev_id[0])
+
+        # ── XML helpers ──────────────────────────────────────────────────────
+        def _make_rpr(bold=False, color: str = None, strike=False, underline=False):
+            """Build a <w:rPr> element with font + optional colour/strikethrough/underline."""
+            rpr = OxmlElement("w:rPr")
+            rfonts = OxmlElement("w:rFonts")
+            for attr in ("w:ascii", "w:hAnsi", "w:cs"):
+                rfonts.set(qn(attr), "Courier New")
+            rpr.append(rfonts)
+            sz = OxmlElement("w:sz");  sz.set(qn("w:val"), "24"); rpr.append(sz)
+            szCs = OxmlElement("w:szCs"); szCs.set(qn("w:val"), "24"); rpr.append(szCs)
+            if bold:
+                rpr.append(OxmlElement("w:b"))
+            if color:
+                col = OxmlElement("w:color"); col.set(qn("w:val"), color); rpr.append(col)
+            if strike:
+                rpr.append(OxmlElement("w:strike"))
+            if underline:
+                ul = OxmlElement("w:u"); ul.set(qn("w:val"), "single"); rpr.append(ul)
+            return rpr
+
+        def _ins_run(para_xml, text: str, bold=False):
+            """Append a <w:ins><w:r><w:t> — blue underlined insertion."""
+            ins = OxmlElement("w:ins")
+            ins.set(qn("w:id"), _next_id())
+            ins.set(qn("w:author"), AUTHOR)
+            ins.set(qn("w:date"), DATE)
+            r = OxmlElement("w:r")
+            r.append(_make_rpr(bold=bold, color="1F4E79", underline=True))
+            t = OxmlElement("w:t")
+            t.set(qn("xml:space"), "preserve")
+            t.text = text
+            r.append(t)
+            ins.append(r)
+            para_xml.append(ins)
+
+        def _del_run(para_xml, text: str, bold=False):
+            """Append a <w:del><w:r><w:delText> — red strikethrough deletion."""
+            d = OxmlElement("w:del")
+            d.set(qn("w:id"), _next_id())
+            d.set(qn("w:author"), AUTHOR)
+            d.set(qn("w:date"), DATE)
+            r = OxmlElement("w:r")
+            r.append(_make_rpr(bold=bold, color="C00000", strike=True))
+            dt = OxmlElement("w:delText")
+            dt.set(qn("xml:space"), "preserve")
+            dt.text = text
+            r.append(dt)
+            d.append(r)
+            para_xml.append(d)
+
+        def _plain_run(para_xml, text: str, bold=False):
+            """Append a plain unchanged <w:r><w:t> run."""
+            r = OxmlElement("w:r")
+            r.append(_make_rpr(bold=bold))
+            t = OxmlElement("w:t")
+            t.set(qn("xml:space"), "preserve")
+            t.text = text
+            r.append(t)
+            para_xml.append(r)
+
+        def _new_para(doc_obj, ppr_xml=None):
+            """Add a new paragraph and return its _p XML element."""
+            p = doc_obj.add_paragraph()
+            p.paragraph_format.space_before = Pt(0)
+            p.paragraph_format.space_after  = Pt(0)
+            p.paragraph_format.line_spacing = Pt(14)
+            if ppr_xml is not None:
+                p._p.insert(0, ppr_xml)
+            return p._p
+
+        def _ppr(left_indent_twips: int = 0):
+            pPr = OxmlElement("w:pPr")
+            if left_indent_twips:
+                ind = OxmlElement("w:ind")
+                ind.set(qn("w:left"), str(left_indent_twips))
+                pPr.append(ind)
+            return pPr
+
+        # ── Word-level diff between two strings ──────────────────────────────
+        def _word_diff(orig: str, corr: str):
+            """
+            Tokenise both strings into words+spaces and return a list of
+            ('equal'|'delete'|'insert'|'replace', orig_tokens, corr_tokens).
+            """
+            def tokenise(s):
+                # Split keeping spaces so we can reconstruct readable text
+                return re.findall(r'\S+|\s+', s)
+
+            orig_toks = tokenise(orig)
+            corr_toks = tokenise(corr)
+            sm = difflib.SequenceMatcher(None, orig_toks, corr_toks, autojunk=False)
+            ops = []
+            for tag, i1, i2, j1, j2 in sm.get_opcodes():
+                ops.append((tag, orig_toks[i1:i2], corr_toks[j1:j2]))
+            return ops
+
+        # ── Detect Q/A prefix ────────────────────────────────────────────────
+        _qa_re = re.compile(r'^(Q|A)[\.:\s]\s*', re.IGNORECASE)
+
+        def _split_prefix(text: str):
+            """Return (prefix, body) e.g. ('Q. ', 'Good afternoon...')"""
+            m = _qa_re.match(text.strip())
+            if m:
+                ltr = m.group(1).upper()
+                body = text.strip()[m.end():]
+                return f"{ltr}. ", body
+            return None, text.strip()
+
+        # ── Cover page ──────────────────────────────────────────────────────
+        if cover_path:
+            try:
+                cover_doc = fitz.open(cover_path)
+                for pg_idx in range(len(cover_doc)):
+                    pg = cover_doc[pg_idx]
+                    for block in pg.get_text("blocks"):
+                        txt = block[4].strip()
+                        if txt:
+                            for ln in txt.split("\n"):
+                                p = _new_para(document)
+                                _plain_run(p, ln)
+                cover_doc.close()
+                document.add_page_break()
+            except Exception:
+                pass
+
+        # ── Title ────────────────────────────────────────────────────────────
+        tp = document.add_paragraph()
+        tp.paragraph_format.space_before = Pt(6)
+        tp.paragraph_format.space_after  = Pt(12)
+        tr = tp.add_run(f"AI CORRECTIONS — {title or 'TRANSCRIPT'}")
+        tr.bold = True
+        tr.font.name = "Courier New"
+        tr.font.size = Pt(12)
+
+        # ── Legend ───────────────────────────────────────────────────────────
+        leg_p = document.add_paragraph()
+        leg_p.paragraph_format.space_after = Pt(10)
+        leg_run = leg_p.add_run(
+            "Legend:  "
+        )
+        leg_run.font.name = "Courier New"
+        leg_run.font.size = Pt(10)
+
+        del_run_leg = leg_p.add_run("Deleted text (original)  ")
+        del_run_leg.font.name  = "Courier New"
+        del_run_leg.font.size  = Pt(10)
+        del_run_leg.font.color.rgb = RGBColor(0xC0, 0x00, 0x00)
+        del_run_leg.font.strike = True
+
+        ins_run_leg = leg_p.add_run("Inserted text (AI correction)")
+        ins_run_leg.font.name   = "Courier New"
+        ins_run_leg.font.size   = Pt(10)
+        ins_run_leg.font.color.rgb = RGBColor(0x1F, 0x4E, 0x79)
+        ins_run_leg.font.underline = True
+
+        document.add_paragraph()  # spacer
+
+        # ── Body: one paragraph per chunk ────────────────────────────────────
+        for orig_text, corr_text in chunk_pairs:
+            orig_text = (orig_text or "").strip()
+            corr_text = (corr_text or "").strip()
+            if not orig_text and not corr_text:
+                continue
+
+            orig_prefix, orig_body = _split_prefix(orig_text)
+            corr_prefix, corr_body = _split_prefix(corr_text)
+
+            # Use corrected prefix (or orig if no change)
+            prefix = corr_prefix or orig_prefix
+            is_qa  = prefix is not None
+            indent = 720 if is_qa else 0  # ~0.5 inch for Q/A body
+
+            p = _new_para(document, _ppr(indent))
+
+            # Prefix label (Q. / A.) — plain, bold
+            if prefix:
+                _plain_run(p, prefix, bold=True)
+
+            # Word-level diff of the bodies
+            ops = _word_diff(orig_body, corr_body)
+            for tag, orig_toks, corr_toks in ops:
+                orig_seg = "".join(orig_toks)
+                corr_seg = "".join(corr_toks)
+                if tag == "equal":
+                    _plain_run(p, orig_seg)
+                elif tag == "delete":
+                    _del_run(p, orig_seg)
+                elif tag == "insert":
+                    _ins_run(p, corr_seg)
+                elif tag == "replace":
+                    _del_run(p, orig_seg)
+                    _ins_run(p, corr_seg)
+
+        # ── Serialize ────────────────────────────────────────────────────────
+        buf = BytesIO()
+        document.save(buf)
+        return buf.getvalue()
+
+
 
     def _generate_word_from_lines(self, title: str, lines: list[str], cover_path: str = None) -> bytes:
         """

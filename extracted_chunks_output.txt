@@ -1,0 +1,1173 @@
+Total chunks extracted: 390
+========================================
+
+Chunk ID: 1
+Combined: Q: Good afternoon Mr. Sakhai. Can you hear me? A: Yes.
+----------------------------------------
+Chunk ID: 2
+Combined: Q: My name is John Anello and I'm an attorney with the law firm of Callahan & Fusco and I represent island snow services with respect to an accident I understand you were involved with back on February 4th of 2021. And we're here to take your deposition today which is -- I think you know what it is but it is a question and answer session about the accident, your alleged injuries and your treatment for those injuries so I'm going to give you some instructions and then I'm going to ask you some questions about those topics and I just ask that you answer those questions to the best of your ability. You were just sworn in bit court reporter and we're conducting this matter virtually and we're in different locations but you still have to tell the truth as though were you anywhere courtroom in front of a Judge. The court reporter is taking down everything we say so just please make sure all your answers are clear and verbal, no uh-huhs or shoulder shrugs or hand gestures. Also please let me finish my question before you answer and I'll do the same for you, I'll allow to complete your answer before I ask the next question. It's very important that only one person be speaking at a time. If I ask you a question and you answer it I'm going to assume that you understood the question. If I ask a question and you don't know the answer please don't guess. It's perfectly all right to say you don't know. However if you question calls for an estimate medication or an approximation please just tell me that that's what you're doing before you provide your answer. Your attorney is here you with you today and there are other attorneys that represent other parties as well and you may hear one of them object to one of my questions. If he objects to one of my questions please let that attorney state the reason for the objection and then wait for instructions for your attorney to answer before answering. Finally if you got stand up, take a break, whatever you need to do just let me know. There's no reason for you to feel uncomfortable so if you need a break it's fine. I don't expect this deposition to be very long. Only thing I ask is that if there's a question pending please answer it before we take a break. Do you understand all of those instructions? A: Yes?
+----------------------------------------
+Chunk ID: 3
+Combined: Q: Do you have any questions? A: I don't.
+----------------------------------------
+Chunk ID: 4
+Combined: Q: Have you ever been deposed before? A: Yes.
+----------------------------------------
+Chunk ID: 5
+Combined: Q: And when was that? A: I don't remember the exact date.
+----------------------------------------
+Chunk ID: 6
+Combined: Q: Was it relative to this action this case? A: Yes.
+----------------------------------------
+Chunk ID: 7
+Combined: Q: Aside from this case have you ever been deposed before? A: No.
+----------------------------------------
+Chunk ID: 8
+Combined: Q: Are you currently under the influence of any substances or medications that would affect your ability to recall the accident, your injuries or your treatment? A: No.
+----------------------------------------
+Chunk ID: 9
+Combined: Q: Is there any reason you can't be truthful with me here today? A: No.
+----------------------------------------
+Chunk ID: 10
+Combined: Q: Have you reviewed any documents in preparation for this deposition? A: No.
+----------------------------------------
+Chunk ID: 11
+Combined: Q: Have you reviewed any photographs in preparation for this deposition? A: I did look at photographs.
+----------------------------------------
+Chunk ID: 12
+Combined: Q: What photographs did you look at? A: The accident photographs.
+----------------------------------------
+Chunk ID: 13
+Combined: Q: And when you say the accident photographs what were these photographs of? A: Me on the -- on the ground and the parking lot.
+----------------------------------------
+Chunk ID: 14
+Combined: Q: And who took these photographs if you know? A: I took the picture -- I took some pictures and I believe my wife.
+----------------------------------------
+Chunk ID: 15
+Combined: Q: Do you have these photographs? Are they in your possession? A: I believe we have provided them before.
+----------------------------------------
+Chunk ID: 16
+Combined: Q: Aside interest your attorney and don't tell me any conversations you had with your attorney have you discussed this case with anyone else in preparation for your deposition? A: No.
+----------------------------------------
+Chunk ID: 17
+Combined: Q: What's your date of birth and we're just put year on the record? A: 1984. (Objection: MR. TAIWO: Thank you.)
+----------------------------------------
+Chunk ID: 18
+Combined: Q: How old are you? A: 41.
+----------------------------------------
+Chunk ID: 19
+Combined: Q: And at the time of the accident how old were you? A: 37.
+----------------------------------------
+Chunk ID: 20
+Combined: Q: And what's your current address? A: Seven North Plandome Road.
+----------------------------------------
+Chunk ID: 21
+Combined: Q: That in Port Washington? A: Port Washington, New York 11050.
+----------------------------------------
+Chunk ID: 22
+Combined: Q: How long have you lived at that address? A: Just over four years now.
+----------------------------------------
+Chunk ID: 23
+Combined: Q: And your address is that home a one family, a two family home or something else? A: It's a one family.
+----------------------------------------
+Chunk ID: 24
+Combined: Q: Do you own it, rent it or something else? A: Own it.
+----------------------------------------
+Chunk ID: 25
+Combined: Q: Did you live at that property on February 4, 2021? A: No.
+----------------------------------------
+Chunk ID: 26
+Combined: Q: Where did you live on February 4, 2021? A: I lived at 125 Main Street apartment 1O Port Washington, New York.
+----------------------------------------
+Chunk ID: 27
+Combined: Q: And on February 4, 2021, how long were you living at that address? A: We had moved in October 2020 -- 2018.
+----------------------------------------
+Chunk ID: 28
+Combined: Q: /AUPBLD say we. Who did you live with at that time? A: My girlfriend that became my wife.
+----------------------------------------
+Chunk ID: 29
+Combined: Q: And what is her name? A: Melody.
+----------------------------------------
+Chunk ID: 30
+Combined: Q: What's her last name? A: Sakhai.
+----------------------------------------
+Chunk ID: 31
+Combined: Q: Do you still live with your wife I'm assuming? A: Yes.
+----------------------------------------
+Chunk ID: 32
+Combined: Q: Do you live with anyone else? A: My kids.
+----------------------------------------
+Chunk ID: 33
+Combined: Q: How many -- how many children do you have? A: Two kids.
+----------------------------------------
+Chunk ID: 34
+Combined: Q: Are they minors? A: Yes.
+----------------------------------------
+Chunk ID: 35
+Combined: Q: What are their names and can we just put initials on the record? A: M. and A..
+----------------------------------------
+Chunk ID: 36
+Combined: Q: How old is M.? A: M. is a little over three years old now and A. is a little over one year old.
+----------------------------------------
+Chunk ID: 37
+Combined: Q: Have you ever gone by any other names or aliases? A: No.
+----------------------------------------
+Chunk ID: 38
+Combined: Q: Where were you born? A: I was born in New York.
+----------------------------------------
+Chunk ID: 39
+Combined: Q: And you're a United States citizen? A: Yes.
+----------------------------------------
+Chunk ID: 40
+Combined: Q: What's your social security number and we'll just put Xs on the record? A: XXX-XX-XXXX. (Objection: MR. TAIWO: Thank you.)
+----------------------------------------
+Chunk ID: 41
+Combined: Q: Sorry, that was XX? A: XX.
+----------------------------------------
+Chunk ID: 42
+Combined: Q: XX okay. And again just Xs on the record. How long have you been married to Melody? A: A little over five years now.
+----------------------------------------
+Chunk ID: 43
+Combined: Q: Prior to your marriage to Melody you were ever married before? A: No.
+----------------------------------------
+Chunk ID: 44
+Combined: Q: What's your highest level education? A: I went to college.
+----------------------------------------
+Chunk ID: 45
+Combined: Q: What college? A: New York University.
+----------------------------------------
+Chunk ID: 46
+Combined: Q: Did you graduate? A: Yes.
+----------------------------------------
+Chunk ID: 47
+Combined: Q: What year? A: 2006.
+----------------------------------------
+Chunk ID: 48
+Combined: Q: And what is your degree in? A: Economics.
+----------------------------------------
+Chunk ID: 49
+Combined: Q: And aside from NYU did you go to any other secondary school or graduate school? A: No.
+----------------------------------------
+Chunk ID: 50
+Combined: Q: Have you gone to any trade schools? A: No.
+----------------------------------------
+Chunk ID: 51
+Combined: Q: Do you have a /PRO*F license by that I mean are you a licensed stock broker, plumber or anything like that? A: No.
+----------------------------------------
+Chunk ID: 52
+Combined: Q: Do you currently have a driver's license? A: Yes.
+----------------------------------------
+Chunk ID: 53
+Combined: Q: In what state? A: New York.
+----------------------------------------
+Chunk ID: 54
+Combined: Q: And when did you first obtain a driver's license? A: I believe I was 17.
+----------------------------------------
+Chunk ID: 55
+Combined: Q: Has your driver's license ever been suspended or revoked? A: Not that I recall. (Objection: MR. TAIWO: Objection but you can answer.)
+----------------------------------------
+Chunk ID: 56
+Combined: Q: Were you employed at the time of the accident? A: Self-employed.
+----------------------------------------
+Chunk ID: 57
+Combined: Q: What was your job? A: So I was both a sales person for destiny *** SPELLING REQUESTED *** international realty not as a W2, as a 1099 there and I have my own businesses.
+----------------------------------------
+Chunk ID: 58
+Combined: Q: What kind of business do you have? A: Consulting and real estate.
+----------------------------------------
+Chunk ID: 59
+Combined: Q: What type of consulting work do you do? A: Various industries.
+----------------------------------------
+Chunk ID: 60
+Combined: Q: And is it commercial, residential, something else? A: I don't understand the question.
+----------------------------------------
+Chunk ID: 61
+Combined: Q: Like what type of industries? You said real estate is it like commercial real estate you deal with or something else? A: Both commercial and residential.
+----------------------------------------
+Chunk ID: 62
+Combined: Q: Okay. And what was your job title at destiny international? A: Sales person.
+----------------------------------------
+Chunk ID: 63
+Combined: Q: And who was your supervisor? A: Grace lay sack *** SPELLING REQUESTED ***.
+----------------------------------------
+Chunk ID: 64
+Combined: Q: And what was your annual salary at the time of the accident? A: Wasn't a salaried position.
+----------------------------------------
+Chunk ID: 65
+Combined: Q: Approximately how much did you make weekly at that position at destiny international? A: I don't know.
+----------------------------------------
+Chunk ID: 66
+Combined: Q: Did you file a /W*BGS claim consult of the /STKHAEPBT gave rise to this lawsuit? A: No.
+----------------------------------------
+Chunk ID: 67
+Combined: Q: Are you currently employed today? A: Self-employed.
+----------------------------------------
+Chunk ID: 68
+Combined: Q: Request the same positions you just described? A: I'm not currently with destiny international realty.
+----------------------------------------
+Chunk ID: 69
+Combined: Q: Okay. What do you do currently? A: I just do consulting.
+----------------------------------------
+Chunk ID: 70
+Combined: Q: And you work for yourself /*ES? A: Yeah.
+----------------------------------------
+Chunk ID: 71
+Combined: Q: Have you ever served in theed military? A: No.
+----------------------------------------
+Chunk ID: 72
+Combined: Q: Have you ever convicted of a crime? A: No.
+----------------------------------------
+Chunk ID: 73
+Combined: Q: Aside from this all have you ever been involved in a personal injury lawsuit before? A: No.
+----------------------------------------
+Chunk ID: 74
+Combined: Q: Have you ever been involved in any other type of accident aside from the one that gave rise to this lawsuit where you injured your right arm? A: No.
+----------------------------------------
+Chunk ID: 75
+Combined: Q: Ever been involved in a motor vehicle accident when you injured your right arm? A: No.
+----------------------------------------
+Chunk ID: 76
+Combined: Q: Ever been involved in any other type of accident with your suffered injuries to the same part of your body that you're alleging you are injured in this lawsuit? A: No.
+----------------------------------------
+Chunk ID: 77
+Combined: Q: What was the date of the accident that gave rise to this lawsuit? A: February 4, 2021.
+----------------------------------------
+Chunk ID: 78
+Combined: Q: And do you remember what Dave /TWHAOEBG was? A: Thursday.
+----------------------------------------
+Chunk ID: 79
+Combined: Q: And about what time of day did the accident happen? A: About 5:30.
+----------------------------------------
+Chunk ID: 80
+Combined: Q: In the afternoon? A: Yeah.
+----------------------------------------
+Chunk ID: 81
+Combined: Q: Where did the accident happen? A: In the parking lot.
+----------------------------------------
+Chunk ID: 82
+Combined: Q: In the parking lot of -- A: Parking lot behind of 125 Main Street.
+----------------------------------------
+Chunk ID: 83
+Combined: Q: This is where you were living at that time? A: Correct.
+----------------------------------------
+Chunk ID: 84
+Combined: Q: Okay. And where specifically did you fall, was it in the parking lot, the street or something else? A: In the parking lot.
+----------------------------------------
+Chunk ID: 85
+Combined: Q: Was anyone with you? A: My wife was with me.
+----------------------------------------
+Chunk ID: 86
+Combined: Q: Anyone else? A: No.
+----------------------------------------
+Chunk ID: 87
+Combined: Q: Where were you going? A: I was take my wife to a doctors appointment.
+----------------------------------------
+Chunk ID: 88
+Combined: Q: And had had the accident not occurred where were you -- where were you planning on going? A: To the doctors appointment.
+----------------------------------------
+Chunk ID: 89
+Combined: Q: Were you using your phone at the time of the accident? A: No.
+----------------------------------------
+Chunk ID: 90
+Combined: Q: Did you have a phone at the time of the accident? A: In my pocket.
+----------------------------------------
+Chunk ID: 91
+Combined: Q: Was it a cell phone, a galley *** SPELLING REQUESTED *** or something else an I phone I mean a -- A: I phone.
+----------------------------------------
+Chunk ID: 92
+Combined: Q: It was an I phone. And you'd been in this area before I'm assuming since you lived there? A: Yes.
+----------------------------------------
+Chunk ID: 93
+Combined: Q: Were you work to your car or some place else? A: I don't think I understand the question. Can you repeat --
+----------------------------------------
+Chunk ID: 94
+Combined: Q: At the time you fell were you walking to your car or were you going to catch a bus or something else? A: Yes, walking to the car.
+----------------------------------------
+Chunk ID: 95
+Combined: Q: What kind of car did you have at the time? A: X5, BMW.
+----------------------------------------
+Chunk ID: 96
+Combined: Q: And your wife's doctor where was it located? A: I believe in Manhasset. I'm not sure. I don't recall exactly.
+----------------------------------------
+Chunk ID: 97
+Combined: Q: Had you gone out at all earlier that day? A: No.
+----------------------------------------
+Chunk ID: 98
+Combined: Q: What time did you wake up on the morning of date date *** SPELLING REQUESTED ***? A: I don't recall.
+----------------------------------------
+Chunk ID: 99
+Combined: Q: Did you have break and a half morning? A: I don't recall.
+----------------------------------------
+Chunk ID: 100
+Combined: Q: Did you have lunch? A: I don't recall.
+----------------------------------------
+Chunk ID: 101
+Combined: Q: Did you have dinner? A: I don't believe so.
+----------------------------------------
+Chunk ID: 102
+Combined: Q: What did you do prior to leaving your house? A: I was working. (Objection: MR. TAIWO: Objection but he can answer.)
+----------------------------------------
+Chunk ID: 103
+Combined: Q: Approximately how long had you been working before you left your house? A: It's an estimate like eight hours.
+----------------------------------------
+Chunk ID: 104
+Combined: Q: What time did you go to bed on February 3, 2021? A: I don't recall.
+----------------------------------------
+Chunk ID: 105
+Combined: Q: Did you excuse me any alcohol in the 24 hours before the accident? A: No.
+----------------------------------------
+Chunk ID: 106
+Combined: Q: Did you excuse me any -- any drugs or intoxicants including manner or THC products in the 24 before the accident? A: No.
+----------------------------------------
+Chunk ID: 107
+Combined: Q: Did you take any prescription medications on the date of the accident? A: No.
+----------------------------------------
+Chunk ID: 108
+Combined: Q: Did you for get or fail to take any prescription medication you were supposed to take on the date of the accident? A: No.
+----------------------------------------
+Chunk ID: 109
+Combined: Q: On the date of the accident did you have any dizziness? A: No.
+----------------------------------------
+Chunk ID: 110
+Combined: Q: Any difficulty walking? A: No.
+----------------------------------------
+Chunk ID: 111
+Combined: Q: Any balance problems? A: No.
+----------------------------------------
+Chunk ID: 112
+Combined: Q: Any vision problems? A: No.
+----------------------------------------
+Chunk ID: 113
+Combined: Q: Any problems with rites *** SPELLING REQUESTED *** in your legs or knees? A: No.
+----------------------------------------
+Chunk ID: 114
+Combined: Q: I see that you're wearing glasses. Did you have to wear glasses at the time of the accident? A: Yes.
+----------------------------------------
+Chunk ID: 115
+Combined: Q: Were you in fact wearing them at the time of the accident? A: Yes.
+----------------------------------------
+Chunk ID: 116
+Combined: Q: And what are those glasses for? A: For vision.
+----------------------------------------
+Chunk ID: 117
+Combined: Q: Do they help you improve your -- can you -- can you not see far, can you not see close? Do you have in /SPH* other issue? A: It's for distance.
+----------------------------------------
+Chunk ID: 118
+Combined: Q: What was the weather like on the date of the accident? A: It was cold.
+----------------------------------------
+Chunk ID: 119
+Combined: Q: Was there any precipitation, rain, snow? A: No.
+----------------------------------------
+Chunk ID: 120
+Combined: Q: Do do you know if it had rained or snowed the day before? A: I believe it was two days beforehand, it had snowed two days beforehand.
+----------------------------------------
+Chunk ID: 121
+Combined: Q: I'm sorry. It had snowed two days beforehand and three days beforehand? A: I believe it was 2 and 3 days beforehand it had /STKPWHROED was there any accumulation on the ground.
+----------------------------------------
+Chunk ID: 122
+Combined: Q: /SHAOUFRPLT at the time of the accident was there any snow accumulation that you noticed on the ground? A: Yes.
+----------------------------------------
+Chunk ID: 123
+Combined: Q: How much approximately? A: I don't know.
+----------------------------------------
+Chunk ID: 124
+Combined: Q: And /SABLGTly how did you fall, did you /SPHR*EUP, trip or something else? A: I slipped.
+----------------------------------------
+Chunk ID: 125
+Combined: Q: Okay. Which foot slipped? A: My right foot.
+----------------------------------------
+Chunk ID: 126
+Combined: Q: And did you fall backwards, forwards or something else? A: My legs went up in the air. I fell backwards.
+----------------------------------------
+Chunk ID: 127
+Combined: Q: Did your body turn or twist? A: No.
+----------------------------------------
+Chunk ID: 128
+Combined: Q: What part of your body hit the ground first? A: My right hand.
+----------------------------------------
+Chunk ID: 129
+Combined: Q: And what part of your body hit the ground second? A: I guess my /PW*UT.
+----------------------------------------
+Chunk ID: 130
+Combined: Q: Okay. Any other parts of your body hit the ground? A: I was on the ground afterwards.
+----------------------------------------
+Chunk ID: 131
+Combined: Q: Do you recall any other parts of your body specifically hitting the ground? A: I guess my feet, my legs.
+----------------------------------------
+Chunk ID: 132
+Combined: Q: In what position did you land? A: Kind of like a seated position almost.
+----------------------------------------
+Chunk ID: 133
+Combined: Q: Did you hit your head? A: I did not luckily.
+----------------------------------------
+Chunk ID: 134
+Combined: Q: Did you lose consciousness at all? A: No.
+----------------------------------------
+Chunk ID: 135
+Combined: Q: What caused you to fall? A: I slipped on black ice.
+----------------------------------------
+Chunk ID: 136
+Combined: Q: Did you observe the ground with your fell offfell? A: Can you repeat the question?
+----------------------------------------
+Chunk ID: 137
+Combined: Q: Sure. Did you -- offfell were you able to observe the ground on which you fell? A: Yes, I was sitting on it.
+----------------------------------------
+Chunk ID: 138
+Combined: Q: And what did you observe on the ground? A: It was icy.
+----------------------------------------
+Chunk ID: 139
+Combined: Q: Was there anything else? A: I don't know --
+----------------------------------------
+Chunk ID: 140
+Combined: Q: Was there any salt or sodium /KHROER ride on the ground to your knowledge? A: Nothing.
+----------------------------------------
+Chunk ID: 141
+Combined: Q: Did you notice this -- did you notice this black ice before you fell? A: No.
+----------------------------------------
+Chunk ID: 142
+Combined: Q: Did you notice black ice anywhere else in the parking lot before you fell? A: No.
+----------------------------------------
+Chunk ID: 143
+Combined: Q: Did you notice black ice in the parking lot on the days prior to your fall? You had said it snowed a few days before? A: No, I didn't go out.
+----------------------------------------
+Chunk ID: 144
+Combined: Q: Okay. This /THAOEUPL went out to take your wife to the doctor when was the last time you went out before that? A: I don't recall.
+----------------------------------------
+Chunk ID: 145
+Combined: Q: Offfell what happened? A: What do you mean? (Objection: MR. TAIWO: Objection, but he can answer.)
+----------------------------------------
+Chunk ID: 146
+Combined: Q: Sure. Your wife was with you? A: My wife with me, yes.
+----------------------------------------
+Chunk ID: 147
+Combined: Q: Did she say anything to you? A: I think I said to her that I broke my arm, I need her to call 911.
+----------------------------------------
+Chunk ID: 148
+Combined: Q: Aside from your wife did anyone see you fall? A: No.
+----------------------------------------
+Chunk ID: 149
+Combined: Q: Did anyone come to your aid? A: He -- the ten ant came and the ambulance came --
+----------------------------------------
+Chunk ID: 150
+Combined: Q: Aside from them did anyone else immediately after the accident come? A: Come to help me is that the --
+----------------------------------------
+Chunk ID: 151
+Combined: Q: Yes. A: No.
+----------------------------------------
+Chunk ID: 152
+Combined: Q: Do you know if anyone other than your wife saw you fall? A: I don't know if anybody saw me fall /PWE size my wife.
+----------------------------------------
+Chunk ID: 153
+Combined: Q: Did you take any pictures offfell? A: Did I take any pictures?
+----------------------------------------
+Chunk ID: 154
+Combined: Q: Yes. A: No.
+----------------------------------------
+Chunk ID: 155
+Combined: Q: Did your wife take any pictures? A: Yes.
+----------------------------------------
+Chunk ID: 156
+Combined: Q: What did she take pictures of? A: Me fall -- me after I had fallen on to the floor in agonizing pain sitting there waiting for the ambulance.
+----------------------------------------
+Chunk ID: 157
+Combined: Q: Did you take pictures of anyone else? A: I don't know.
+----------------------------------------
+Chunk ID: 158
+Combined: Q: Do you know if anyone else took any pictures of you or the accident scene? A: I don't know.
+----------------------------------------
+Chunk ID: 159
+Combined: Q: Were you able to get abandoning offfell? A: No.
+----------------------------------------
+Chunk ID: 160
+Combined: Q: Did you ever dish mean obviously you got back up but did you require any aassistance in getting up? A: There was -- there was ice to the point where lieutenant almost slipped and fell also. The EMS person that had come almost slipped on to me when the lieutenant screamed at him and told him to get down on his hands and knees and crawl to me with the board. There was no chance that I could get up. And they put me on to the board and put me on to the ambulance.
+----------------------------------------
+Chunk ID: 161
+Combined: Q: So the EMTs put -- so you didn't /TKPWEUPT until the EMTs put you on to the board and put you in the ambulance? A: I did not get up after I had fallen. I did not get up. The EMS put me onto a board. With the lieutenant and whoever else was there they put me into the ambulance.
+----------------------------------------
+Chunk ID: 162
+Combined: Q: It was dark out, correct? A: I think it was just getting dark.
+----------------------------------------
+Chunk ID: 163
+Combined: Q: All right. So was the sun still up or was it totally dark? A: It was -- I don't recall exactly.
+----------------------------------------
+Chunk ID: 164
+Combined: Q: Were there any streetlights or anything in the area? A: I can seat /STPRAOET back of the /TPRARLT behind --
+----------------------------------------
+Chunk ID: 165
+Combined: Q: Were there any lights from the back of the parking lot anything that helped I /HRAOUPL anyway the area? A: There are lights there. They were not on.
+----------------------------------------
+Chunk ID: 166
+Combined: Q: Require to the accident had you ever made any complaints to the -- to the building or anyone associated with the building about snow or ice in the parking lot? A: No.
+----------------------------------------
+Chunk ID: 167
+Combined: Q: Did you ever make any complaints about snow or ice anywhere else on the -- on the facility? A: No.
+----------------------------------------
+Chunk ID: 168
+Combined: Q: Are you aware of any -- any prior accidents involving snow or ice in that parking lot until particular? A: No.
+----------------------------------------
+Chunk ID: 169
+Combined: Q: What were you wearing on the date of the accident? A: What was the question?
+----------------------------------------
+Chunk ID: 170
+Combined: Q: What were you wearing on the date of the accident? Did you have a jacket on? A: It was cold. I had jeans, jacket and snow boots.
+----------------------------------------
+Chunk ID: 171
+Combined: Q: What kind of -- what kind of snow boots were they? A: The brand is that what you're asking?
+----------------------------------------
+Chunk ID: 172
+Combined: Q: Yeah sure. The brand? A: I believe it's Columbia.
+----------------------------------------
+Chunk ID: 173
+Combined: Q: Were they actually snow boots or work boots or something else? A: Snow boots.
+----------------------------------------
+Chunk ID: 174
+Combined: Q: Do you still have those snow boots? A: Yes.
+----------------------------------------
+Chunk ID: 175
+Combined: Q: When did you purchase those /STPHOEF boots if you recall? A: I don't recall.
+----------------------------------------
+Chunk ID: 176
+Combined: Q: Were you carrying anything at the time of the accident? A: No.
+----------------------------------------
+Chunk ID: 177
+Combined: Q: Did any part of your body come into contact with anything other than the ground as a result of this slip? A: Can you repeat the question?
+----------------------------------------
+Chunk ID: 178
+Combined: Q: Sure. Did your -- did any part of your body as a result of this slip come into contact with anything else besides the ground, a car, anything else? A: No.
+----------------------------------------
+Chunk ID: 179
+Combined: Q: Did you feel pain immediately after the impact? A: Yes a ton of pain and I was sitting there waiting for the ambulance. I asked my wife for water because I just needed to have some water. I was in shock.
+----------------------------------------
+Chunk ID: 180
+Combined: Q: Where did you feel this pain? A: In my arm.
+----------------------------------------
+Chunk ID: 181
+Combined: Q: In your right arm? A: My right arm.
+----------------------------------------
+Chunk ID: 182
+Combined: Q: Did you feel pain anywhere else? A: No.
+----------------------------------------
+Chunk ID: 183
+Combined: Q: If you had to describe this pain in your right arm on a scale from 1 to 10, being the worst, one being the best how would you describe it? A: Ten. From the elbow to the shoulder was a complete ten.
+----------------------------------------
+Chunk ID: 184
+Combined: Q: Were you bleeding from anywhere in your body after the impact? A: No.
+----------------------------------------
+Chunk ID: 185
+Combined: Q: Was there any swelling anywhere on your body after the -- after the fall? A: I don't recall.
+----------------------------------------
+Chunk ID: 186
+Combined: Q: Did you have any other visual injuries immediately after the impact anywhere else on your body? A: Can you explain the question again? (Objection: MR. TAIWO: Objection. He can answer if he understands.)
+----------------------------------------
+Chunk ID: 187
+Combined: Q: Sure. Aside interest your right ample which you described did you have any other visual injuries, bleeding, bruising, swelling anywhere else on your body? A: I was wearing a jacket. You couldn't even see my arm that it was injured.
+----------------------------------------
+Chunk ID: 188
+Combined: Q: Were you aware of any other -- any other injuries to any other parts of your body immediately after the fall? A: No.
+----------------------------------------
+Chunk ID: 189
+Combined: Q: Who /TKURB said an ambulance arrived. Who called the ambulance? A: My wife called 911.
+----------------------------------------
+Chunk ID: 190
+Combined: Q: And approximately how long did it take for 911 to arrive after she called? A: I believe lieutenant showed up within five minutes or so.
+----------------------------------------
+Chunk ID: 191
+Combined: Q: And what police department did that lieutenant belong to? A: I believe Port Washington.
+----------------------------------------
+Chunk ID: 192
+Combined: Q: And how long after -- after that did the ambulance arrive? A: Couple minutes.
+----------------------------------------
+Chunk ID: 193
+Combined: Q: So from the time of the call until the time the ambulance arrived about about ten minutes went by is that fair to say? A: It's probably a good estimate.
+----------------------------------------
+Chunk ID: 194
+Combined: Q: Approximately how long were you on the ground after you fell? A: Approximately the ten minutes that I was waiting.
+----------------------------------------
+Chunk ID: 195
+Combined: Q: Did you speak to the EMTs when they arrived? A: Sorry.
+----------------------------------------
+Chunk ID: 196
+Combined: Q: Okay. What did you say to them? A: Told them I slipped and I fell and I believe I broke my arm.
+----------------------------------------
+Chunk ID: 197
+Combined: Q: And what did they -- what did at the say to you? A: They told me they're going to take me to the hospital.
+----------------------------------------
+Chunk ID: 198
+Combined: Q: Did they treat you at the scene for anything? A: I don't recall.
+----------------------------------------
+Chunk ID: 199
+Combined: Q: Did they treat you in the ambulance for anything? A: I don't recall.
+----------------------------------------
+Chunk ID: 200
+Combined: Q: What hospital did they take you to? A: North well in Manhasset.
+----------------------------------------
+Chunk ID: 201
+Combined: Q: Did you ask to go to that hospital or that's just the hospital they took you to? A: I don't recall.
+----------------------------------------
+Chunk ID: 202
+Combined: Q: How long did it take for them to get out to hospital? A: As an estimate maybe five minutes or so.
+----------------------------------------
+Chunk ID: 203
+Combined: Q: Other than the EMTs did anyone else ride in the ambulance with you? A: No one sells allowed in the ambulance because of COVID at the time.
+----------------------------------------
+Chunk ID: 204
+Combined: Q: Did you report your slip and fall to the -- any property managers or owners of the building? A: I believe that we -- I had looked for the contact information for the building manager and the super had come out. He had seen me and we told the owner of the unit.
+----------------------------------------
+Chunk ID: 205
+Combined: Q: Who is is the super? A: Super is jack.
+----------------------------------------
+Chunk ID: 206
+Combined: Q: Do you know jack's last name? A: I don't.
+----------------------------------------
+Chunk ID: 207
+Combined: Q: How long after you fell did jack come out? A: I don't know.
+----------------------------------------
+Chunk ID: 208
+Combined: Q: What did he say to you? A: I don't recall.
+----------------------------------------
+Chunk ID: 209
+Combined: Q: Did he do anything? A: I don't recall.
+----------------------------------------
+Chunk ID: 210
+Combined: Q: And when did you report this accident to the property manager? A: I don't recall.
+----------------------------------------
+Chunk ID: 211
+Combined: Q: Did you fill out a form or anything like that? A: I don't believe so. I don't recall though.
+----------------------------------------
+Chunk ID: 212
+Combined: Q: Who specifically did you -- did you report it to, do you know his or her name? A: I don't. Don't recall.
+----------------------------------------
+Chunk ID: 213
+Combined: Q: Aside from jack did anyone else approach you at the accident scene? A: The lieutenant the EMS, jack was there. He didn't approach me. His wife was there too.
+----------------------------------------
+Chunk ID: 214
+Combined: Q: And you said you went to north -- the EMTs took you to north shore hospital? A: North well.
+----------------------------------------
+Chunk ID: 215
+Combined: Q: North well? A: Yeah.
+----------------------------------------
+Chunk ID: 216
+Combined: Q: And it took about five /TPHOEUPBS /TKWET there? A: An estimate would be 5, minutes or so something like that.
+----------------------------------------
+Chunk ID: 217
+Combined: Q: Do you know what time you arrived at north well hospital? A: I don't recall the exact time.
+----------------------------------------
+Chunk ID: 218
+Combined: Q: And did they take you to the emergency room or some place else? A: Emergency room.
+----------------------------------------
+Chunk ID: 219
+Combined: Q: And how long were you in the emergency room before you met with a health care provider? A: I don't recall.
+----------------------------------------
+Chunk ID: 220
+Combined: Q: And when you first met with a health care provider was it a doctor a nurse or someone else? A: I don't recall.
+----------------------------------------
+Chunk ID: 221
+Combined: Q: Did you see a doctor at the hospital? A: Yes.
+----------------------------------------
+Chunk ID: 222
+Combined: Q: Do you recall the name of the doctor? A: I don't.
+----------------------------------------
+Chunk ID: 223
+Combined: Q: What -- what did you tell the doctor? What did you complain of? A: I complained of the pain in my arm, in elbow and shoulder and that I had slipped on ice and broke my arm.
+----------------------------------------
+Chunk ID: 224
+Combined: Q: And did the doctor examine you? A: Yes.
+----------------------------------------
+Chunk ID: 225
+Combined: Q: Did he diagnosis you with any injuries or conditions? A: They took x-rays and then told me that my arm was broken and it was -- the way he described it is it was like /STPRAEUT across where it was like two water bottle openings trying to line up together and they would manually happen to put it back as best as possible together but that I would need surgery to be able to fix the broken arm.
+----------------------------------------
+Chunk ID: 226
+Combined: Q: And who took the x-rays? A: I don't know.
+----------------------------------------
+Chunk ID: 227
+Combined: Q: The x-rays were done at the hospital though? A: Yes.
+----------------------------------------
+Chunk ID: 228
+Combined: Q: And you reviewed the x-rays with a doctor before you left? A: I don't recall. I believe so.
+----------------------------------------
+Chunk ID: 229
+Combined: Q: Approximately how long were you in the emergency room? A: Approximately seven hours.
+----------------------------------------
+Chunk ID: 230
+Combined: Q: Where did you go when you left the hospital? A: Home.
+----------------------------------------
+Chunk ID: 231
+Combined: Q: How did you get home? A: I don't recall.
+----------------------------------------
+Chunk ID: 232
+Combined: Q: You say you had x-rays at the hospital /-FRPLT besides your right arm did they x-ray any or parts of your body? A: I don't recall.
+----------------------------------------
+Chunk ID: 233
+Combined: Q: Did they do any other diagnostic testing like MRIs or CT scans? A: No.
+----------------------------------------
+Chunk ID: 234
+Combined: Q: Are you familiar with a doctor arrest /KWRAL gold man *** SPELLING REQUESTED ***? A: Yes.
+----------------------------------------
+Chunk ID: 235
+Combined: Q: Okay. How are you familiar with him? A: He did the surgery to put my arm back together.
+----------------------------------------
+Chunk ID: 236
+Combined: Q: And who referred to you Dr. Goldman? A: I found him online.
+----------------------------------------
+Chunk ID: 237
+Combined: Q: Is he the doctor you treated with at the hospital? A: I don't think so.
+----------------------------------------
+Chunk ID: 238
+Combined: Q: When was your first visit with Dr. Goldman? A: The week after the accident.
+----------------------------------------
+Chunk ID: 239
+Combined: Q: So approximately February 10th, February 11th around there? A: I believe so.
+----------------------------------------
+Chunk ID: 240
+Combined: Q: Where is Dr. Goldman's office located? A: I believe it's Manhasset also.
+----------------------------------------
+Chunk ID: 241
+Combined: Q: Approximately how far from your home at the time was Dr. Goldman's office? A: About the same 5 or 10 minutes, to 10 minutes.
+----------------------------------------
+Chunk ID: 242
+Combined: Q: And on your first visit there who examined you? A: Dr. Goldman.
+----------------------------------------
+Chunk ID: 243
+Combined: Q: Did he diagnose you with any injuries or conditions? A: He telled me my arm was broken and I need surgery.
+----------------------------------------
+Chunk ID: 244
+Combined: Q: Can you describe that initial examination with Dr. Goldman? A: What do you mean?
+----------------------------------------
+Chunk ID: 245
+Combined: Q: Did he go over any x-rays with you, derecommend any MRIs, anything like that? A: Yeah he showed meet x-ray and showed me that my arm was broken and told me that I was going to need a surgery to be able to put it back together.
+----------------------------------------
+Chunk ID: 246
+Combined: Q: What surgery did he recommend that you made? A: I believe it was open reduction where he would need to put in a plate and screws and screw it all back together because my arm was in totally pulled apart /PWHRAEUFBG so but the bones were not together.
+----------------------------------------
+Chunk ID: 247
+Combined: Q: Did -- derecommend anything other than /STOURPBLG treat your injuries? A: There was nothing else that I could do.
+----------------------------------------
+Chunk ID: 248
+Combined: Q: Dein fact perform this surgery on your arm -- on your right arm? A: De.
+----------------------------------------
+Chunk ID: 249
+Combined: Q: When did you perform that surgery? A: I believe it was February /#12K3W4R5*9 and where did he perform that surgery.
+----------------------------------------
+Chunk ID: 250
+Combined: Q: And after the -- after the surgery how long were you hospitalized? A: I went home that day.
+----------------------------------------
+Chunk ID: 251
+Combined: Q: Approximately how long did the surgery talk? A: He told me that the surgery was going to take approximately two hours. I believe it was two hours and change.
+----------------------------------------
+Chunk ID: 252
+Combined: Q: And approximately how long you were -- were you in the hospital from start to finish for the surgery? A: I don't recall.
+----------------------------------------
+Chunk ID: 253
+Combined: Q: It was all done in a day. You weren't -- you didn't stay overnight? A: Did I not stay overnight.
+----------------------------------------
+Chunk ID: 254
+Combined: Q: Did the surgery alleviate the pain this your right arm? A: No.
+----------------------------------------
+Chunk ID: 255
+Combined: Q: Do you still have pain this your right arm? A: I still have pain sitting here right now.
+----------------------------------------
+Chunk ID: 256
+Combined: Q: Is it -- is it better or worse since the surgery? A: The pain at the time of the surgery was a ten. I could -- I was screaming every time I would get into a car and move so I would say it's better since the surgery.
+----------------------------------------
+Chunk ID: 257
+Combined: Q: Prior to the accident did you have any -- any other injuries -- any injuries to your right arm? A: No.
+----------------------------------------
+Chunk ID: 258
+Combined: Q: Did you have any surgeons before the -- before the accident? A: No.
+----------------------------------------
+Chunk ID: 259
+Combined: Q: Aside from the surgery to your right arm have you had any other surgeries for any other parts of your body for injuries you alleged to have sustained in this accident? A: Can you repeat the question?
+----------------------------------------
+Chunk ID: 260
+Combined: Q: Sure. Aside from -- aside from the surgery to your arm that you just described have you had any other surgeries related to injuries you claim to have sustained during this accident? A: No. The doctors told me that I followed up with tolled me that I likely need a second surgery and I'm very scared to do that.
+----------------------------------------
+Chunk ID: 261
+Combined: Q: What kind of surgery did they say you need? A: One told me I need arrest throw /SKOPic surgery in the right shouldersm the others told me that I likely need other surgeries that are even more intensive but I'm scared to do any of that.
+----------------------------------------
+Chunk ID: 262
+Combined: Q: What doctor told you that you need right shoulder surgery? A: I saw three doctors after Dr. Goldman and all three of them told me that I likely need surgery.
+----------------------------------------
+Chunk ID: 263
+Combined: Q: What are the names of the three doctors that you saw after the surgery? A: I saw Dr. Tuck man *** SPELLING REQUESTED *** I saw /TKHR-FPLT go /HRA Doe and I saw Dr. Degree *** SPELLING REQUESTED ***.
+----------------------------------------
+Chunk ID: 264
+Combined: Q: And who is that third doctor? A: District attorneyingly *** SPELLING REQUESTED ***.
+----------------------------------------
+Chunk ID: 265
+Combined: Q: District attorneyingly. Do you know Dr. Item man's first name? A: Don't.
+----------------------------------------
+Chunk ID: 266
+Combined: Q: And who referred to you Dr. Item man? A: I wasn't referred to him.
+----------------------------------------
+Chunk ID: 267
+Combined: Q: How did you come to learn of him? A: He works in the same office as Dr. /PHAOUS at that if a *** SPELLING REQUESTED ***.
+----------------------------------------
+Chunk ID: 268
+Combined: Q: Who is Dr. /RAO*US *** SPELLING REQUESTED ***? A: /RAO*US was the first doctor that I saw after the /STKPWHREPBT how did you learn about Dr. /RAO*US.
+----------------------------------------
+Chunk ID: 269
+Combined: Q: Sand Dr. /T*UPL /TK*EL also an orthopedic doctor? A: Yes.
+----------------------------------------
+Chunk ID: 270
+Combined: Q: Do you know /WHAE specializes in? A: I believe in the shoulder.
+----------------------------------------
+Chunk ID: 271
+Combined: Q: And this other doctor is it Dr. /TKPWO*L *** SPELLING REQUESTED *** you said? A: /TKPWO*L.
+----------------------------------------
+Chunk ID: 272
+Combined: Q: /TKPWO*L. Do you know his first name? A: I don't.
+----------------------------------------
+Chunk ID: 273
+Combined: Q: And how did you learn of /TKO*L *** SPELLING REQUESTED ***? A: I had seen somebody who looked like they had a shoulder surgery in my daughter's office, doctor's office and I asked him, you know, did you have shoulder surgery, he said yes and he told meet doctor's name.
+----------------------------------------
+Chunk ID: 274
+Combined: Q: Where is /TKO*L's office located? A: In Manhattan HSS.
+----------------------------------------
+Chunk ID: 275
+Combined: Q: How did you know he had shoulder surgery? A: It looked like he could have been and I think he had writing up on his shoulder.
+----------------------------------------
+Chunk ID: 276
+Combined: Q: Writing on his shoulder? A: It looked like he had marks on his shoulder.
+----------------------------------------
+Chunk ID: 277
+Combined: Q: Oh. And when was your first treatment with or first visit with /TKO*L? A: I don't recall.
+----------------------------------------
+Chunk ID: 278
+Combined: Q: Do you know what kind of doctor /TKO*L is? A: He's one of the top doctors in HSS for shoulders --
+----------------------------------------
+Chunk ID: 279
+Combined: Q: And did he -- have you had /PH*ULT visits with him or it was just that one visit? A: I don't recall.
+----------------------------------------
+Chunk ID: 280
+Combined: Q: Dr. /T*UPL or /TKO*L did they recommend you undergo any MRIs on your shoulder or any other MRIs any other part of your body? A: Yes.
+----------------------------------------
+Chunk ID: 281
+Combined: Q: Did you in fact undergo MRIs on your right shoulder? A: Did I MRIs for my shoulder and my elbow.
+----------------------------------------
+Chunk ID: 282
+Combined: Q: When did you do the MRI on your shoulder? A: After Dr. Tuckman told me to.
+----------------------------------------
+Chunk ID: 283
+Combined: Q: When was that? A: I don't recall the exact date.
+----------------------------------------
+Chunk ID: 284
+Combined: Q: Where did you get this MRI? A: It was Zwanger & Pesiri.
+----------------------------------------
+Chunk ID: 285
+Combined: Q: Where is that? What was that? A: Zwanger & Pesiri.
+----------------------------------------
+Chunk ID: 286
+Combined: Q: Is that a doctor's name or a name of the -- is that the name of the place where they did it? A: That's the name of the place where they did it at.
+----------------------------------------
+Chunk ID: 287
+Combined: Q: Where is that located? A: I don't recall.
+----------------------------------------
+Chunk ID: 288
+Combined: Q: Is that where Dr. Tuckman told you to go or? A: Don't -- I don't recall.
+----------------------------------------
+Chunk ID: 289
+Combined: Q: Where is that place located with respect or where is it located? A: I believe plain view. I'm not sure.
+----------------------------------------
+Chunk ID: 290
+Combined: Q: And that's in Long Island? A: Yes.
+----------------------------------------
+Chunk ID: 291
+Combined: Q: How far is it from your home? A: I believe 20 minutes.
+----------------------------------------
+Chunk ID: 292
+Combined: Q: All right. And how many times did you treat with Dr. Tuckman or visit with Dr. Tuckman? A: I don't recall exactly.
+----------------------------------------
+Chunk ID: 293
+Combined: Q: De/SRAO*UT MRI results with you? A: Yes.
+----------------------------------------
+Chunk ID: 294
+Combined: Q: Oh I'm sorry just back up a little bit. Did you get your elbow MRIed the same /TKHAEU got your -- A: No.
+----------------------------------------
+Chunk ID: 295
+Combined: Q: Where did you get your elbow MRIed? A: It was after.
+----------------------------------------
+Chunk ID: 296
+Combined: Q: Was it at the same facility? A: No.
+----------------------------------------
+Chunk ID: 297
+Combined: Q: Where did you get your elbow MRIed? A: In the office I believe downstairs from where Dr. Tuckman's office is.
+----------------------------------------
+Chunk ID: 298
+Combined: Q: Somewhere Dr. Tuckman's office? A: In Manhasset.
+----------------------------------------
+Chunk ID: 299
+Combined: Q: Do you know the name of that facility or -- A: I don't recall.
+----------------------------------------
+Chunk ID: 300
+Combined: Q: Aside from the -- your elbow and your shoulder did you have any other body parts MRIed since this -- since this accident? A: No.
+----------------------------------------
+Chunk ID: 301
+Combined: Q: And you said -- you mentioned a third doctor doctor district attorneyingly /SWAS it? A: Yeah.
+----------------------------------------
+Chunk ID: 302
+Combined: Q: How did you come to learn of /TKA*G *** SPELLING REQUESTED ***? A: I found him online.
+----------------------------------------
+Chunk ID: 303
+Combined: Q: And where is his office located? A: I don't recall.
+----------------------------------------
+Chunk ID: 304
+Combined: Q: When did you first visit with him? A: I don't recall exact date.
+----------------------------------------
+Chunk ID: 305
+Combined: Q: What can you described of doctor is he? A: He's also an orthopedic specialist.
+----------------------------------------
+Chunk ID: 306
+Combined: Q: Specializing in the shoulder or /SPH* other body part? A: I don't recall.
+----------------------------------------
+Chunk ID: 307
+Combined: Q: Did of these doctors diagnose you with any injury or condition with respect to your right shoulder? A: They told me that I have weakness and that the -- it likely needs surgery to be able to bring pain down and to get full range of motion hopefully back.
+----------------------------------------
+Chunk ID: 308
+Combined: Q: And did call four of these doctors recommend you have surgery on your right shoulder? A: Yes.
+----------------------------------------
+Chunk ID: 309
+Combined: Q: Did any of them recommend anything other than surgery? A: /TKO*L told me I can take shots and try that.
+----------------------------------------
+Chunk ID: 310
+Combined: Q: Did you take shots? A: No.
+----------------------------------------
+Chunk ID: 311
+Combined: Q: Did they recommend physical therapy? A: I had done physical therapy after Dr. Goldman had told me to and I did that for almost two years.
+----------------------------------------
+Chunk ID: 312
+Combined: Q: When -- when did you start physical therapy? A: I believe it was immediately after my surgery.
+----------------------------------------
+Chunk ID: 313
+Combined: Q: So that was about 2021? A: Yeah.
+----------------------------------------
+Chunk ID: 314
+Combined: Q: Where did you -- where did you do physical therapy? A: Stars.
+----------------------------------------
+Chunk ID: 315
+Combined: Q: Where is that? A: /PHA*PBS *** SPELLING REQUESTED ***.
+----------------------------------------
+Chunk ID: 316
+Combined: Q: And how did you learn about that place? A: My wife had gone to them.
+----------------------------------------
+Chunk ID: 317
+Combined: Q: Okay. And what kind of -- what parts of your body did you work on at physical therapy? A: My right arm and shoulder and elbow.
+----------------------------------------
+Chunk ID: 318
+Combined: Q: Did -- did the physical therapy help alleviate your pain at all? A: They -- can you repeat the question?
+----------------------------------------
+Chunk ID: 319
+Combined: Q: Sure. Did the physical therapy help alleviate your pain? A: It helped me live with my arm that wasn't working.
+----------------------------------------
+Chunk ID: 320
+Combined: Q: Yes. A: I was not able to move my arm at all when I walked in. I couldn't dish could barely do anything. When I walked out I was still able to at least be able to pick up a bottle of water.
+----------------------------------------
+Chunk ID: 321
+Combined: Q: So the physical therapy helped? A: Yes.
+----------------------------------------
+Chunk ID: 322
+Combined: Q: And not only with your shoulder it helped with your arm as well on your elbow? A: I couldn't move anything when I walked into that office.
+----------------------------------------
+Chunk ID: 323
+Combined: Q: Okay. When was the last time you went for physical therapy? A: I don't recall.
+----------------------------------------
+Chunk ID: 324
+Combined: Q: Do you currently have any surgeries scheduled relative to the injuries you alleged to have sustained in the accident? A: No but it's been a consideration to go for the surgery because of the /TPHAEUPB I'm in and at times it's gotten really bad to the point where I feel I have no choice but to go for surgery. I've about just been putting it off because of thes /TPHAEUBGT have two young kids and I don't want to take the risk a drop wrist or having to go /TKPWEB through another two years of recovery and ending up in the same position without being able to help my family throughout the time.
+----------------------------------------
+Chunk ID: 325
+Combined: Q: And that's a surgery on your right shoulder you're considering? A: Yes.
+----------------------------------------
+Chunk ID: 326
+Combined: Q: Are you considering any other surgeries? A: No.
+----------------------------------------
+Chunk ID: 327
+Combined: Q: Are you currently treating for any of the injuries that you alleged to have sustained in this accident? A: No. Treating way doctor is that what you mean?
+----------------------------------------
+Chunk ID: 328
+Combined: Q: /KWREFPLT are you currently treating with any doctor whatsoever for any injuries you alleged to have sustained in this accident? A: No.
+----------------------------------------
+Chunk ID: 329
+Combined: Q: Is there anything that you could do before the accident that you cannot do now? A: Many things.
+----------------------------------------
+Chunk ID: 330
+Combined: Q: Okay like what for instance? A: Playing /SPORTSZ, being able to pick things up, being able to lift /WAETSZ, being able to put furniture together, being able to change the light bulbs easily. Being able to shave easily. Being able to brush my teeth easily. There's pain involved in all the things that I have to do now on a daily basis. Being able to pick up my kids is painful. It's -- I have to hold my kids /WHEB I can with my left arm which I'm not that comfortable with. At times when I have to switch to the right arm for a quick second it's very uncomfortable and does result in further pain.
+----------------------------------------
+Chunk ID: 331
+Combined: Q: You mentioned -- you mentioned sports. Before the accident did you -- did you play any sports? A: I would play sports, I would swim, I would do thing to try to be active, I would go to the gym. A lot of these things I /O can't do anymore.
+----------------------------------------
+Chunk ID: 332
+Combined: Q: What sports did you play? A: I would play basketball. I would swim, I would play tennis.
+----------------------------------------
+Chunk ID: 333
+Combined: Q: And you're not able to do any of those things anymore? A: I'm able to do things with a large amount of pain so it's not that, you know, my arm doesn't move at all. My arm thankfully does move and I can could thing but it either causes a ton of pain at the time or thereafter also.
+----------------------------------------
+Chunk ID: 334
+Combined: Q: Where did you -- you said you would play tennis. Where would you play tennis before the accident? A: I would play socially.
+----------------------------------------
+Chunk ID: 335
+Combined: Q: And all these /SPOURTS said were you in any lesion or did you just play with friends or socially -- A: No play with friends socially.
+----------------------------------------
+Chunk ID: 336
+Combined: Q: Okay. And you're no longer able to -- are you able to play any sports now? A: I can't play a game of basketball.
+----------------------------------------
+Chunk ID: 337
+Combined: Q: Can you play tennis? A: No.
+----------------------------------------
+Chunk ID: 338
+Combined: Q: Do you have any social media accounts? A: I do.
+----------------------------------------
+Chunk ID: 339
+Combined: Q: Do you have /TP*B? A: Yes.
+----------------------------------------
+Chunk ID: 340
+Combined: Q: Do you have /*EUG? A: Yes.
+----------------------------------------
+Chunk ID: 341
+Combined: Q: Do you have Twitter or X? A: Yes.
+----------------------------------------
+Chunk ID: 342
+Combined: Q: Do you have linked in? A: Yes.
+----------------------------------------
+Chunk ID: 343
+Combined: Q: Do you have Snapchat? A: I don't recall.
+----------------------------------------
+Chunk ID: 344
+Combined: Q: Do you have TikTok? A: No.
+----------------------------------------
+Chunk ID: 345
+Combined: Q: Do you have any other social media accounts on any other platforms that I haven't mentioned? A: I don't recall.
+----------------------------------------
+Chunk ID: 346
+Combined: Q: Have you ever posted anything on social media regarding the accident? A: I posted one picture.
+----------------------------------------
+Chunk ID: 347
+Combined: Q: And which picture is that? A: Picture of my arm wrapped up after the accident.
+----------------------------------------
+Chunk ID: 348
+Combined: Q: And who /THAOBG picture? A: My wife.
+----------------------------------------
+Chunk ID: 349
+Combined: Q: When did you post it? A: Couple of days after the accident.
+----------------------------------------
+Chunk ID: 350
+Combined: Q: Any other posts? A: No.
+----------------------------------------
+Chunk ID: 351
+Combined: Q: /TPH*EU other -- any other posts about your injuries? A: No.
+----------------------------------------
+Chunk ID: 352
+Combined: Q: In the two years since the accident or however long it's been since the accident, almost four years now, have you traveled outside of the United States? A: No.
+----------------------------------------
+Chunk ID: 353
+Combined: Q: Have you traveled outside of the State of New York? A: Yes.
+----------------------------------------
+Chunk ID: 354
+Combined: Q: Where have you gone? A: I believe New York, Florida and Hawaii. Sorry. New Jersey.
+----------------------------------------
+Chunk ID: 355
+Combined: Q: Oh okay. When did you go to Florida? A: I don't recall.
+----------------------------------------
+Chunk ID: 356
+Combined: Q: How many times have you gone to Florida? A: I think once.
+----------------------------------------
+Chunk ID: 357
+Combined: Q: Where did you go in Florida? A: I don't recall.
+----------------------------------------
+Chunk ID: 358
+Combined: Q: Was it for vacation, business? A: I believe to go see family in my a/PHEU.
+----------------------------------------
+Chunk ID: 359
+Combined: Q: And how did you get to /PHAO*EUPL *** SPELLING REQUESTED ***? A: Via plane.
+----------------------------------------
+Chunk ID: 360
+Combined: Q: And how did you get back? A: Plane.
+----------------------------------------
+Chunk ID: 361
+Combined: Q: How long were you there? A: I don't recall.
+----------------------------------------
+Chunk ID: 362
+Combined: Q: Where did -- where did you stay? A: (Pause.) I stayed in a hotel, know /PWAOU hotel.
+----------------------------------------
+Chunk ID: 363
+Combined: Q: And that's in /PHAO*EUPL *** SPELLING REQUESTED ***? A: Yeah.
+----------------------------------------
+Chunk ID: 364
+Combined: Q: You said you went to Hawaii as well. A: Yeah.
+----------------------------------------
+Chunk ID: 365
+Combined: Q: When was that? A: I don't recall.
+----------------------------------------
+Chunk ID: 366
+Combined: Q: How long were you in Hawaii for? A: Couple of days.
+----------------------------------------
+Chunk ID: 367
+Combined: Q: And where -- where specifically did you go in Hawaii? A: /PHAU which.
+----------------------------------------
+Chunk ID: 368
+Combined: Q: And was this for a vacation, business or something sells? A: Vacation *** SPELLING REQUESTED ***.
+----------------------------------------
+Chunk ID: 369
+Combined: Q: And where did you say in /PHAU which? A: Hotel.
+----------------------------------------
+Chunk ID: 370
+Combined: Q: What was the name of the hotel? A: I don't recall.
+----------------------------------------
+Chunk ID: 371
+Combined: Q: How did you get back from Hawaii? A: Plane.
+----------------------------------------
+Chunk ID: 372
+Combined: Q: And these flights Florida and Hawaii are these commercial flights you took or private flights or something else? A: Commercial.
+----------------------------------------
+Chunk ID: 373
+Combined: Q: The treatments in the surgery that you describe today who paid for it? A: My insurance company united health care.
+----------------------------------------
+Chunk ID: 374
+Combined: Q: And you had insurance at the time of the accident? A: Yes.
+----------------------------------------
+Chunk ID: 375
+Combined: Q: And how did you -- what kind of plan did you have? A: I don't know.
+----------------------------------------
+Chunk ID: 376
+Combined: Q: Did you obtain it through your employment or some other way? A: It's through my wife's employment.
+----------------------------------------
+Chunk ID: 377
+Combined: Q: Oh okay. And where does your wife work? A: She works Hadasa.
+----------------------------------------
+Chunk ID: 378
+Combined: Q: Hadasa? A: Hadasa it's called.
+----------------------------------------
+Chunk ID: 379
+Combined: Q: What kind of business or establishment is that? A: It's a nonfor profit that works with a hospital.
+----------------------------------------
+Chunk ID: 380
+Combined: Q: Do you have any other outstanding medical bills as a result of your treatment? A: I don't believe so.
+----------------------------------------
+Chunk ID: 381
+Combined: Q: Are you aware of any -- any liens that any health care provider or medical company has with /TROPT your treatment? A: I don't know.
+----------------------------------------
+Chunk ID: 382
+Combined: Q: I don't have anything further at this time? A: Yeah so I don't believe Florida was after the accident. It was California and Hawaii for my honey /PHOPB and I went to Canada once within the last year I believe it was. (Objection: MR. TAIWO: Can I -- can we just take a quick break. MR. ANELLO: Sure. MR. TAIWO: Just a couple of minutes I'm not going to go anywhere. (Whereupon, an off-the-record discussion was held.) MR. TAIWO: Over my objection I'm going to let my client answer the question about legal funding so yeah and my -- I believe he also wants to correct his previous answers about where he went to for vacation.)
+----------------------------------------
+Chunk ID: 383
+Combined: Q: Where did you go in Canada? A: Montreal.
+----------------------------------------
+Chunk ID: 384
+Combined: Q: And how did you get there? A: I took a plane also.
+----------------------------------------
+Chunk ID: 385
+Combined: Q: How long were you in Canada or in Montreal? A: Couple of days few days.
+----------------------------------------
+Chunk ID: 386
+Combined: Q: Was it for business, vacation or something else? A: Vacation.
+----------------------------------------
+Chunk ID: 387
+Combined: Q: Okay. And you said you went to -- was it California to Hawaii one trip? A: Went to California, stayed there I think for a couple of days, went to Hawaii and then back to California to New York.
+----------------------------------------
+Chunk ID: 388
+Combined: Q: Okay. And that was for your honeymoon? A: Yes.
+----------------------------------------
+Chunk ID: 389
+Combined: Q: And do you recall when exactly that was? A: I believe the end of 2021.
+----------------------------------------
+Chunk ID: 390
+Combined: Q: Or treatment funding? A: No.
+----------------------------------------

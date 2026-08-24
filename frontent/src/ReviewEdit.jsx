@@ -260,6 +260,7 @@ export default function ReviewEdit({ task, onBack }) {
   saveStatusRef.current = saveStatus;
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [isDownloadingWord, setIsDownloadingWord] = useState(false);
+  const [isDownloadingWordTracked, setIsDownloadingWordTracked] = useState(false);
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const downloadDropdownRef = useRef(null);
 
@@ -371,6 +372,11 @@ export default function ReviewEdit({ task, onBack }) {
   const dataTableWrapperRef = useRef(null);
   const docEditorContainerRef = useRef(null);
   const audioPlayerCardRef = useRef(null);
+
+  // Virtuoso imperative refs — used for programmatic scrollToIndex
+  const docVirtuosoRef = useRef(null);
+  const transcriptVirtuosoRef = useRef(null);
+  const matchesVirtuosoRef = useRef(null);
 
   const audioContextRef = useRef(null);
   const gainNodeRef = useRef(null);
@@ -513,7 +519,7 @@ export default function ReviewEdit({ task, onBack }) {
     }, 150);
   };
 
-  const handleTranscriptScroll = (e) => {
+  const handleTranscriptScroll = () => {
     // Mark that user is manually scrolling the transcript
     userScrollingTranscriptRef.current = true;
     if (userScrollTimeoutRef.current) {
@@ -523,15 +529,9 @@ export default function ReviewEdit({ task, onBack }) {
     userScrollTimeoutRef.current = setTimeout(() => {
       userScrollingTranscriptRef.current = false;
     }, 2000);
-
-    // Load more segments when scrolling close to the bottom
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop - clientHeight < 150) {
-      setTranscriptionLimit(prev => prev + 100);
-    }
   };
 
-  const handleDataScroll = (e) => {
+  const handleDataScroll = () => {
     // Mark that user is manually scrolling the raw data table
     userScrollingDataRef.current = true;
     if (userScrollDataTimeoutRef.current) {
@@ -541,15 +541,9 @@ export default function ReviewEdit({ task, onBack }) {
     userScrollDataTimeoutRef.current = setTimeout(() => {
       userScrollingDataRef.current = false;
     }, 2000);
-
-    // Load more matches when scrolling close to the bottom
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop - clientHeight < 150) {
-      setMatchesLimit(prev => prev + 100);
-    }
   };
 
-  const handleDocScroll = (e) => {
+  const handleDocScroll = () => {
     // Mark that user is manually scrolling the doc editor
     userScrollingDocRef.current = true;
     if (userScrollDocTimeoutRef.current) {
@@ -558,12 +552,6 @@ export default function ReviewEdit({ task, onBack }) {
     userScrollDocTimeoutRef.current = setTimeout(() => {
       userScrollingDocRef.current = false;
     }, 2000);
-
-    // Load more document paragraphs when scrolling close to the bottom
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop - clientHeight < 150) {
-      setDocumentLimit(prev => prev + 100);
-    }
   };
 
   const handleCrossPanelHover = (startTime, endTime) => {
@@ -700,29 +688,54 @@ export default function ReviewEdit({ task, onBack }) {
     }
   }, [audioUrl, volume, isMuted, isBoosted, speechEnhancer, filterMode, playbackSpeed]);
 
+  // Auto-scroll all three Virtuoso panels to the currently active item.
+  // Uses Virtuoso's imperative scrollToIndex API because Virtuoso virtualises
+  // the DOM — querySelector on a Virtuoso container finds nothing for off-screen rows.
   useEffect(() => {
-    if (transcriptContainerRef.current) {
-      const activeSeg = transcriptContainerRef.current.querySelector('.active-segment');
-      if (activeSeg) {
-        triggerProgrammaticScroll(transcriptContainerRef.current, activeSeg, userScrollingTranscriptRef);
-      }
-    }
-    
-    if (dataTableWrapperRef.current) {
-      const activeMatch = dataTableWrapperRef.current.querySelector('.active-match');
-      if (activeMatch) {
-        triggerProgrammaticScroll(dataTableWrapperRef.current, activeMatch, userScrollingDataRef);
-      }
+    // ── Left panel: Legal Transcript doc chunks ─────────────────────────────
+    const activeDocIdx = localChunks.findIndex(
+      c => c.audio_start_time_sec != null &&
+           currentTime >= c.audio_start_time_sec &&
+           currentTime <= c.audio_end_time_sec
+    );
+    if (activeDocIdx >= 0 && !userScrollingDocRef.current) {
+      docVirtuosoRef.current?.scrollToIndex({
+        index: activeDocIdx,
+        align: 'center',
+        behavior: 'smooth',
+      });
     }
 
-    // Auto-scroll AI document to the currently playing paragraph
-    if (docEditorContainerRef.current) {
-      const activePara = docEditorContainerRef.current.querySelector('.active-paragraph');
-      if (activePara) {
-        triggerProgrammaticScroll(docEditorContainerRef.current, activePara, userScrollingDocRef);
-      }
+    // ── Right panel: Transcription segments ─────────────────────────────────
+    const transcribedData = results?.transcribed_data || [];
+    const activeTranscriptIdx = transcribedData.findIndex(
+      s => s.start != null &&
+           currentTime >= s.start &&
+           currentTime <= s.end
+    );
+    if (activeTranscriptIdx >= 0 && !userScrollingTranscriptRef.current) {
+      transcriptVirtuosoRef.current?.scrollToIndex({
+        index: activeTranscriptIdx,
+        align: 'center',
+        behavior: 'smooth',
+      });
     }
-  }, [currentTime]);
+
+    // ── Right panel: Matches rows ────────────────────────────────────────────
+    const matches = results?.matches || [];
+    const activeMatchIdx = matches.findIndex(
+      m => m.audio_start_time_sec != null &&
+           currentTime >= m.audio_start_time_sec &&
+           currentTime <= m.audio_end_time_sec
+    );
+    if (activeMatchIdx >= 0 && !userScrollingDataRef.current) {
+      matchesVirtuosoRef.current?.scrollToIndex({
+        index: activeMatchIdx,
+        align: 'center',
+        behavior: 'smooth',
+      });
+    }
+  }, [currentTime, localChunks, results]);
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
@@ -1079,6 +1092,30 @@ export default function ReviewEdit({ task, onBack }) {
     }
   };
 
+  const handleDownloadWordTracked = async () => {
+    if (!task) return;
+    setIsDownloadingWordTracked(true);
+    try {
+      const orgId = localStorage.getItem('organization_id') || task?.organization_id;
+      const response = await api(`/api/v1/organizations/${orgId}/tasks/${task.id}/pipeline/document/word-tracked`);
+      if (!response.ok) throw new Error('Word (tracked) download failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${task?.name || 'document'}_ai_tracked_changes.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Word tracked download error:', err);
+      alert('Failed to download Word document with tracked changes.');
+    } finally {
+      setIsDownloadingWordTracked(false);
+    }
+  };
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   // --- Resize handlers ---
@@ -1265,9 +1302,9 @@ export default function ReviewEdit({ task, onBack }) {
               <button 
                 className="primary-btn action-btn-doc" 
                 onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
-                disabled={loading || isDownloadingPDF || isDownloadingWord || !localChunks.length}
+                disabled={loading || isDownloadingPDF || isDownloadingWord || isDownloadingWordTracked || !localChunks.length}
               >
-                {isDownloadingPDF || isDownloadingWord ? (
+                {isDownloadingPDF || isDownloadingWord || isDownloadingWordTracked ? (
                   <Loader2 className="animate-spin" size={16} />
                 ) : (
                   <Download size={16} />
@@ -1275,6 +1312,7 @@ export default function ReviewEdit({ task, onBack }) {
                 <span>
                   {isDownloadingPDF ? 'Downloading PDF...' : 
                    isDownloadingWord ? 'Downloading Word...' : 
+                   isDownloadingWordTracked ? 'Downloading...' :
                    'Download'}
                 </span>
               </button>
@@ -1348,6 +1386,36 @@ export default function ReviewEdit({ task, onBack }) {
                     <FileText size={16} color="#2b579a" />
                     <span>Download Word</span>
                   </button>
+                  <button
+                    onClick={() => {
+                      setShowDownloadDropdown(false);
+                      handleDownloadWordTracked();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderTop: '1px solid var(--border-color)',
+                      color: 'var(--text-dark)',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <FileText size={16} color="#107c41" />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                      <span>Word with Changes</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '400' }}>Original vs AI corrections</span>
+                    </div>
+                  </button>
                 </div>
               )}
             </div>
@@ -1396,10 +1464,13 @@ export default function ReviewEdit({ task, onBack }) {
               ) : localChunks && localChunks.length > 0 ? (
                 <div className="transcript-virtuoso-wrapper" style={{ height: '100%' }}>
                   <Virtuoso
+                    ref={docVirtuosoRef}
                     style={{ height: '100%' }}
                     data={localChunks}
                     itemContent={(idx, chunk) => {
-                      const isActive = currentTime >= chunk.audio_start_time_sec && currentTime <= chunk.audio_end_time_sec;
+                      const isActive = chunk.audio_start_time_sec != null &&
+                                       currentTime >= chunk.audio_start_time_sec &&
+                                       currentTime <= chunk.audio_end_time_sec;
                       const isCrossHighlighted = isTimeHighlighted(chunk.audio_start_time_sec, chunk.audio_end_time_sec);
                       const chunkId = chunk.raw_chunk_id != null ? chunk.raw_chunk_id : idx;
                       const startLineNo = chunkStartMap[chunkId] || 1;
@@ -1772,7 +1843,7 @@ export default function ReviewEdit({ task, onBack }) {
                   <span className="accordion-preview">{results.transcribed_data.length} segments</span>
                 )}
               </div>
-              <div className="accordion-content" ref={transcriptContainerRef} onScroll={handleTranscriptScroll}>
+              <div className="accordion-content" ref={transcriptContainerRef}>
                 {loading ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
                     <div className="skeleton-bar long shimmer" style={{ height: '16px' }} />
@@ -1783,10 +1854,19 @@ export default function ReviewEdit({ task, onBack }) {
                   </div>
                 ) : results?.transcribed_data && results.transcribed_data.length > 0 ? (
                   <Virtuoso
+                    ref={transcriptVirtuosoRef}
                     style={{ height: '100%' }}
                     data={results.transcribed_data}
+                    scrollerRef={(ref) => {
+                      // Also wire up the manual-scroll detection on the Virtuoso scroller
+                      if (ref) {
+                        ref.onscroll = handleTranscriptScroll;
+                      }
+                    }}
                     itemContent={(index, segment) => {
-                      const isActive = currentTime >= segment.start && currentTime <= segment.end;
+                      const isActive = segment.start != null &&
+                                       currentTime >= segment.start &&
+                                       currentTime <= segment.end;
                       const isCrossHighlighted = isTimeHighlighted(segment.start, segment.end);
                       const prevSpeaker = index > 0 ? results.transcribed_data[index - 1].speaker : null;
                       const showSpeakerHeader = segment.speaker !== prevSpeaker;
@@ -1834,7 +1914,7 @@ export default function ReviewEdit({ task, onBack }) {
                   </span>
                 )}
               </div>
-              <div className="accordion-content" ref={dataTableWrapperRef} onScroll={handleDataScroll}>
+              <div className="accordion-content" ref={dataTableWrapperRef}>
                 {loading ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px 0' }}>
                     <div className="skeleton-bar long shimmer" style={{ height: '40px', borderRadius: '10px' }} />
@@ -1843,10 +1923,18 @@ export default function ReviewEdit({ task, onBack }) {
                   </div>
                 ) : results?.matches && results.matches.length > 0 ? (
                   <Virtuoso
+                    ref={matchesVirtuosoRef}
                     style={{ height: '100%' }}
                     data={results.matches}
+                    scrollerRef={(ref) => {
+                      if (ref) {
+                        ref.onscroll = handleDataScroll;
+                      }
+                    }}
                     itemContent={(index, match) => {
-                      const isActive = currentTime >= match.audio_start_time_sec && currentTime <= match.audio_end_time_sec;
+                      const isActive = match.audio_start_time_sec != null &&
+                                       currentTime >= match.audio_start_time_sec &&
+                                       currentTime <= match.audio_end_time_sec;
                       const isCrossHighlighted = isTimeHighlighted(match.audio_start_time_sec, match.audio_end_time_sec);
                       const score = match.confidence_score || 0;
                       const confidenceClass = score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';

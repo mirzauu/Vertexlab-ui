@@ -427,12 +427,22 @@ class DataProcessingStep(BasePipelineStep):
             sample_text = "\n".join(sample_text_parts)
             doc.close()
 
-            # 2. Detect layout structure dynamically using LLM
-            structure_rules = await detect_pdf_structure(sample_text)
+            # 2. Extract PDF formatting profile (font, size, line spacing, margins, vertical rules)
+            from app.utils.pdf_layout import extract_pdf_layout_profile
+            layout_profile = extract_pdf_layout_profile(source_for_clean)
 
-            # 3. Clean transcript using dynamic rules
-            cleaned_text = clean_transcript_pdf(source_for_clean, structure_rules)
-            qa_chunks = extract_qa(cleaned_text, structure_rules)
+            # 3. Detect layout structure dynamically using LLM (for junk terms, disclaimers)
+            structure_rules = await detect_pdf_structure(sample_text)
+            structure_rules["layout_profile"] = layout_profile
+
+            # 4. Extract atomic SpeechBlocks and high-accuracy Q&A pairs using layout-aware engine
+            from app.utils.qa_extractor import extract_speech_blocks_from_pdf, aggregate_speech_blocks_to_qa
+            speech_blocks, cleaned_text = extract_speech_blocks_from_pdf(
+                source_for_clean,
+                layout_profile=layout_profile,
+                structure_rules=structure_rules
+            )
+            qa_chunks = aggregate_speech_blocks_to_qa(speech_blocks)
 
             # Save cleaned data to storage/output directory
             output_dir = os.path.join(settings.STORAGE_PATH, "output")

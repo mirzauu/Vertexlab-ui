@@ -237,3 +237,22 @@ async def get_document_word(
             "Content-Disposition": f"attachment; filename=document_corrected_{task_id}.docx"
         },
     )
+
+
+@router.get("/document/word-tracked")
+async def get_document_word_tracked(
+    org_id: UUID,
+    task_id: UUID,
+    org: Organization = Depends(get_current_org),
+    service: PipelineService = Depends(get_pipeline_service),
+):
+    """Download the AI document as Word DOCX with tracked changes (original vs AI-corrected)."""
+    docx_bytes = await service.get_document_word_tracked(task_id, org_id)
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f"attachment; filename=document_tracked_{task_id}.docx"
+        },
+    )
+
